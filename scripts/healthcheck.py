@@ -85,6 +85,9 @@ def ollama():
     answer = re.sub(r"<think>.*?</think>", "", body.get("response", ""), flags=re.S).strip()
     if not answer:
         raise RuntimeError(f"Boş yanıt (done_reason={body.get('done_reason')})")
+    if "ankara" not in answer.lower():
+        raise RuntimeError(f"Beklenen cevap 'Ankara' değil: {answer[:60]!r}. Düşünme metni sızıyorsa "
+                           "Ollama'yı güncelleyin veya talimat sürümünü kullanın (qwen3:30b-a3b-instruct-2507-q4_K_M)")
     ns = 1e9
     load_s = body.get("load_duration", 0) / ns
     tok_s = body.get("eval_count", 0) / max(body.get("eval_duration", 1) / ns, 1e-9)
