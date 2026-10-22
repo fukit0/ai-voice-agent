@@ -15,25 +15,25 @@ agents do not update it automatically.
 
 ## Current Verified State
 
-- Repository root:
-- Standard startup path:
-- Standard verification path:
-- Current highest-priority unfinished feature:
-- Current blocker:
+- Repository root: ~/sahibinden-voice-agent (git, main)
+- Standard startup path: `./init.sh` (hızlı kontrol); `FULL_CHECK=1 ./init.sh` (Chatterbox dahil)
+- Standard verification path: `scripts/healthcheck.py` -> `evidence/healthcheck-*.json`
+- Current highest-priority unfinished feature: lab-000 (Lab uygulaması iskeleti)
+- Current blocker: yok
 
 ## Session Log
 
 ### Session 001
 
-- Date:
-- Goal:
-- Completed:
-- Verification run:
-- Evidence captured:
-- Commits:
-- Files or artifacts updated:
-- Known risk or unresolved issue:
-- Next best step:
+- Date: 2026-10-22
+- Goal: Plan -> feature_list.json, lokal model ortamının doğrulanması (setup-001)
+- Completed: setup-001 passing
+- Verification run: `FULL_CHECK=1 ./init.sh` -> 4/4 PASS
+- Evidence captured: evidence/healthcheck-20261022-180150.json
+- Commits: 1e16b86..(bu commit)
+- Files or artifacts updated: feature_list.json, init.sh, scripts/healthcheck.py, requirements.txt, .gitignore
+- Known risk or unresolved issue: Chatterbox MPS'te RTF 6.5 (gerçek zamandan ~6 kat yavaş); "forcing EOS" uyarısı, ses kalitesi dinlenmeli. Repo henüz GitHub'a gönderilmedi.
+- Next best step: lab-000 Lab uygulaması iskeleti
 
 ### Session 002
 

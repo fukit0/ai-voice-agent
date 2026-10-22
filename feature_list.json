@@ -29,15 +29,17 @@
       "moscow": "must",
       "title": "Lokal model ortamı kurulumu",
       "user_visible_behavior": "Geliştirici Mac'inde STT, LLM ve TTS modelleri tek komutla ayağa kalkar ve sağlık kontrolünden geçer.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "./init.sh çalıştırılır ve hatasız biter.",
         "Ollama/LM Studio uç noktası bir test istemine yanıt verir.",
         "mlx-whisper örnek bir Türkçe ses dosyasını metne çevirir.",
         "Chatterbox ve EMA Lightning birer örnek cümleyi wav olarak üretir."
       ],
-      "evidence": [],
-      "notes": "Kullanıcı 2026-10-22'de kurulumların ve örnek bir STT testinin tamamlandığını bildirdi. passing'e almadan önce init.sh içinde sağlık kontrolü ve kanıt (komut çıktısı) eklenmeli."
+      "evidence": [
+        "evidence/healthcheck-20261022-180150.json (FULL_CHECK=1: ollama, ema, stt, chatterbox PASS)"
+      ],
+      "notes": "2026-10-22 doğrulandı. Ölçümler: qwen3:30b-a3b-instruct-2507-q4_K_M 70 tok/s, yükleme 15s; EMA Lightning RTF 0.04; mlx-whisper large-v3-turbo 2.2s (yükleme dahil); Chatterbox Multilingual MPS'te RTF 6.54 (4.1s ses ~27s'de) -> bu Mac'te gerçek zamanlı kullanılamaz, kıyas matrisinde not edilmeli. Düşünen qwen3:30b-a3b yerine instruct sürümü kullanılmalı; setuptools<81 gerekli (Chatterbox watermarker)."
     },
     {
       "id": "lab-000",
