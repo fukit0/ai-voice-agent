@@ -1,0 +1,854 @@
+{
+  "project": "sahibinden-voice-agent",
+  "last_updated": "2026-10-22",
+  "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true
+  },
+  "status_legend": {
+    "not_started": "Work has not begun.",
+    "in_progress": "The feature is the current active task.",
+    "blocked": "Work cannot continue until a documented blocker is resolved.",
+    "passing": "Required verification has passed and evidence is recorded."
+  },
+  "phase_legend": {
+    "faz-0": "Model spike + Lab iskeleti (tahmini 4-6 gün).",
+    "faz-1": "Lokal ajan, kıyas matrisi. Kapı: p50 < 1,2 sn, söz kesme, cevapların >= %90'ı doğru, matris dolu, yığın seçildi.",
+    "faz-2": "Yönetim paneli, yük testi, production projeksiyonu. Kapı: panelde yeni senaryo kodsuz konuşulur, projeksiyon hazır.",
+    "later": "PoC sonrası pilot."
+  },
+  "features": [
+    {
+      "id": "setup-001",
+      "plan_ref": "Faz 0 adım 1",
+      "priority": 1,
+      "area": "setup",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "Lokal model ortamı kurulumu",
+      "user_visible_behavior": "Geliştirici Mac'inde STT, LLM ve TTS modelleri tek komutla ayağa kalkar ve sağlık kontrolünden geçer.",
+      "status": "not_started",
+      "verification": [
+        "./init.sh çalıştırılır ve hatasız biter.",
+        "Ollama/LM Studio uç noktası bir test istemine yanıt verir.",
+        "mlx-whisper örnek bir Türkçe ses dosyasını metne çevirir.",
+        "Chatterbox ve EMA Lightning birer örnek cümleyi wav olarak üretir."
+      ],
+      "evidence": [],
+      "notes": "Kullanıcı 2026-10-22'de kurulumların ve örnek bir STT testinin tamamlandığını bildirdi. passing'e almadan önce init.sh içinde sağlık kontrolü ve kanıt (komut çıktısı) eklenmeli."
+    },
+    {
+      "id": "lab-000",
+      "plan_ref": "F7 / Faz 0 adım 1",
+      "priority": 2,
+      "area": "lab",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "Lab uygulaması iskeleti (React + FastAPI)",
+      "user_visible_behavior": "Kullanıcı tarayıcıda Lab uygulamasını açar ve ekranlar arasında gezinir; backend sağlık uç noktası yanıt verir.",
+      "status": "not_started",
+      "verification": [
+        "./init.sh backend ve frontend bağımlılıklarını kurar.",
+        "Backend /health 200 döner.",
+        "Tarayıcıda Lab açılır, menüde TTS stüdyosu, STT test, Playground, Aramalar, Kıyas matrisi görünür."
+      ],
+      "evidence": [],
+      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar."
+    },
+    {
+      "id": "core-003",
+      "plan_ref": "F1.3",
+      "priority": 3,
+      "area": "voice-runtime",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "STT / LLM / TTS sağlayıcı soyutlaması ve profiller",
+      "user_visible_behavior": "Kullanıcı Lab'de bir profil (L1–L5, A1, A2) seçer; aynı ekran o profilin modellerini kullanır.",
+      "status": "not_started",
+      "verification": [
+        "Profiller config dosyasında tanımlıdır.",
+        "Profil değiştirildiğinde STT/TTS çağrıları ilgili sağlayıcıya gider (loglarda görülür).",
+        "Eksik API anahtarı olan profil anlaşılır bir hata verir."
+      ],
+      "evidence": [],
+      "notes": "Lab ekranları ve ajan aynı soyutlamayı kullanır."
+    },
+    {
+      "id": "lab-002",
+      "plan_ref": "F7.2",
+      "priority": 4,
+      "area": "lab",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "STT test ekranı",
+      "user_visible_behavior": "Kullanıcı ses yükler veya mikrofondan kaydeder; seçili STT modellerinin çıktısını yan yana, referans metne göre WER ve işlem süresiyle görür.",
+      "status": "not_started",
+      "verification": [
+        "Örnek Türkçe ses yüklenir.",
+        "En az iki STT modeli seçilir ve çalıştırılır.",
+        "Her model için transkript, WER ve süre görünür.",
+        "Sonuç kaydedilir ve tekrar açılabilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "norm-007",
+      "plan_ref": "F1.7",
+      "priority": 5,
+      "area": "voice-runtime",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "Türkçe metin normalizasyonu (trnorm)",
+      "user_visible_behavior": "TTS'e giden metindeki sayı, fiyat, tarih ve telefon numaraları doğru okunur.",
+      "status": "not_started",
+      "verification": [
+        "'1.250.000 TL', '22.10.2026', '0532 123 45 67' içeren cümle normalize edilir.",
+        "Normalize çıktı birim testlerle doğrulanır.",
+        "TTS stüdyosunda normalize edilmiş hali önizlenir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "lab-001",
+      "plan_ref": "F7.1",
+      "priority": 6,
+      "area": "lab",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "TTS stüdyosu ve kör dinleme (dinleyici modu)",
+      "user_visible_behavior": "Kullanıcı cümle setini girer, modelleri seçip ses üretir; dinleyici modunda klipler gizli kimlik ve rastgele sırayla çalınır ve doğallık / insan gibilik / telaffuz hatası puanları kaydedilir.",
+      "status": "not_started",
+      "verification": [
+        "10 cümlelik set ve en az 3 TTS modeli ile üretim yapılır.",
+        "Her klip için ilk ses süresi ve RTF loglanır.",
+        "Klipler aynı ses seviyesine normalize edilir.",
+        "Dinleyici modunda model adları görünmez, sıra her dinleyici için farklıdır.",
+        "Puanlar kaydedilir ve CSV olarak dışa aktarılır."
+      ],
+      "evidence": [],
+      "notes": "Faz 0 adım 3. Telefon filtreli (8 kHz) tur da desteklenmeli."
+    },
+    {
+      "id": "eval-llm",
+      "plan_ref": "Faz 0 adım 4",
+      "priority": 7,
+      "area": "eval",
+      "phase": "faz-0",
+      "moscow": "must",
+      "title": "LLM fonksiyon çağrısı testi",
+      "user_visible_behavior": "Kullanıcı 30 örnek cevabı seçili LLM'lere verir ve doğru JSON ile doğru dal oranını görür.",
+      "status": "not_started",
+      "verification": [
+        "30 örnek cevaplık test seti çalıştırılır.",
+        "Her LLM için doğru normalize ve doğru dal oranı raporlanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-001",
+      "plan_ref": "F1.1",
+      "priority": 8,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Tarayıcıdan mikrofonla konuşma (yerel WebRTC)",
+      "user_visible_behavior": "Kullanıcı playground'da mikrofon iznini verir ve ajanla sesli konuşur.",
+      "status": "not_started",
+      "verification": [
+        "Playground açılır, 'Başlat' ile bağlantı kurulur.",
+        "Kullanıcının sesi ajana ulaşır, ajanın sesi tarayıcıda duyulur."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "lab-003",
+      "plan_ref": "F7.3",
+      "priority": 9,
+      "area": "lab",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Konuşma playground'u",
+      "user_visible_behavior": "Kullanıcı profil ve JSON senaryo seçip konuşur; canlı transkripti, aktif düğümü, tur başına STT/LLM/TTS gecikmesini ve çıkarılan cevapları görür.",
+      "status": "not_started",
+      "verification": [
+        "Profil ve senaryo seçilir, konuşma başlatılır.",
+        "Her turda gecikme dökümü görünür.",
+        "Çıkarılan cevaplar konuşma sırasında listelenir.",
+        "Telefon filtresi açılıp kapatılabilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-002",
+      "plan_ref": "F1.2",
+      "priority": 10,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Söz sırası tespiti ve söz kesme (barge-in)",
+      "user_visible_behavior": "Kullanıcı ajan konuşurken araya girdiğinde ajan susar ve dinler; kullanıcı sustuğunda ajan doğal sürede cevap verir.",
+      "status": "not_started",
+      "verification": [
+        "Ajan konuşurken kullanıcı konuşmaya başlar; ajan sesi 500 ms içinde kesilir.",
+        "Kısa duraksamalarda ajan söz almaz (Smart Turn)."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-004",
+      "plan_ref": "F1.4",
+      "priority": 11,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "JSON senaryodan anket yürütme",
+      "user_visible_behavior": "Ajan JSON'daki soruları sırayla sorar, cevabı tipe göre çıkarır, anlaşılmazsa en fazla 2 kez farklı biçimde tekrar sorar ve cevaba göre doğru dala geçer.",
+      "status": "not_started",
+      "verification": [
+        "Örnek anket iki farklı daldan uçtan uca tamamlanır.",
+        "Anlaşılmayan cevapta tekrar sorma gözlenir.",
+        "Cevaplar tipe uygun JSON olarak kaydedilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-005",
+      "plan_ref": "F1.5",
+      "priority": 12,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Persona promptu",
+      "user_visible_behavior": "Ajan kısa cümleler, doğal onaylar ve uygun hitapla konuşur.",
+      "status": "not_started",
+      "verification": [
+        "5 test aramasının transkripti persona kurallarına göre gözden geçirilir.",
+        "Cümle başına ortalama kelime sayısı raporlanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-006",
+      "plan_ref": "F1.6",
+      "priority": 13,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Sessizlik, konu dışı cevap ve global durumlar",
+      "user_visible_behavior": "Ajan sessizlikte 'Alo, duyabiliyor musunuz?' der; 'müsait değilim' ve 'bot musun?' gibi durumları doğru ve dürüst ele alır.",
+      "status": "not_started",
+      "verification": [
+        "8 sn sessizlikte ajan kontrol cümlesi söyler.",
+        "'Şu an müsait değilim' geri arama akışına gider.",
+        "'Bot musun?' sorusuna dürüst cevap verilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-008",
+      "plan_ref": "F1.8",
+      "priority": 14,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Transkript, cevap ve gecikme logları",
+      "user_visible_behavior": "Her arama için transkript, cevap JSON'u ve tur bazında gecikmeler kaydedilir.",
+      "status": "not_started",
+      "verification": [
+        "Bir test araması yapılır.",
+        "JSONL logda tüm turlar ve STT/LLM/TTS süreleri bulunur."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "lab-004",
+      "plan_ref": "F7.4",
+      "priority": 15,
+      "area": "lab",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Arama listesi ve detayı (basit)",
+      "user_visible_behavior": "Kullanıcı yapılan test aramalarını listeler, birini açıp transkripti, ses kaydını, cevapları ve gecikmeleri görür.",
+      "status": "not_started",
+      "verification": [
+        "En az 3 arama listede görünür.",
+        "Detayda ses kaydı çalınır, transkript ve cevaplar görünür."
+      ],
+      "evidence": [],
+      "notes": "F4.1–F4.2'nin ilk hali."
+    },
+    {
+      "id": "eval-001",
+      "plan_ref": "F6.1",
+      "priority": 16,
+      "area": "eval",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Kıyas düzeneği (kayıtlı persona sesleriyle otomatik koşu)",
+      "user_visible_behavior": "Kullanıcı bir profili seçip 20 aramalık test setini tek tıkla koşturur; her arama kayıtlı persona sesleriyle otomatik oynatılır.",
+      "status": "not_started",
+      "verification": [
+        "20 test araması (5 persona x 4 yol) bir profil için tamamlanır.",
+        "Telefon filtresi açık ve kapalı iki koşu yapılır.",
+        "Sonuçlar arama listesine düşer."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "eval-003",
+      "plan_ref": "F6.3",
+      "priority": 17,
+      "area": "eval",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Arama başına maliyet ve kaynak ölçümü",
+      "user_visible_behavior": "Her arama için süre, konuşma payı, STT dakikası, LLM token, TTS karakter ve GPU saniyesi kaydedilir.",
+      "status": "not_started",
+      "verification": [
+        "Bir koşu sonrası her aramada tüm maliyet kalemleri doludur.",
+        "API profillerinde fiyat listesinden arama başı maliyet hesaplanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "eval-002",
+      "plan_ref": "F6.2",
+      "priority": 18,
+      "area": "eval",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Lokal kıyas matrisi",
+      "user_visible_behavior": "Kriter, ağırlık ve profil bazında puanlar tek tabloda toplanır; production yığını seçilir.",
+      "status": "not_started",
+      "verification": [
+        "7 profilin tümü için matris satırları doludur.",
+        "Ağırlıklı puan hesaplanır.",
+        "Lisans eleme kriteri uygulanır.",
+        "Seçilen yığın ve gerekçesi kayda geçer."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "lab-005",
+      "plan_ref": "F7.5",
+      "priority": 19,
+      "area": "lab",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Kıyas matrisi ekranı",
+      "user_visible_behavior": "Kullanıcı kıyas matrisini Lab'de görür; koşu sonuçları ve dinleme puanları otomatik dolar.",
+      "status": "not_started",
+      "verification": [
+        "Yeni bir koşu sonrası ekran güncellenir.",
+        "Ağırlıklar değiştirilince puanlar yeniden hesaplanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-009",
+      "plan_ref": "F1.9",
+      "priority": 20,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Telefon ses kalitesi simülasyonu (8 kHz)",
+      "user_visible_behavior": "Kullanıcı telefon filtresini açtığında giriş ve çıkış sesi 8 kHz µ-law kalitesine indirgenir.",
+      "status": "not_started",
+      "verification": [
+        "Filtre açıkken kayıtların 8 kHz olduğu doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-010",
+      "plan_ref": "F1.10",
+      "priority": 21,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "could",
+      "title": "Gemma 4 ile STT'siz ses girdisi deneyi",
+      "user_visible_behavior": "L5 profili sesi doğrudan LLM'e verir; gecikme kazancı ölçülür.",
+      "status": "not_started",
+      "verification": [
+        "L5 profiliyle 5 test araması yapılır ve gecikme L1 ile karşılaştırılır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-001",
+      "plan_ref": "F2.1",
+      "priority": 22,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Senaryo listesi, CRUD ve versiyonlama",
+      "user_visible_behavior": "Kullanıcı senaryo oluşturur, düzenler, yayınlar ve arşivler; yayındaki senaryo değişince yeni versiyon oluşur.",
+      "status": "not_started",
+      "verification": [
+        "Senaryo oluşturulur ve yayınlanır.",
+        "Düzenleme yeni versiyon üretir.",
+        "Eski aramalar eski versiyona bağlı kalır."
+      ],
+      "evidence": [],
+      "notes": "Lab backend'i ve kabuğu üzerine kurulur."
+    },
+    {
+      "id": "scn-002",
+      "plan_ref": "F2.2",
+      "priority": 23,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Soru ekleme, çıkarma, sıralama",
+      "user_visible_behavior": "Kullanıcı 6 soru tipinden soru ekler, siler, sıralar; tekrar sorma metni ve eş anlamlıları girer.",
+      "status": "not_started",
+      "verification": [
+        "Her soru tipinden bir soru eklenir.",
+        "Sıra değiştirilir ve kaydedilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-003",
+      "plan_ref": "F2.3",
+      "priority": 24,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Görsel akış editörü (React Flow)",
+      "user_visible_behavior": "Kullanıcı düğümleri ve koşullu bağlantıları görsel olarak düzenler.",
+      "status": "not_started",
+      "verification": [
+        "Soru, mesaj ve bitiş düğümleri eklenir.",
+        "Bağlantılar çizilir ve kaydedilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-004",
+      "plan_ref": "F2.4",
+      "priority": 25,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Koşul kuralları",
+      "user_visible_behavior": "Kullanıcı eşittir, içinde, aralık, cevapsız ve varsayılan dal kuralları tanımlar.",
+      "status": "not_started",
+      "verification": [
+        "Her kural tipiyle bir dal tanımlanır.",
+        "Simülatörde her dalın tetiklendiği doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-007",
+      "plan_ref": "F2.7",
+      "priority": 26,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Değişken şeması ve şablon editörü",
+      "user_visible_behavior": "Kullanıcı değişkenleri tanımlar, {customer_name} gibi şablonlar yazar ve test müşterisiyle önizler.",
+      "status": "not_started",
+      "verification": [
+        "Değişken tanımlanır.",
+        "Şablon önizlemede doğru değerle render edilir.",
+        "Tanımsız değişken uyarı verir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-009",
+      "plan_ref": "F2.9",
+      "priority": 27,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Metin modu: Birebir oku / Doğal ifade et",
+      "user_visible_behavior": "Kullanıcı her metin için okuma modunu seçer; birebir metinler değiştirilmeden okunur.",
+      "status": "not_started",
+      "verification": [
+        "Birebir moddaki metin transkriptte kelimesi kelimesine görülür."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "sim-001",
+      "plan_ref": "F3.1",
+      "priority": 28,
+      "area": "simulator",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Senaryo ve test müşterisi seçimi",
+      "user_visible_behavior": "Kullanıcı simülatörde senaryo ve test müşterisi seçip değişkenleri doldurur.",
+      "status": "not_started",
+      "verification": [
+        "Seçilen müşterinin değişkenleri ajanın konuşmasında kullanılır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "sim-002",
+      "plan_ref": "F3.2",
+      "priority": 29,
+      "area": "simulator",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Softphone arayüzü",
+      "user_visible_behavior": "Kullanıcı çalma, açma, kapatma, sessize alma ve telefon filtresi olan bir arama arayüzü kullanır.",
+      "status": "not_started",
+      "verification": [
+        "Arama çalar, açılır, konuşulur ve kapatılır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "sim-003",
+      "plan_ref": "F3.3",
+      "priority": 30,
+      "area": "simulator",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Canlı transkript ve aktif düğüm",
+      "user_visible_behavior": "Kullanıcı arama sırasında transkripti, aktif düğümü ve çıkarılan cevapları görür.",
+      "status": "not_started",
+      "verification": [
+        "Aktif düğüm akış üzerinde vurgulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-001",
+      "plan_ref": "F4.1",
+      "priority": 31,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Arama listesi (filtreli)",
+      "user_visible_behavior": "Kullanıcı aramaları senaryo, versiyon, tarih ve duruma göre filtreler.",
+      "status": "not_started",
+      "verification": [
+        "Her filtre doğru sonuç döner."
+      ],
+      "evidence": [],
+      "notes": "lab-004 üzerine genişletilir."
+    },
+    {
+      "id": "res-002",
+      "plan_ref": "F4.2",
+      "priority": 32,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Arama detayı (izlenen yol dahil)",
+      "user_visible_behavior": "Kullanıcı aramanın transkriptini, kaydını, cevaplarını ve izlenen akış yolunu görür.",
+      "status": "not_started",
+      "verification": [
+        "Dallanma kuralları izlenen yolla doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-003",
+      "plan_ref": "F4.3",
+      "priority": 33,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Senaryo özeti ve istatistikler",
+      "user_visible_behavior": "Kullanıcı tamamlanma oranı, ortalama süre, soru bazında dağılım ve NPS'i görür.",
+      "status": "not_started",
+      "verification": [
+        "20 simülasyon aramasının istatistikleri ekranda görünür."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "eval-004",
+      "plan_ref": "F6.4",
+      "priority": 34,
+      "area": "eval",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Yük testi (1 / 5 / 10 eşzamanlı arama)",
+      "user_visible_behavior": "Kullanıcı eşzamanlı arama sayısına göre gecikme ve kaynak kullanımını görür; bulut GPU üzerinde de koşulur.",
+      "status": "not_started",
+      "verification": [
+        "1, 5 ve 10 eşzamanlı aramada p50/p90 gecikme raporlanır.",
+        "Seçilen yığın bulut GPU'da da koşturulur."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "eval-005",
+      "plan_ref": "F6.5",
+      "priority": 35,
+      "area": "eval",
+      "phase": "faz-2",
+      "moscow": "must",
+      "title": "Production maliyet ve süre projeksiyonu",
+      "user_visible_behavior": "Kullanıcı pilot, orta ve tam ölçek senaryoları için self-host ve API karşılaştırmalı aylık maliyet, arama başı maliyet, kampanya süresi ve beklenen gecikmeyi görür.",
+      "status": "not_started",
+      "verification": [
+        "Üç hacim senaryosu için tablo doludur.",
+        "Hesaplar PoC ölçümlerinden türetilir ve formül belgelenir."
+      ],
+      "evidence": [],
+      "notes": "Hacim, saat penceresi ve operatör dakika ücreti açık soru."
+    },
+    {
+      "id": "scn-005",
+      "plan_ref": "F2.5",
+      "priority": 36,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Global durum yönlendirmeleri",
+      "user_visible_behavior": "Geri ara, aramayın, yanlış kişi ve şikayet durumları her düğümden ilgili akışa yönlenir.",
+      "status": "not_started",
+      "verification": [
+        "Her global durum simülatörde tetiklenir ve doğru akışa gider."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-006",
+      "plan_ref": "F2.6",
+      "priority": 37,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Yayın öncesi akış doğrulama",
+      "user_visible_behavior": "Yayınlamadan önce ulaşılamayan düğüm, sonu olmayan dal ve tanımsız değişken uyarıları gösterilir.",
+      "status": "not_started",
+      "verification": [
+        "Hatalı akış yayınlanamaz ve hatalar listelenir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-008",
+      "plan_ref": "F2.8",
+      "priority": 38,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Türkçe ek filtreleri",
+      "user_visible_behavior": "{city|de} gibi filtreler ünlü uyumuna göre doğru eki üretir.",
+      "status": "not_started",
+      "verification": [
+        "Ankara'da, İzmir'de, Muş'ta birim testlerle doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-010",
+      "plan_ref": "F2.10",
+      "priority": 39,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Persona ve ses ayarları",
+      "user_visible_behavior": "Kullanıcı senaryo başına ses, konuşma hızı, açılış ve kapanış metnini ayarlar.",
+      "status": "not_started",
+      "verification": [
+        "Ayar değişikliği bir sonraki aramada duyulur."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "sim-004",
+      "plan_ref": "F3.4",
+      "priority": 40,
+      "area": "simulator",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Debug paneli",
+      "user_visible_behavior": "Kullanıcı tur bazında gecikmeyi ve LLM'in çağırdığı fonksiyonları görür.",
+      "status": "not_started",
+      "verification": [
+        "Bir arama boyunca tüm fonksiyon çağrıları listelenir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-004",
+      "plan_ref": "F4.4",
+      "priority": 41,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Düğüm bazında kopma hunisi",
+      "user_visible_behavior": "Kullanıcı hangi düğümde aramaların bırakıldığını görür.",
+      "status": "not_started",
+      "verification": [
+        "Huni sayıları arama kayıtlarıyla eşleşir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-005",
+      "plan_ref": "F4.5",
+      "priority": 42,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Kalite metrikleri",
+      "user_visible_behavior": "Kullanıcı ortalama gecikme, tekrar sorma ve anlaşılamadı oranlarını görür.",
+      "status": "not_started",
+      "verification": [
+        "Metrikler loglarla eşleşir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-006",
+      "plan_ref": "F4.6",
+      "priority": 43,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "CSV dışa aktarma",
+      "user_visible_behavior": "Kullanıcı aramaları ve cevapları CSV olarak indirir.",
+      "status": "not_started",
+      "verification": [
+        "CSV açılır ve satırlar ekrandakiyle eşleşir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "plat-001",
+      "plan_ref": "F5.1",
+      "priority": 44,
+      "area": "platform",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Tek yönetici girişi",
+      "user_visible_behavior": "Panel basit parolayla korunur.",
+      "status": "not_started",
+      "verification": [
+        "Parolasız erişim reddedilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "plat-002",
+      "plan_ref": "F5.2",
+      "priority": 45,
+      "area": "platform",
+      "phase": "faz-2",
+      "moscow": "should",
+      "title": "Saklama süresi ve maskeleme",
+      "user_visible_behavior": "Ses kaydı ve transkriptler tanımlı süre sonunda silinir; test verisinde kişisel bilgiler maskelenir.",
+      "status": "not_started",
+      "verification": [
+        "Süresi dolan kayıt silinir.",
+        "Maskeleme transkriptte doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "scn-011",
+      "plan_ref": "F2.11",
+      "priority": 46,
+      "area": "scenario",
+      "phase": "faz-2",
+      "moscow": "could",
+      "title": "Senaryo JSON içe / dışa aktarma",
+      "user_visible_behavior": "Kullanıcı senaryoyu JSON olarak indirir ve geri yükler.",
+      "status": "not_started",
+      "verification": [
+        "Dışa aktarılan senaryo içe aktarılınca birebir aynıdır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "res-007",
+      "plan_ref": "F4.7",
+      "priority": 47,
+      "area": "results",
+      "phase": "faz-2",
+      "moscow": "could",
+      "title": "Açık uçlu cevaplar için tema özeti",
+      "user_visible_behavior": "Kullanıcı açık uçlu cevapların LLM ile çıkarılmış temalarını görür.",
+      "status": "not_started",
+      "verification": [
+        "En az 20 cevaptan tema listesi üretilir."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "sim-005",
+      "plan_ref": "F3.5",
+      "priority": 48,
+      "area": "simulator",
+      "phase": "later",
+      "moscow": "could",
+      "title": "Gerçek telefon araması (Twilio / SIP)",
+      "user_visible_behavior": "Kullanıcı ajanın kendi telefon numarasını aramasını sağlar.",
+      "status": "not_started",
+      "verification": [
+        "Gerçek bir hatta arama tamamlanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "plat-003",
+      "plan_ref": "F5.3",
+      "priority": 49,
+      "area": "platform",
+      "phase": "later",
+      "moscow": "could",
+      "title": "Müşteri listesi, kampanya, arama saatleri, yeniden deneme",
+      "user_visible_behavior": "Kullanıcı CSV ile müşteri yükler ve arama kampanyası planlar.",
+      "status": "not_started",
+      "verification": [
+        "CSV yüklenir, kampanya saat penceresine uyar."
+      ],
+      "evidence": [],
+      "notes": ""
+    }
+  ]
+}
