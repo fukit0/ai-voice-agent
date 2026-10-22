@@ -5,8 +5,8 @@ Her bileşen için küçük bir çağrı yapar, süreyi ölçer ve sonucu eviden
 Kanıt dosyası feature_list.json'daki `evidence` alanına referans olarak eklenebilir.
 
 Kullanım:
-    python scripts/healthcheck.py                # hepsi
-    python scripts/healthcheck.py --skip chatterbox
+    python scripts/healthcheck.py           # hızlı: Ollama + EMA -> STT (modeller önbellekteyse ~10 sn)
+    python scripts/healthcheck.py --full    # + Chatterbox (yükleme ~1 dk, ~3 GB bellek)
 Ortam değişkenleri:
     OLLAMA_URL   (varsayılan http://localhost:11434)
     OLLAMA_MODEL (varsayılan: Ollama'daki ilk model)
@@ -65,7 +65,7 @@ def ollama():
 
     tags = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5).json().get("models", [])
     if not tags:
-        raise RuntimeError("Ollama çalışıyor ama yüklü model yok (ollama pull <model>)")
+        raise RuntimeError("Ollama çalışıyor ama yüklü model yok. Örn: ollama pull qwen3:30b-a3b (32 GB+) veya ollama pull gemma4:e4b (16 GB)")
     model = os.environ.get("OLLAMA_MODEL") or tags[0]["name"]
     t0 = time.perf_counter()
     r = requests.post(f"{OLLAMA_URL}/api/generate", timeout=120, json={
@@ -90,14 +90,17 @@ def ema():
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     path = AUDIO_DIR / "ema.wav"
     t0 = time.perf_counter()
-    speech = EMA().say(TEST_SENTENCE, sample_rate=16000, path=str(path))
+    engine = EMA()
+    load = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    speech = engine.say(TEST_SENTENCE, sample_rate=16000, path=str(path))
     if speech.duration <= 0.5:
         raise RuntimeError(f"Ses çok kısa: {speech.duration:.2f}s")
     shared["audio_16k"] = speech.audio  # STT testinde kullanılır
     took = time.perf_counter() - t0
     return {"wav": str(path.relative_to(ROOT)), "audio_seconds": round(speech.duration, 2),
-            "rtf": round(took / speech.duration, 3),
-            "summary": f"{speech.duration:.1f}s ses, RTF {took / speech.duration:.2f}"}
+            "load_seconds": round(load, 1), "rtf": round(took / speech.duration, 3),
+            "summary": f"{speech.duration:.1f}s ses, RTF {took / speech.duration:.2f} (yükleme {load:.0f}s)"}
 
 
 @check("stt")
@@ -127,7 +130,8 @@ def chatterbox():
 
     device = "mps" if torch.backends.mps.is_available() else "cpu"
     t0 = time.perf_counter()
-    model = ChatterboxMultilingualTTS.from_pretrained(device=torch.device(device))
+    # Cihaz string olarak verilmeli: kütüphane "mps"/"cpu" string karşılaştırmasıyla CPU'ya map ediyor.
+    model = ChatterboxMultilingualTTS.from_pretrained(device=device)
     load = time.perf_counter() - t0
     t1 = time.perf_counter()
     wav = model.generate(TEST_SENTENCE, language_id="tr")
@@ -145,12 +149,16 @@ def chatterbox():
 
 
 CHECKS = [ollama, ema, stt, chatterbox]
+HEAVY = {"chatterbox"}  # sadece --full ile
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--full", action="store_true", help="Ağır kontrolleri de çalıştır (Chatterbox)")
     ap.add_argument("--skip", nargs="*", default=[], choices=[c.component for c in CHECKS])
     args = ap.parse_args()
+    if not args.full:
+        args.skip = sorted(set(args.skip) | HEAVY)
 
     print("==> Model sağlık kontrolü")
     for c in CHECKS:

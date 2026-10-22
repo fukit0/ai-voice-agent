@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-10-22T17:18:00",
+  "host": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.11.11",
+  "test_sentence": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+  "results": [
+    {
+      "component": "ollama",
+      "status": "fail",
+      "seconds": 0.69,
+      "detail": {
+        "error": "RuntimeError: Ollama çalışıyor ama yüklü model yok (ollama pull <model>)",
+        "trace": "Traceback (most recent call last):\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 47, in run\n    entry[\"detail\"] = fn() or {}\n                      ^^^^\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 68, in ollama\n    raise RuntimeError(\"Ollama çalışıyor ama yüklü model yok (ollama pull <model>)\")\nRuntimeError: Ollama çalışıyor ama yüklü model yok (ollama pull <model>)\n"
+      }
+    },
+    {
+      "component": "ema",
+      "status": "pass",
+      "seconds": 17.96,
+      "detail": {
+        "wav": "evidence/healthcheck-audio/ema.wav",
+        "audio_seconds": 3.88,
+        "rtf": 3.366,
+        "summary": "3.9s ses, RTF 3.37"
+      }
+    },
+    {
+      "component": "stt",
+      "status": "pass",
+      "seconds": 3.4,
+      "detail": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "source": "ema.wav (TTS -> STT)",
+        "transcript": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+        "matched_keywords": [
+          "merhaba",
+          "anket"
+        ],
+        "summary": "'Merhaba, sahibinden anketine hoş geldiniz. İlanını'"
+      }
+    },
+    {
+      "component": "chatterbox",
+      "status": "fail",
+      "seconds": 171.88,
+      "detail": {
+        "error": "RuntimeError: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.",
+        "trace": "Traceback (most recent call last):\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 47, in run\n    entry[\"detail\"] = fn() or {}\n                      ^^^^\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 130, in chatterbox\n    model = ChatterboxMultilingualTTS.from_pretrained(device=torch.device(device))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/chatterbox/mtl_tts.py\", line 220, in from_pretrained\n    return cls.from_local(ckpt_dir, device)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Attempting to deserialize object on a CUDA device but torch.cuda.is_available() is False. If you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU.\n"
+      }
+    }
+  ]
+}

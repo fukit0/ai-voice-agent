@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Oturum başlangıç betiği: ortamı hazırlar ve lokal modellerin çalıştığını doğrular.
-#   ./init.sh                         # bağımlılık + tüm model kontrolleri
-#   SKIP_CHATTERBOX=1 ./init.sh       # Chatterbox'ı atla (yüklemesi uzun sürer)
-#   SKIP_MODEL_CHECKS=1 ./init.sh     # sadece ortam
+#   ./init.sh                      # her oturum: ortam + hızlı model kontrolü (Ollama, EMA -> STT)
+#   FULL_CHECK=1 ./init.sh         # + Chatterbox; model değişince veya setup-001 kanıtı için
+#   SKIP_MODEL_CHECKS=1 ./init.sh  # sadece ortam
+#   MODELS_ONLINE=1 ./init.sh      # yeni modeli Hugging Face'ten indirmeye izin ver
+# Modeller ~/.cache/huggingface altında önbelleklenir; ilk indirmeden sonra tekrar inmez.
 # Ortam değişkenleri: OLLAMA_URL, OLLAMA_MODEL, STT_MODEL (bkz. scripts/healthcheck.py)
 
 set -euo pipefail
@@ -36,10 +38,14 @@ if ! curl -sf "$OLLAMA_URL/api/tags" >/dev/null; then
 fi
 
 # --- Model sağlık kontrolleri ---------------------------------------------
+# Varsayılan: önbellekten çevrimdışı çalış (ağ kontrolü ve indirme yok, daha hızlı).
+if [ "${MODELS_ONLINE:-0}" != "1" ]; then export HF_HUB_OFFLINE=1; fi
+export HF_HUB_DISABLE_PROGRESS_BARS=1
 if [ "${SKIP_MODEL_CHECKS:-0}" != "1" ]; then
-  SKIP=()
-  [ "${SKIP_CHATTERBOX:-0}" = "1" ] && SKIP+=(chatterbox)
-  python scripts/healthcheck.py ${SKIP[@]+--skip "${SKIP[@]}"}
+  ARGS=()
+  [ "${FULL_CHECK:-0}" = "1" ] && ARGS+=(--full)
+  python scripts/healthcheck.py ${ARGS[@]+"${ARGS[@]}"} || {
+    echo "==> İpucu: model önbellekte yoksa MODELS_ONLINE=1 ./init.sh ile indir."; exit 1; }
 fi
 
 echo "==> Hazır. Kanıtlar evidence/ altında."
