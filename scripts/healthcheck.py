@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import sys
 import time
 import traceback
@@ -72,15 +73,25 @@ def ollama():
         "model": model,
         "prompt": "Tek kelimeyle cevap ver: Türkiye'nin başkenti neresidir?",
         "stream": False,
-        "options": {"num_predict": 16, "temperature": 0},
+        # Qwen3 gibi "düşünen" modeller önce düşünce token'ı üretir; kısa limitte cevap boş kalır.
+        # Ajan da gecikme için düşünmeyi kapalı kullanacak.
+        "think": False,
+        # Kontrolden sonra modeli bellekten at: STT/TTS ile aynı RAM'i paylaşıyor.
+        "keep_alive": 0,
+        "options": {"num_predict": 32, "temperature": 0},
     })
     r.raise_for_status()
-    answer = r.json().get("response", "").strip()
+    body = r.json()
+    answer = re.sub(r"<think>.*?</think>", "", body.get("response", ""), flags=re.S).strip()
     if not answer:
-        raise RuntimeError("Boş yanıt")
+        raise RuntimeError(f"Boş yanıt (done_reason={body.get('done_reason')})")
+    ns = 1e9
+    load_s = body.get("load_duration", 0) / ns
+    tok_s = body.get("eval_count", 0) / max(body.get("eval_duration", 1) / ns, 1e-9)
     return {"model": model, "answer": answer, "generate_seconds": round(time.perf_counter() - t0, 2),
+            "load_seconds": round(load_s, 1), "tokens_per_second": round(tok_s, 1),
             "installed_models": [m["name"] for m in tags],
-            "summary": f"{model} -> {answer[:40]!r}"}
+            "summary": f"{model} -> {answer[:30]!r}, {tok_s:.0f} tok/s (yükleme {load_s:.0f}s)"}
 
 
 @check("ema")
