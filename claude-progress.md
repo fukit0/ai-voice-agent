@@ -32,7 +32,7 @@ agents do not update it automatically.
 - Evidence captured: evidence/healthcheck-20261022-180150.json
 - Commits: 1e16b86..(bu commit)
 - Files or artifacts updated: feature_list.json, init.sh, scripts/healthcheck.py, requirements.txt, .gitignore
-- Known risk or unresolved issue: Chatterbox MPS'te RTF 6.5 (gerçek zamandan ~6 kat yavaş); "forcing EOS" uyarısı, ses kalitesi dinlenmeli. Repo henüz GitHub'a gönderilmedi.
+- Known risk or unresolved issue: Chatterbox MPS'te RTF 6.5 (gerçek zamandan ~6 kat yavaş); "forcing EOS" uyarısı verdi ama cümle tam okundu (dinlenerek doğrulandı). Repo henüz GitHub'a gönderilmedi.
 - Next best step: lab-000 Lab uygulaması iskeleti
 
 ### Session 002
