@@ -18,7 +18,7 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Current highest-priority unfinished feature: core-003 (STT / LLM / TTS sağlayıcı soyutlaması ve profiller)
+- Current highest-priority unfinished feature: lab-000 — Mac'te ./init.sh + scripts/dev.sh doğrulaması
 - Current blocker: yok
 
 ## Session Log
@@ -39,7 +39,7 @@ agents do not update it automatically.
 
 - Date: 2026-10-22
 - Goal: lab-000 Lab uygulaması iskeleti
-- Completed: lab-000 passing
+- Completed: lab-000 kodu ve bulut doğrulaması; Mac doğrulaması bekleniyor (in_progress)
 - Verification run: pytest (2), vitest (4), vite build, Playwright e2e (1), init.sh baseline, dev.sh proxy — hepsi geçti (bulut çalışma alanında, aynı kaynak)
 - Evidence captured: evidence/lab-000-verification.json, evidence/lab-000-e2e.png
 - Commits: (bu commit)

@@ -50,7 +50,7 @@
       "moscow": "must",
       "title": "Lab uygulaması iskeleti (React + FastAPI)",
       "user_visible_behavior": "Kullanıcı tarayıcıda Lab uygulamasını açar ve ekranlar arasında gezinir; backend sağlık uç noktası yanıt verir.",
-      "status": "passing",
+      "status": "in_progress",
       "verification": [
         "./init.sh backend ve frontend bağımlılıklarını kurar.",
         "Backend /health 200 döner.",
@@ -60,7 +60,7 @@
         "evidence/lab-000-verification.json",
         "evidence/lab-000-e2e.png"
       ],
-      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac'te ./init.sh ile tekrar edilmesi önerilir. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil."
+      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac doğrulaması bekleniyor: ./init.sh ve scripts/dev.sh Mac'te koşup geçince passing olacak. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil."
     },
     {
       "id": "core-003",
