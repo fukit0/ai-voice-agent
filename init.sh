@@ -4,6 +4,7 @@
 #   FULL_CHECK=1 ./init.sh         # + Chatterbox; model değişince veya setup-001 kanıtı için
 #   SKIP_MODEL_CHECKS=1 ./init.sh  # sadece ortam
 #   MODELS_ONLINE=1 ./init.sh      # yeni modeli Hugging Face'ten indirmeye izin ver
+#   RUN_START_COMMAND=1 ./init.sh  # kontrollerden sonra Lab'i başlat (scripts/dev.sh)
 # Modeller ~/.cache/huggingface altında önbelleklenir; ilk indirmeden sonra tekrar inmez.
 # Ortam değişkenleri: OLLAMA_URL, OLLAMA_MODEL, STT_MODEL (bkz. scripts/healthcheck.py)
 
@@ -27,9 +28,21 @@ if [ -f requirements.txt ] && [ "${SKIP_INSTALL:-0}" != "1" ]; then
   uv pip install -q -r requirements.txt
 fi
 
+# --- Frontend --------------------------------------------------------------
+if [ "${SKIP_INSTALL:-0}" != "1" ]; then
+  echo "==> Frontend bağımlılıkları (npm ci)"
+  npm --prefix frontend ci --no-audit --no-fund --loglevel=error
+fi
+
+# --- Temel doğrulama (hızlı, modelsiz) -------------------------------------
+echo "==> Backend testleri"
+python -m pytest -q backend
+echo "==> Frontend testleri"
+npm --prefix frontend test --silent
+
 # --- Ollama ----------------------------------------------------------------
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
-if ! curl -sf "$OLLAMA_URL/api/tags" >/dev/null; then
+if [ "${SKIP_MODEL_CHECKS:-0}" != "1" ] && ! curl -sf "$OLLAMA_URL/api/tags" >/dev/null; then
   echo "==> Ollama yanıt vermiyor ($OLLAMA_URL). Başlatmayı deniyorum: ollama serve"
   if command -v ollama >/dev/null; then
     (ollama serve >/tmp/ollama.log 2>&1 &)
@@ -49,3 +62,5 @@ if [ "${SKIP_MODEL_CHECKS:-0}" != "1" ]; then
 fi
 
 echo "==> Hazır. Kanıtlar evidence/ altında."
+echo "==> Lab'i başlatmak için: scripts/dev.sh  (arayüz http://localhost:5173)"
+if [ "${RUN_START_COMMAND:-0}" = "1" ]; then exec scripts/dev.sh; fi

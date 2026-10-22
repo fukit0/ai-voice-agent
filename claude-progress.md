@@ -16,9 +16,9 @@ agents do not update it automatically.
 ## Current Verified State
 
 - Repository root: ~/sahibinden-voice-agent (git, main)
-- Standard startup path: `./init.sh` (hızlı kontrol); `FULL_CHECK=1 ./init.sh` (Chatterbox dahil)
-- Standard verification path: `scripts/healthcheck.py` -> `evidence/healthcheck-*.json`
-- Current highest-priority unfinished feature: lab-000 (Lab uygulaması iskeleti)
+- Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
+- Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
+- Current highest-priority unfinished feature: core-003 (STT / LLM / TTS sağlayıcı soyutlaması ve profiller)
 - Current blocker: yok
 
 ## Session Log
@@ -37,12 +37,12 @@ agents do not update it automatically.
 
 ### Session 002
 
-- Date:
-- Goal:
-- Completed:
-- Verification run:
-- Evidence captured:
-- Commits:
-- Files or artifacts updated:
-- Known risk or unresolved issue:
-- Next best step:
+- Date: 2026-10-22
+- Goal: lab-000 Lab uygulaması iskeleti
+- Completed: lab-000 passing
+- Verification run: pytest (2), vitest (4), vite build, Playwright e2e (1), init.sh baseline, dev.sh proxy — hepsi geçti (bulut çalışma alanında, aynı kaynak)
+- Evidence captured: evidence/lab-000-verification.json, evidence/lab-000-e2e.png
+- Commits: (bu commit)
+- Files or artifacts updated: backend/, frontend/, scripts/dev.sh, init.sh, requirements.txt (pytest), .gitignore, feature_list.json
+- Known risk or unresolved issue: Mac'te ./init.sh ile npm ci + testler henüz koşmadı. E2E için Mac'te `npx playwright install chromium` gerekir. Repo GitHub'a henüz gönderilmedi.
+- Next best step: core-003 sağlayıcı soyutlaması (Lab ekranlarının ve ajanın ortak model katmanı)

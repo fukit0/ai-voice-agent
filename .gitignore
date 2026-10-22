@@ -6,3 +6,8 @@ node_modules/
 .env
 # Sağlık kontrolü sesleri büyük ve her koşuda yeniden üretilir; JSON kanıtlar repoda kalır.
 evidence/healthcheck-audio/
+frontend/node_modules/
+frontend/dist/
+frontend/e2e-artifacts/
+frontend/test-results/
+frontend/playwright-report/

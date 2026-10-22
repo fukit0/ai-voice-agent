@@ -1,0 +1,37 @@
+{
+  "feature": "lab-000",
+  "date": "2026-10-22",
+  "environment": "Claude bulut çalışma alanı (Linux, Python 3.13, Node 22) — kaynak bilgisayardaki repo ile aynı dosyalar",
+  "checks": [
+    {
+      "command": "npm --prefix frontend ci (package-lock.json ile)",
+      "result": "192 paket kuruldu"
+    },
+    {
+      "command": "python -m pytest -q backend",
+      "result": "2 passed"
+    },
+    {
+      "command": "npm --prefix frontend test",
+      "result": "4 passed (menüde 5 ekran, kök yönlendirme, backend bağlı, backend yok)"
+    },
+    {
+      "command": "npm --prefix frontend run build",
+      "result": "tsc + vite build başarılı"
+    },
+    {
+      "command": "npm --prefix frontend run e2e",
+      "result": "1 passed: Lab açılır, 'Backend bağlı · v0.1.0', 5 ekranın her biri menüden açılır",
+      "screenshot": "evidence/lab-000-e2e.png"
+    },
+    {
+      "command": "SKIP_INSTALL=1 SKIP_MODEL_CHECKS=1 ./init.sh",
+      "result": "Backend testleri 2 passed, frontend testleri 4 passed, baseline yolu hatasız"
+    },
+    {
+      "command": "scripts/dev.sh + curl localhost:5173/api/health",
+      "result": "Vite proxy üzerinden {status: ok}; arayüz <title>Voice Agent Lab</title>"
+    }
+  ],
+  "pending_on_mac": "./init.sh (npm ci + pytest + vitest) Mac'te kullanıcı tarafından çalıştırılmalı"
+}
