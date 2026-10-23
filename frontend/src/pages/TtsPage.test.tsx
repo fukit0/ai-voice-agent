@@ -67,6 +67,19 @@ describe("TtsPage", () => {
     await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("/api/profiles/S-chatterbox/warmup?keep_others=false"))).toBe(true));
   });
 
+  it("prepares a normal model with the TTS component only (no LLM key needed)", async () => {
+    const cold = MODELS.map((m) => (m.profile === "L2" ? { ...m, warm: false } : m));
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/tts/models") return new Response(JSON.stringify(cold));
+      if (url === "/api/tts/sessions") return new Response("[]");
+      if (url.includes("/warmup")) return new Response(JSON.stringify({ state: "ready", components: {} }), { status: 202 });
+      return new Response("", { status: 404 });
+    });
+    render(<TtsPage />);
+    fireEvent.click((await screen.findAllByRole("button", { name: "Hazırla" }))[0]);
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]) === "/api/profiles/L2/warmup?keep_others=true&components=tts")).toBe(true));
+  });
+
   it("listener mode hides model names and saves ratings", async () => {
     render(<TtsPage />);
     fireEvent.click(await screen.findByRole("tab", { name: "Dinleyici modu" }));

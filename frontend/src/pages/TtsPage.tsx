@@ -79,7 +79,9 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
     setError(null);
     try {
       // Stüdyoya özgü model (Chatterbox) tek başına yüklenir: diğer modeller bellekten çıkarılır (ADR 0001).
-      let job = await startWarmup(m.profile, !m.studio_only);
+      // Yalnızca TTS bileşeni ısıtılır (LLM / STT anahtarları stüdyo için gerekmez). Tek bileşenli stüdyo
+      // profilinde (Chatterbox) keep_others=false: diğer modeller bellekten çıkar, model tek başına yüklenir.
+      let job = m.studio_only ? await startWarmup(m.profile, false) : await startWarmup(m.profile, true, "tts");
       while (job.state === "running") {
         await new Promise((r) => setTimeout(r, 1000));
         job = await getWarmup(m.profile);

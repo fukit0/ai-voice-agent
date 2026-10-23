@@ -54,8 +54,18 @@ class AnthropicLLM(LLMProvider):
         if system:
             payload["system"] = system
         t0 = time.perf_counter()
-        res = _post("https://api.anthropic.com/v1/messages", json=payload, headers={
-            "x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"})
+        headers = {"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
+        if os.environ.get("ANTHROPIC_WORKSPACE_ID"):  # çalışma alanına bağlı olmayan anahtarlar bu başlığı ister
+            headers["anthropic-workspace-id"] = os.environ["ANTHROPIC_WORKSPACE_ID"]
+        try:
+            res = _post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
+        except ProviderError as exc:
+            if "workspace" in str(exc).lower() and not os.environ.get("ANTHROPIC_WORKSPACE_ID"):
+                raise ProviderError(
+                    "Anthropic anahtarı bir çalışma alanına (workspace) bağlı değil. .env dosyasına "
+                    "ANTHROPIC_WORKSPACE_ID=<çalışma alanı kimliği> ekleyip backend'i yeniden başlatın "
+                    "(Console > Settings > Workspaces) ya da çalışma alanına bağlı bir anahtar kullanın.") from exc
+            raise
         body = res.json()
         text = "".join(b.get("text", "") for b in body.get("content", []) if b.get("type") == "text")
         return LLMResult(text=text.strip(), seconds=time.perf_counter() - t0, provider=self.kind,
