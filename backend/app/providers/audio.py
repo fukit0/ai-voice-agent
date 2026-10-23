@@ -1,0 +1,35 @@
+"""Ses yardımcıları: örnekleme hızı dönüşümü ve WAV kodlama."""
+from __future__ import annotations
+
+import io
+from math import gcd
+
+import numpy as np
+import soundfile as sf
+from scipy.signal import resample_poly
+
+
+def to_mono_float32(audio: np.ndarray) -> np.ndarray:
+    audio = np.asarray(audio, dtype=np.float32)
+    if audio.ndim > 1:
+        audio = audio.mean(axis=1)
+    return audio
+
+
+def resample(audio: np.ndarray, src_rate: int, dst_rate: int) -> np.ndarray:
+    if src_rate == dst_rate:
+        return audio.astype(np.float32, copy=False)
+    g = gcd(src_rate, dst_rate)
+    return resample_poly(audio, dst_rate // g, src_rate // g).astype(np.float32)
+
+
+def decode_audio(data: bytes) -> tuple[np.ndarray, int]:
+    """WAV/FLAC/OGG baytlarını mono float32'ye çevirir."""
+    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=False)
+    return to_mono_float32(audio), int(rate)
+
+
+def encode_wav(audio: np.ndarray, sample_rate: int) -> bytes:
+    buf = io.BytesIO()
+    sf.write(buf, np.clip(audio, -1.0, 1.0), sample_rate, format="WAV", subtype="PCM_16")
+    return buf.getvalue()

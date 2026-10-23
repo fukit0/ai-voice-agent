@@ -11,3 +11,4 @@ frontend/dist/
 frontend/e2e-artifacts/
 frontend/test-results/
 frontend/playwright-report/
+logs/

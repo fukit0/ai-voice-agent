@@ -76,14 +76,18 @@
       "moscow": "must",
       "title": "STT / LLM / TTS sağlayıcı soyutlaması ve profiller",
       "user_visible_behavior": "Kullanıcı Lab'de bir profil (L1–L5, A1, A2) seçer; aynı ekran o profilin modellerini kullanır.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Profiller config dosyasında tanımlıdır.",
         "Profil değiştirildiğinde STT/TTS çağrıları ilgili sağlayıcıya gider (loglarda görülür).",
         "Eksik API anahtarı olan profil anlaşılır bir hata verir."
       ],
-      "evidence": [],
-      "notes": "Lab ekranları ve ajan aynı soyutlamayı kullanır."
+      "evidence": [
+        "evidence/core-003-verification.json",
+        "evidence/core-003-mac-L2.jpg",
+        "evidence/core-003-mac-A1.jpg"
+      ],
+      "notes": "Lab ekranları ve ajan aynı soyutlamayı kullanır. 2026-10-23 tamamlandı: backend/app/providers/ (base, local: mlx_whisper/hf_whisper/ollama/ema/chatterbox, remote: deepgram/anthropic/elevenlabs, registry: önbellek + logs/provider-calls.jsonl), config/profiles.yaml, /api/profiles (+ /{id}/stt|llm|tts), arayüzde profil seçici. A2 realtime sağlayıcısı lab-003'e bırakıldı."
     },
     {
       "id": "lab-002",

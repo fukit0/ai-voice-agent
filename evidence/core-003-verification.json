@@ -1,0 +1,87 @@
+{
+  "feature": "core-003",
+  "date": "2026-10-23",
+  "machine": "Kullanıcının Mac'i (macOS 26.5.1 arm64), scripts/dev.sh ile çalışan Lab backend'i (uvicorn --reload, Python 3.11.11)",
+  "verification": {
+    "1_profiller_config_dosyasinda": "config/profiles.yaml: L1–L5, A1, A2. GET /api/profiles Mac'te 7 profili döndürdü; testler (test_real_config_defines_plan_profiles) sırayı ve sağlayıcıları doğruluyor.",
+    "2_profil_degisince_cagri_ilgili_saglayiciya_gider_loglarda": "Gerçek modellerle Mac'te: L1 TTS -> ema, L1 STT -> mlx_whisper, L2 LLM -> ollama/qwen3, L2 TTS -> chatterbox. logs/provider-calls.jsonl kayıtları aşağıda.",
+    "3_eksik_api_anahtari_anlasilir_hata": "A1 TTS -> HTTP 400 provider_not_ready: 'A1 profili için ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID tanımlı değil. Anahtarı ortam değişkeni olarak veya proje kökündeki .env dosyasına ekleyip backend'i yeniden başlatın.' Arayüzde A1 seçilince eksik anahtar uyarısı gösteriliyor (core-003-mac-A1.jpg)."
+  },
+  "provider_calls_log": [
+    {
+      "ts": "2026-10-23T07:22:44.769+00:00",
+      "profile": "L1",
+      "component": "tts",
+      "provider": "ema",
+      "model": "ema-lightning",
+      "seconds": 2.642,
+      "ok": true,
+      "chars": 69,
+      "audio_seconds": 3.88,
+      "rtf": 0.171
+    },
+    {
+      "ts": "2026-10-23T07:22:47.442+00:00",
+      "profile": "L1",
+      "component": "stt",
+      "provider": "mlx_whisper",
+      "model": "mlx-community/whisper-large-v3-turbo",
+      "seconds": 2.649,
+      "ok": true,
+      "audio_seconds": 3.88,
+      "chars": 69
+    },
+    {
+      "ts": "2026-10-23T07:23:54.174+00:00",
+      "profile": "L2",
+      "component": "llm",
+      "provider": "ollama",
+      "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
+      "seconds": 66.707,
+      "ok": true,
+      "output_tokens": 4
+    },
+    {
+      "ts": "2026-10-23T07:27:28.080+00:00",
+      "profile": "L2",
+      "component": "tts",
+      "provider": "chatterbox",
+      "model": "chatterbox-multilingual",
+      "seconds": 187.161,
+      "ok": true,
+      "chars": 69,
+      "audio_seconds": 4.64,
+      "rtf": 31.928
+    },
+    {
+      "ts": "2026-10-23T07:28:18.121+00:00",
+      "profile": "L2",
+      "component": "tts",
+      "provider": "chatterbox",
+      "model": "chatterbox-multilingual",
+      "seconds": 47.934,
+      "ok": true,
+      "chars": 69,
+      "audio_seconds": 4.92,
+      "rtf": 4.887
+    }
+  ],
+  "other_responses": {
+    "A2_llm": "HTTP 400 component_unavailable: A2 profilinde LLM yok: tek modelli realtime profil; bileşenler ayrı çağrılamaz.",
+    "L5_stt": "HTTP 400 component_unavailable: L5 profilinde STT yok."
+  },
+  "stt_roundtrip": "L1 EMA ile üretilen 'Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?' sesi L1 mlx_whisper ile 69 karakter olarak geri çözüldü.",
+  "observations": [
+    "L2 LLM ilk çağrı 66.7 sn: qwen3 modelinin belleğe ilk yüklenmesi (soğuk başlangıç); sonraki çağrılar model bellekteyken hızlı olmalı, Faz 1'de ölçülecek.",
+    "L2 Chatterbox RTF 4.9 (4.9 sn ses ~48 sn'de, yükleme dahil); setup-001 bulgusuyla tutarlı.",
+    "L1 (gemma4:e4b), L4 (gpt-oss:20b), L5 (gemma4:12b) modelleri Ollama'da indirilmemiş; /api/profiles bunu 'issues' olarak raporluyor ve arayüz ilk hazır profili (L2) seçiyor."
+  ],
+  "automated_tests": {
+    "backend": "python -m pytest -q backend -> 13 passed (bulut, aynı kaynak)",
+    "frontend": "npm test -> 7 passed; npm run build başarılı"
+  },
+  "screenshots": [
+    "evidence/core-003-mac-L2.jpg",
+    "evidence/core-003-mac-A1.jpg"
+  ]
+}

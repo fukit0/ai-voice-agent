@@ -1,0 +1,57 @@
+# Model profilleri: Lab ekranları ve ajan aynı profilleri kullanır (core-003, plan F1.3).
+# Her bileşen: provider (sağlayıcı türü) + o sağlayıcıya özgü ayarlar.
+# Bileşen null ise o profilde ayrı bir STT/LLM/TTS yoktur (ör. L5'te ses doğrudan LLM'e, A2 tek modelli realtime).
+# API anahtarları burada DEĞİL, ortam değişkenlerinde / .env dosyasında tutulur.
+
+profiles:
+  L1:
+    name: Hızlı
+    purpose: 16 GB Mac'te en düşük gecikme
+    stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
+    llm: {provider: ollama, model: "gemma4:e4b"}
+    tts: {provider: ema}
+
+  L2:
+    name: Dengeli
+    purpose: Önerilen başlangıç yığını
+    stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
+    llm: {provider: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M"}
+    tts: {provider: chatterbox, language: tr}
+    notes: Chatterbox bu Mac'te gerçek zamandan ~6,5 kat yavaş (setup-001); canlı konuşma için değil, dinleme testi için.
+
+  L3:
+    name: Doğruluk
+    purpose: Türkçe ince ayarlı STT'nin katkısı
+    stt: {provider: hf_whisper, model: BuzzASR/turkish}
+    llm: {provider: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M"}
+    tts: {provider: chatterbox, language: tr}
+
+  L4:
+    name: Alternatif LLM
+    purpose: Fonksiyon çağrısı güvenilirliği
+    stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
+    llm: {provider: ollama, model: "gpt-oss:20b"}
+    tts: {provider: chatterbox, language: tr}
+
+  L5:
+    name: Sesli LLM
+    purpose: STT'siz hattın gecikme kazancı (ses doğrudan LLM'e; core-010)
+    stt: null
+    llm: {provider: ollama, model: "gemma4:12b"}
+    tts: {provider: ema}
+
+  A1:
+    name: API referansı
+    purpose: Lokal yığınların hedef çıtası
+    stt: {provider: deepgram, model: nova-3}
+    llm: {provider: anthropic, model: claude-haiku-5-5}
+    tts: {provider: elevenlabs, model: eleven_flash_v2_5}
+
+  A2:
+    name: Realtime referansı
+    purpose: Tek modelli hattın doğallığı ve gecikmesi
+    mode: realtime
+    realtime: {provider: openai_realtime, model: gpt-realtime-2.1-mini}
+    stt: null
+    llm: null
+    tts: null

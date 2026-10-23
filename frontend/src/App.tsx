@@ -1,5 +1,7 @@
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { BackendStatus } from "./BackendStatus";
+import { ProfileProvider } from "./ProfileContext";
+import { ProfileSelector } from "./ProfileSelector";
 import { ScreenPlaceholder } from "./pages/ScreenPlaceholder";
 import { SCREENS } from "./screens";
 
@@ -8,10 +10,14 @@ export const ROUTER_FUTURE = { v7_startTransition: true, v7_relativeSplatPath: t
 
 export function App() {
   return (
+    <ProfileProvider>
     <div className="layout">
       <header className="topbar">
         <h1>Voice Agent Lab</h1>
-        <BackendStatus />
+        <div className="topbar-right">
+          <ProfileSelector />
+          <BackendStatus />
+        </div>
       </header>
       <nav aria-label="Lab ekranları" className="sidebar">
         {SCREENS.map((s) => (
@@ -30,5 +36,6 @@ export function App() {
         </Routes>
       </main>
     </div>
+    </ProfileProvider>
   );
 }

@@ -18,7 +18,7 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Current highest-priority unfinished feature: core-003 (STT / LLM / TTS sağlayıcı soyutlaması ve profiller)
+- Current highest-priority unfinished feature: lab-002 (STT test ekranı)
 - Current blocker: yok
 
 ## Session Log
@@ -46,3 +46,15 @@ agents do not update it automatically.
 - Files or artifacts updated: backend/, frontend/, scripts/dev.sh, init.sh, requirements.txt (pytest), .gitignore, feature_list.json
 - Known risk or unresolved issue: E2E için Mac'te `npx playwright install chromium` gerekir. Repo GitHub'a henüz gönderilmedi.
 - Next best step: core-003 sağlayıcı soyutlaması (Lab ekranlarının ve ajanın ortak model katmanı)
+
+### Session 003
+
+- Date: 2026-10-23
+- Goal: lab-000'ı Mac log'uyla kapatmak; core-003 sağlayıcı soyutlaması ve profiller
+- Completed: lab-000 passing (evidence/init-20261023-095125.log); core-003 passing
+- Verification run: pytest 13, vitest 7, build (bulut); Mac'te gerçek modellerle /api/profiles/{L1,L2,A1,A2,L5} çağrıları, arayüzde profil seçici
+- Evidence captured: evidence/core-003-verification.json, evidence/core-003-mac-*.jpg
+- Commits: a75644e, (bu commit)
+- Files or artifacts updated: backend/app/providers/, backend/app/profiles.py, backend/app/api_profiles.py, config/profiles.yaml, .env.example, frontend/src (ProfileContext, ProfileSelector, ActiveProfile), testler
+- Known risk or unresolved issue: gemma4:e4b, gpt-oss:20b, gemma4:12b Ollama'da yok (L1/L4/L5 LLM'i çalışmaz). Qwen soğuk yükleme ~67 sn. A2 realtime sağlayıcısı yok (lab-003). uvicorn --reload dosya değişince uzun süren isteği keser.
+- Next best step: lab-002 STT test ekranı (sağlayıcı katmanını kullanır)
