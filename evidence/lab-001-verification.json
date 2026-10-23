@@ -1,0 +1,59 @@
+{
+  "feature": "lab-001",
+  "date": "2026-10-23",
+  "environment": "Mac 36 GB, backend scripts/demo.sh (tek süreç), tarayıcıdan /tts API'leri",
+  "session": "20261023-164026-d6f5b2",
+  "run": {
+    "sentences": 10,
+    "models": [
+      "L1/EMA Lightning (ema)",
+      "A1/ElevenLabs eleven_flash_v2_5",
+      "S-chatterbox/chatterbox-multilingual"
+    ],
+    "clips_ok": "30/30",
+    "phone_round": false
+  },
+  "per_model": {
+    "ema": {
+      "clips": 10,
+      "first_audio_mean_s": 0.191,
+      "rtf_mean": 0.049,
+      "rms_dbfs_range": [
+        -22.1,
+        -20.0
+      ]
+    },
+    "elevenlabs": {
+      "clips": 10,
+      "first_audio_mean_s": 0.565,
+      "rtf_mean": 0.145,
+      "rms_dbfs_range": [
+        -21.03,
+        -20.0
+      ]
+    },
+    "chatterbox": {
+      "clips": 10,
+      "first_audio_mean_s": 10.794,
+      "rtf_mean": 1.853,
+      "rms_dbfs_range": [
+        -21.3,
+        -20.0
+      ]
+    }
+  },
+  "checks": {
+    "10_sentences_3_models": "geçti: 30/30 klip, üç farklı TTS",
+    "first_audio_and_rtf_logged": "geçti: her klipte first_audio_seconds ve rtf; logs/provider-calls.jsonl (source=tts-studio). Akış desteklemeyen sağlayıcılarda ilk ses = üretimin tamamı (first_audio_measured=false)",
+    "level_normalized": "geçti: hedef -20 dBFS RMS; tüm klipler -22.1..-20 dBFS (tepe sınırı birkaç klipte hedefin ~2 dB altında bıraktı)",
+    "blind_listener_mode": "geçti: yanıtta model/sağlayıcı/profil adı yok; iki dinleyicinin sırası farklı, kümesi aynı; başka dinleyicinin jetonuyla ses 404",
+    "ratings_saved_and_csv": "geçti: 6 puan kaydedildi, CSV başlığı + 6 satır, modele göre özet"
+  },
+  "caveats": [
+    "Puanlar 'otomatik-test-1' dinleyicisiyle sistemin çalıştığını göstermek için girildi; kalite yargısı DEĞİL. Gerçek dinleme yapılmadı.",
+    "Telefon turu (8 kHz) birim testle doğrulandı; Mac'te gerçek modelle koşulmadı.",
+    "Önceki koşuda (20261023-163416-c67c6e) backend Chatterbox'ın 6. cümlesinde durdu; nedeni bilinmiyor (terminal çıktısı alınamadı). Yeniden başlatma sonrası aynı cümle sorunsuz üretildi; tekrarlarsa Chatterbox ayrı süreçte çalıştırılmalı.",
+    "Chatterbox tek başına RTF ~1.9 (Qwen ile birlikte 6.5 ölçülmüştü); canlı hat için yine uygun değil, ilk ses ~11 sn.",
+    "Yeniden başlatılan backend, 'interrupted' oturum düzeltmesini içermiyor olabilir (eski yarım oturum 'running' görünür); bir sonraki yeniden başlatmada devreye girer."
+  ]
+}

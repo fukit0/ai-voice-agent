@@ -160,7 +160,7 @@
       "moscow": "must",
       "title": "TTS stüdyosu ve kör dinleme (dinleyici modu)",
       "user_visible_behavior": "Kullanıcı cümle setini girer, modelleri seçip ses üretir; dinleyici modunda klipler gizli kimlik ve rastgele sırayla çalınır ve doğallık / insan gibilik / telaffuz hatası puanları kaydedilir.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "10 cümlelik set ve en az 3 TTS modeli ile üretim yapılır.",
         "Her klip için ilk ses süresi ve RTF loglanır.",
@@ -168,7 +168,9 @@
         "Dinleyici modunda model adları görünmez, sıra her dinleyici için farklıdır.",
         "Puanlar kaydedilir ve CSV olarak dışa aktarılır."
       ],
-      "evidence": [],
+      "evidence": [
+        "evidence/lab-001-verification.json"
+      ],
       "notes": "Faz 0 adım 3. Telefon filtreli (8 kHz) tur da desteklenmeli."
     },
     {
