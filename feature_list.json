@@ -50,7 +50,7 @@
       "moscow": "must",
       "title": "Lab uygulaması iskeleti (React + FastAPI)",
       "user_visible_behavior": "Kullanıcı tarayıcıda Lab uygulamasını açar ve ekranlar arasında gezinir; backend sağlık uç noktası yanıt verir.",
-      "status": "passing",
+      "status": "in_progress",
       "verification": [
         "./init.sh backend ve frontend bağımlılıklarını kurar.",
         "Backend /health 200 döner.",
@@ -64,7 +64,7 @@
         "evidence/lab-000-mac-tts.jpg",
         "evidence/lab-000-mac-matrix.jpg"
       ],
-      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac doğrulaması: ./init.sh (npm ci + pytest + vitest + hızlı model kontrolü) ve scripts/dev.sh 2026-10-22 19:35-19:37'de Mac'te koştu; bkz. lab-000-mac-verification.json. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil. 2026-10-23: Mac'te çalışan Lab'e tarayıcıdan bağlanılarak 5 ekran ve /api/health doğrudan doğrulandı."
+      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac doğrulaması: ./init.sh (npm ci + pytest + vitest + hızlı model kontrolü) ve scripts/dev.sh 2026-10-22 19:35-19:37'de Mac'te koştu; bkz. lab-000-mac-verification.json. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil. 2026-10-23: Mac'te çalışan Lab'e tarayıcıdan bağlanılarak 5 ekran ve /api/health doğrudan doğrulandı. Durum: Mac'te ./init.sh koşusunun kendi çıktısı (evidence/init-*.log) bekleniyor; gelince passing."
     },
     {
       "id": "core-003",
