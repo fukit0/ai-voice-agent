@@ -20,7 +20,8 @@ REF = "Merhaba, ilanınız için teşekkür ederiz."
 
 
 def test_normalize_turkish_case_and_punctuation():
-    assert normalize_tr("İSTANBUL'da, IŞIK!") == "istanbul da ışık"
+    assert normalize_tr("İSTANBUL'da, IŞIK!") == "istanbulda ışık"  # kesme işareti ek ile kelimeyi böl-mez
+    assert normalize_tr("sahibinden’den") == "sahibindenden"
     assert normalize_tr("  Merhaba,   dünya.  ") == "merhaba dünya"
 
 

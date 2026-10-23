@@ -1,0 +1,19 @@
+{
+  "feature": "lab-002",
+  "status": "partial",
+  "checked_at": "2026-10-23T11:50:00Z",
+  "verified_on_mac_real_model": {
+    "audio": "EMA ile üretilen 5.36 sn cümle (ema-ornek.wav)",
+    "reference": "Merhaba, ben sahibinden'den arıyorum. İlanınızla ilgili iki kısa sorum olacaktı, uygun musunuz?",
+    "mlx_whisper_large_v3_turbo": {"seconds": 0.715, "rtf": 0.133, "wer_before_apostrophe_fix": 0.0769, "text": "Merhaba ben sahibinden arıyorum. İlanınızla ilgili iki kısa sorum olacaktı. Uygun musunuz?"},
+    "cold_model_reported": "BuzzASR/turkish: status=cold, ölçülmedi (ADR 0001)",
+    "run_saved_listed_reopened": true,
+    "audio_replay": {"status": 200, "content_type": "audio/wav", "bytes": 257324},
+    "ui": "/stt ekranı Mac tarayıcısında açıldı: modeller, durum çipleri, Hazırla, yükleme, mikrofon düğmesi, kayıtlı koşular"
+  },
+  "not_yet_verified": [
+    "İkinci bir modelle yan yana karşılaştırma: BuzzASR/turkish Mac'te önbellekte yok (OSError: huggingface.co'ya bağlanılamadı; HF_HUB_OFFLINE=1). Deepgram nova-3 anahtarı tanımlı, ancak yalnızca-STT Hazırla (?components=stt) çalışan backend'de yok (yeniden başlatma gerekir).",
+    "Mikrofondan kayıt (tarayıcı araçlarıyla test edilemez, kullanıcı elle denemeli)"
+  ],
+  "cloud_tests": {"pytest": 44, "vitest": 15, "build": "ok"}
+}

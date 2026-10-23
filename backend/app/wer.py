@@ -1,7 +1,7 @@
 """Türkçe metinler için WER (word error rate) hesabı.
 
 Karşılaştırmadan önce iki metin de aynı biçime getirilir: Türkçe küçük harf kuralı (İ->i, I->ı),
-noktalama ve fazla boşluk atılır. Sayılar ve yazım biçimleri (ör. "3 bin" / "üç bin") çevrilmez;
+kesme işareti (ek kelimeye yapışık kalır), noktalama ve fazla boşluk atılır. Sayılar ve yazım biçimleri (ör. "3 bin" / "üç bin") çevrilmez;
 bu fark WER'e hata olarak yansır ve normalizasyon (norm-007) ile ayrıca ele alınır.
 """
 from __future__ import annotations
@@ -15,6 +15,7 @@ _SPACE = re.compile(r"\s+")
 
 def normalize_tr(text: str) -> str:
     text = text.replace("İ", "i").replace("I", "ı").lower()
+    text = text.replace("'", "").replace("’", "")  # kesme işareti kelimeyi bölmez: sahibinden'den -> sahibindenden
     text = _PUNCT.sub(" ", text)
     return _SPACE.sub(" ", text).strip()
 
