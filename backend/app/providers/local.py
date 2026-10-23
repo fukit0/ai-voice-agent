@@ -92,7 +92,16 @@ class HfWhisperSTT(STTProvider):
             from transformers import pipeline
 
             device = "mps" if torch.backends.mps.is_available() else "cpu"
-            self._pipe = pipeline("automatic-speech-recognition", model=self.model, device=device)
+            try:
+                self._pipe = pipeline("automatic-speech-recognition", model=self.model, device=device)
+            except OSError as exc:
+                offline = os.environ.get("HF_HUB_OFFLINE") == "1"
+                raise ProviderError(
+                    f"{self.model} modeli bu bilgisayarın önbelleğinde yok"
+                    + (" ve backend çevrimdışı modda (HF_HUB_OFFLINE=1)" if offline else
+                       " ve Hugging Face'e bağlanılamadı") + ". Backend'i yeniden başlatmadan indirmek için: "
+                    f"./.venv/bin/python scripts/fetch_models.py {self.model}  (sonra Hazırla'yı tekrar deneyin). "
+                    f"Ayrıntı: {str(exc).splitlines()[0][:160]}") from exc
         return self._pipe
 
     def transcribe(self, audio, sample_rate, language="tr"):

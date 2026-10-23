@@ -79,10 +79,14 @@ class Profile:
                          and all(c.get("warm") for c in comps.values() if c))}
 
 
-def load_profiles(path: Path | None = None) -> dict[str, Profile]:
+def load_profiles(path: Path | None = None, include_studio: bool = False) -> dict[str, Profile]:
+    """`include_studio`: yalnızca TTS stüdyosunda kullanılan, listede görünmeyen tek bileşenli profiller de dahil."""
     raw = yaml.safe_load((path or profiles_path()).read_text(encoding="utf-8")) or {}
     out: dict[str, Profile] = {}
-    for pid, cfg in (raw.get("profiles") or {}).items():
+    entries = dict(raw.get("profiles") or {})
+    if include_studio:
+        entries.update(raw.get("studio_profiles") or {})
+    for pid, cfg in entries.items():
         out[pid] = Profile(id=pid, name=cfg.get("name", pid), purpose=cfg.get("purpose", ""),
                            mode=cfg.get("mode", "cascade"), realtime=cfg.get("realtime"),
                            notes=cfg.get("notes", ""),

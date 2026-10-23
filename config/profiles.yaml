@@ -65,3 +65,13 @@ profiles:
     llm: null
     tts: null
     notes: Türkçe desteği Google dokümanında doğrulanamadı; kıyas matrisinde test edilecek.
+
+# TTS stüdyosuna özgü tek bileşenli profiller (lab-001): profil listesinde görünmez, yalnızca ses üretimi ve
+# kör dinleme için kullanılır. Hazırla (keep_others=false) bu modeli bellekte tek başına bırakır.
+studio_profiles:
+  S-chatterbox:
+    name: Chatterbox (yalnızca stüdyo)
+    purpose: Kör dinlemede EMA / ElevenLabs ile karşılaştırma; canlı hatta kullanılmaz (ADR 0001 ek notu)
+    stt: null
+    llm: null
+    tts: {provider: chatterbox}

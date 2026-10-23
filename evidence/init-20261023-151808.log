@@ -1,0 +1,47 @@
+==> Working directory: /Users/furkan.tanriverdi/sahibinden-voice-agent
+==> Python: Python 3.11.11
+==> Bağımlılıklar senkronize ediliyor
+==> Frontend bağımlılıkları (npm ci)
+
+added 192 packages in 3s
+==> Backend testleri
+............................................                             [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:45
+  /Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+44 passed, 1 warning in 3.30s
+==> Frontend testleri
+
+ RUN  v2.1.8 /Users/furkan.tanriverdi/sahibinden-voice-agent/frontend
+
+(node:38281) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38282) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38283) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wav.test.ts (2 tests) 3ms
+ ✓ src/pages/SttPage.test.tsx (4 tests) 1184ms
+   ✓ STT test ekranı > soğuk modeli Hazırla ile ısıtır (yalnızca STT bileşeni, diğer sıcaklar kalsın diye keep_others=true) ve listeyi yeniler 1048ms
+ ✓ src/App.test.tsx (11 tests) 1170ms
+   ✓ Hazırla (lab-006, ADR 0001) > Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer 1020ms
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  15:18:16
+   Duration  2.15s (transform 98ms, setup 388ms, collect 129ms, tests 2.36s, environment 922ms, prepare 287ms)
+
+==> Model sağlık kontrolü
+  [PASS] ollama         0.69s  qwen3:30b-a3b-instruct-2507-q4_K_M -> 'Ankara', 62 tok/s (yükleme 0s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  [PASS] ema            2.13s  3.9s ses, RTF 0.05 (yükleme 1s)
+  [PASS] stt            2.97s  'Merhaba, sahibinden anketine hoş geldiniz. İlanını'
+  [SKIP] chatterbox
+==> Kanıt: evidence/healthcheck-20261023-151824.json
+==> Tüm kontroller geçti
+==> Hazır. Kanıtlar evidence/ altında.
+==> Lab'i başlatmak için: scripts/dev.sh  (arayüz http://localhost:5173)
+==> init.sh çıkış kodu: 0 (evidence/init-20261023-151808.log)

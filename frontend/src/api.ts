@@ -122,3 +122,42 @@ export function compareStt(audio: Blob, filename: string, profiles: string[], re
   form.append("reference", reference);
   return fetch("/api/stt/compare", { method: "POST", body: form }).then((r) => json<SttRun>(r));
 }
+
+// ---- TTS stüdyosu (lab-001) ----
+export type TtsModel = {
+  profile: string; profiles: string[]; provider: string; model: string; ready: boolean; warm: boolean;
+  missing_env: string[]; studio_only: boolean;
+};
+export type TtsClip = {
+  id: string; sentence_idx: number; profile: string; provider: string; model: string;
+  status: "ok" | "cold" | "not_ready" | "failed"; error?: string;
+  gen_seconds?: number; first_audio_seconds?: number; first_audio_measured?: boolean;
+  audio_seconds?: number; rtf?: number; rms_dbfs?: number; sample_rate?: number;
+};
+export type TtsSession = {
+  id: string; created_at: string; language: string; phone: boolean; sentences: string[]; profiles: string[];
+  clips: TtsClip[]; done: number; total: number; state: "running" | "done" | "failed"; error?: string;
+};
+export type TtsSessionSummary = { id: string; created_at: string; sentences: number; models: string[]; clips: number; phone: boolean };
+export type BlindRating = { naturalness: number; humanlike: number; mispronunciation: number; comment?: string };
+export type BlindItem = { position: number; token: string; sentence: string; rating: BlindRating | null };
+export type BlindView = { session: string; listener: string; items: BlindItem[]; rated: number };
+export type TtsSummaryRow = { profile: string; model: string; ratings: number; naturalness: number; humanlike: number; mispronunciation: number };
+
+const post = (url: string, body: unknown) =>
+  fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+export const fetchTtsModels = () => fetch("/api/tts/models").then((r) => json<TtsModel[]>(r));
+export const fetchTtsSessions = () => fetch("/api/tts/sessions").then((r) => json<TtsSessionSummary[]>(r));
+export const fetchTtsSession = (id: string) => fetch(`/api/tts/sessions/${id}`).then((r) => json<TtsSession>(r));
+export const createTtsSession = (sentences: string[], profiles: string[], phone: boolean) =>
+  post("/api/tts/sessions", { sentences, profiles, phone }).then((r) => json<TtsSession>(r));
+export const ttsClipUrl = (sid: string, clip: string) => `/api/tts/sessions/${sid}/clips/${clip}/audio`;
+export const startListening = (sid: string, listener: string, restart = false) =>
+  post(`/api/tts/sessions/${sid}/listen`, { listener, restart }).then((r) => json<BlindView>(r));
+export const blindAudioUrl = (sid: string, token: string, listener: string) =>
+  `/api/tts/sessions/${sid}/blind/${token}/audio?listener=${encodeURIComponent(listener)}`;
+export const rateClip = (sid: string, listener: string, token: string, r: BlindRating) =>
+  post(`/api/tts/sessions/${sid}/ratings`, { listener, token, ...r }).then((res) => json<{ ok: boolean }>(res));
+export const ttsRatingsCsvUrl = (sid: string) => `/api/tts/sessions/${sid}/ratings.csv`;
+export const fetchTtsSummary = (sid: string) => fetch(`/api/tts/sessions/${sid}/summary`).then((r) => json<TtsSummaryRow[]>(r));

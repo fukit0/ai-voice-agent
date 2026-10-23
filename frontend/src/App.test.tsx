@@ -75,6 +75,7 @@ function mockApi({ healthStatus = 200 } = {}) {
       warmed = true;
       return new Response(JSON.stringify(READY_JOB));
     }
+    if (url.startsWith("/api/tts") || url.startsWith("/api/stt")) return new Response("[]");
     if (url.startsWith("/api/profiles"))
       return new Response(
         JSON.stringify(PROFILES.map((p) => (warmed && p.id === "L1" ? { ...p, warm: true, warmup: READY_JOB } : p))),
@@ -133,7 +134,7 @@ describe("Lab iskeleti", () => {
 describe("Profil seçimi (core-003)", () => {
   it("profilleri listeler ve eksik anahtarı işaretler", async () => {
     mockApi();
-    renderAt("/tts");
+    renderAt("/playground");
     const select = await screen.findByRole("combobox", { name: "Profil" });
     const options = within(select).getAllByRole("option").map((o) => o.textContent);
     expect(options).toEqual(["L1 · Hızlı", "L2 · Dengeli", "A1 · API referansı (anahtar eksik)"]);
@@ -141,7 +142,7 @@ describe("Profil seçimi (core-003)", () => {
 
   it("profil değişince ekran o profilin modellerini gösterir", async () => {
     mockApi();
-    renderAt("/tts");
+    renderAt("/playground");
     const card = await screen.findByTestId("active-profile");
     expect(card).toHaveTextContent("ema · ema-lightning");
     fireEvent.change(screen.getByRole("combobox", { name: "Profil" }), { target: { value: "L2" } });
@@ -160,7 +161,7 @@ describe("Profil seçimi (core-003)", () => {
 describe("Hazırla (lab-006, ADR 0001)", () => {
   it("soğuk profilde uyarı ve Hazırla düğmesi gösterir", async () => {
     mockApi();
-    renderAt("/tts");
+    renderAt("/playground");
     expect(await screen.findByTestId("warm-state")).toHaveTextContent("Soğuk");
     expect(screen.getByTestId("cold-warning")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Hazırla" })).toBeEnabled();
@@ -168,7 +169,7 @@ describe("Hazırla (lab-006, ADR 0001)", () => {
 
   it("Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer", async () => {
     const fetchMock = mockApi();
-    renderAt("/tts");
+    renderAt("/playground");
     fireEvent.click(await screen.findByRole("button", { name: "Hazırla" }));
     expect(await screen.findByText(/Hazırlanıyor · STT/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/profiles/L1/warmup?keep_others=false", { method: "POST" });
@@ -192,7 +193,7 @@ describe("Hazırla (lab-006, ADR 0001)", () => {
           : new Response(JSON.stringify(HEALTH)),
       ),
     );
-    renderAt("/tts");
+    renderAt("/playground");
     expect(await screen.findByText("Bellek yetmiyor")).toBeInTheDocument();
     expect(screen.getByTestId("degraded-warning")).toHaveTextContent("bellek çekişmesi");
     expect(screen.getByText(/hepsi yüklüyken 33.0 sn/)).toBeInTheDocument();
@@ -200,7 +201,7 @@ describe("Hazırla (lab-006, ADR 0001)", () => {
 
   it("eksik anahtarlı profilde Hazırla devre dışı", async () => {
     mockApi();
-    renderAt("/tts");
+    renderAt("/playground");
     fireEvent.change(await screen.findByRole("combobox", { name: "Profil" }), { target: { value: "A1" } });
     expect(screen.getByRole("button", { name: "Hazırla" })).toBeDisabled();
   });

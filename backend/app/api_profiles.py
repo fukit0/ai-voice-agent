@@ -30,7 +30,7 @@ class LLMRequest(BaseModel):
 
 
 def _profile(pid: str) -> Profile:
-    profiles = load_profiles()
+    profiles = load_profiles(include_studio=True)
     if pid not in profiles:
         raise HTTPException(404, {"error": "unknown_profile", "message": f"Profil yok: {pid}",
                                   "available": sorted(profiles)})

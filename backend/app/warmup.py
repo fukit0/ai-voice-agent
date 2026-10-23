@@ -111,7 +111,8 @@ def _run(profile: Profile, job: WarmupJob, keep_others: bool, only: set[str] | N
             _final_pass(profile, job, specs)
         degraded = [n for n, c in job.components.items() if c.get("state") == "degraded"]
         if failed:
-            final_state, final_error = "failed", "Hazırlanamayan bileşen: " + ", ".join(failed)
+            causes = "; ".join(f"{n.upper()}: {job.components[n].get('error')}" for n in failed if job.components[n].get("error"))
+            final_state, final_error = "failed", "Hazırlanamayan bileşen: " + ", ".join(failed) + (f" — {causes}" if causes else "")
         elif degraded:
             final_state = "degraded"
             final_error = ("Bu bilgisayarda profilin tüm modelleri aynı anda sıcak tutulamıyor; "
