@@ -18,8 +18,9 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Current highest-priority unfinished feature: lab-001 (TTS stüdyosu ve kör dinleme)
-- Current blocker: yok (lab-002 notu: mikrofon düğmesi elle denenmedi; BuzzASR indirilmedi)
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001 (6 / 50)
+- Current highest-priority unfinished feature: norm-007 (Türkçe metin normalizasyonu), sonra eval-llm
+- Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi
 
 ## Session Log
 
