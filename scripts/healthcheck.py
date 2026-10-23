@@ -67,7 +67,18 @@ def ollama():
     tags = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5).json().get("models", [])
     if not tags:
         raise RuntimeError("Ollama çalışıyor ama yüklü model yok. Örn: ollama pull qwen3:30b-a3b (32 GB+) veya ollama pull gemma4:e4b (16 GB)")
-    model = os.environ.get("OLLAMA_MODEL") or tags[0]["name"]
+    installed = [t["name"] for t in tags]
+    # Seçim sırası: OLLAMA_MODEL, sonra Lab'in başlangıç profili (L2) modeli kuruluysa o, yoksa ilk kurulu model.
+    # ("İlk model" tek başına yanlış: sonradan çekilen "düşünen" bir model listenin başına geçip kontrolü bozabilir.)
+    default = None
+    try:
+        import yaml
+
+        cfg = yaml.safe_load((ROOT / "config" / "profiles.yaml").read_text(encoding="utf-8"))
+        default = cfg["profiles"]["L2"]["llm"]["model"]
+    except Exception:  # noqa: BLE001 — yapılandırma okunamazsa ilk modele düş
+        pass
+    model = os.environ.get("OLLAMA_MODEL") or (default if default in installed else installed[0])
     # Model Lab'de "Hazırla" ile zaten ısıtılmışsa bellekten atma (ADR 0001); değilse kontrol sonrası boşalt.
     loaded = {m.get("name") for m in requests.get(f"{OLLAMA_URL}/api/ps", timeout=5).json().get("models", [])}
     keep_alive = -1 if model in loaded else 0
@@ -87,7 +98,8 @@ def ollama():
     body = r.json()
     answer = re.sub(r"<think>.*?</think>", "", body.get("response", ""), flags=re.S).strip()
     if not answer:
-        raise RuntimeError(f"Boş yanıt (done_reason={body.get('done_reason')})")
+        raise RuntimeError(f"Boş yanıt (model={model}, done_reason={body.get('done_reason')}). "
+                           "Düşünen bir model olabilir: OLLAMA_MODEL=qwen3:30b-a3b-instruct-2507-q4_K_M ile deneyin.")
     if "ankara" not in answer.lower():
         raise RuntimeError(f"Beklenen cevap 'Ankara' değil: {answer[:60]!r}. Düşünme metni sızıyorsa "
                            "Ollama'yı güncelleyin veya talimat sürümünü kullanın (qwen3:30b-a3b-instruct-2507-q4_K_M)")

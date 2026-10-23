@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-10-23T15:08:53",
+  "host": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.11.11",
+  "test_sentence": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+  "results": [
+    {
+      "component": "ollama",
+      "status": "fail",
+      "seconds": 12.38,
+      "detail": {
+        "error": "RuntimeError: Boş yanıt (done_reason=length)",
+        "trace": "Traceback (most recent call last):\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 48, in run\n    entry[\"detail\"] = fn() or {}\n                      ^^^^\n  File \"/Users/furkan.tanriverdi/sahibinden-voice-agent/scripts/healthcheck.py\", line 90, in ollama\n    raise RuntimeError(f\"Boş yanıt (done_reason={body.get('done_reason')})\")\nRuntimeError: Boş yanıt (done_reason=length)\n"
+      }
+    },
+    {
+      "component": "ema",
+      "status": "pass",
+      "seconds": 2.22,
+      "detail": {
+        "wav": "evidence/healthcheck-audio/ema.wav",
+        "audio_seconds": 3.88,
+        "load_seconds": 0.8,
+        "rtf": 0.054,
+        "summary": "3.9s ses, RTF 0.05 (yükleme 1s)"
+      }
+    },
+    {
+      "component": "stt",
+      "status": "pass",
+      "seconds": 2.34,
+      "detail": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "source": "ema.wav (TTS -> STT)",
+        "transcript": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+        "matched_keywords": [
+          "merhaba",
+          "anket"
+        ],
+        "summary": "'Merhaba, sahibinden anketine hoş geldiniz. İlanını'"
+      }
+    },
+    {
+      "component": "chatterbox",
+      "status": "skipped"
+    }
+  ]
+}
