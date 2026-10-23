@@ -1,0 +1,15 @@
+{
+  "feature": "lab-000",
+  "machine": "macOS-26.5.1-arm64 (kullanıcının Mac'i)",
+  "date": "2026-10-22 (yerel saat, UTC+3)",
+  "method": "Mac'te koşan komutların repo içinde bıraktığı izlerden doğrulandı",
+  "observations": [
+    {"time": "19:35:35", "artifact": "frontend/node_modules/.package-lock.json + @rollup/rollup-darwin-arm64, @esbuild/darwin-arm64", "means": "init.sh içindeki npm ci Mac'te koştu (darwin-arm64 paketleri)"},
+    {"time": "19:35:36", "artifact": "backend/app/__pycache__/main.cpython-311.pyc", "means": "backend testleri Mac'teki .venv (Python 3.11) ile koştu"},
+    {"time": "19:35:38", "artifact": "frontend/node_modules/.vite/vitest", "means": "frontend testleri (vitest) koştu"},
+    {"time": "19:35:54", "artifact": "evidence/healthcheck-20261022-193554.json (host macOS-26.5.1-arm64): ollama, ema, stt PASS", "means": "init.sh `set -euo pipefail` ile çalıştığı için bu adıma ulaşılması pytest ve vitest'in geçtiğini gösterir"},
+    {"time": "19:36:53-19:37:16", "artifact": "frontend/node_modules/.vite/deps (bağımlılık ön paketlemesi)", "means": "scripts/dev.sh ile Vite geliştirme sunucusu Mac'te başladı ve uygulama modüllerini işledi"}
+  ],
+  "complements": "evidence/lab-000-verification.json (bulut: pytest 2, vitest 4, build, Playwright e2e 1 ve evidence/lab-000-e2e.png)",
+  "limit": "Mac'teki tarayıcı görünümü için ekran görüntüsü yok; menüdeki 5 ekran ve 'Backend bağlı' rozeti bulut e2e testinde aynı kaynakla doğrulandı."
+}

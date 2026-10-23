@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-10-22T19:35:54",
+  "host": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.11.11",
+  "test_sentence": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+  "results": [
+    {
+      "component": "ollama",
+      "status": "pass",
+      "seconds": 11.62,
+      "detail": {
+        "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
+        "answer": "Ankara",
+        "generate_seconds": 11.52,
+        "load_seconds": 11.2,
+        "tokens_per_second": 63.3,
+        "installed_models": [
+          "qwen3:30b-a3b-instruct-2507-q4_K_M"
+        ],
+        "summary": "qwen3:30b-a3b-instruct-2507-q4_K_M -> 'Ankara', 63 tok/s (yükleme 11s)"
+      }
+    },
+    {
+      "component": "ema",
+      "status": "pass",
+      "seconds": 1.82,
+      "detail": {
+        "wav": "evidence/healthcheck-audio/ema.wav",
+        "audio_seconds": 3.88,
+        "load_seconds": 0.1,
+        "rtf": 0.055,
+        "summary": "3.9s ses, RTF 0.06 (yükleme 0s)"
+      }
+    },
+    {
+      "component": "stt",
+      "status": "pass",
+      "seconds": 2.73,
+      "detail": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "source": "ema.wav (TTS -> STT)",
+        "transcript": "Merhaba, sahibinden anketine hoş geldiniz. İlanınızı satabildiniz mi?",
+        "matched_keywords": [
+          "merhaba",
+          "anket"
+        ],
+        "summary": "'Merhaba, sahibinden anketine hoş geldiniz. İlanını'"
+      }
+    },
+    {
+      "component": "chatterbox",
+      "status": "skipped"
+    }
+  ]
+}
