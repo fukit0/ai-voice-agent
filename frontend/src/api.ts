@@ -24,18 +24,19 @@ export type ProfileStatus = {
 };
 
 export type WarmupComponent = {
-  state: "pending" | "loading" | "measuring" | "ready" | "failed";
+  state: "pending" | "loading" | "measuring" | "ready" | "degraded" | "failed";
   provider?: string;
   model?: string;
   load_seconds?: number;
   warm_seconds?: number;
+  final_seconds?: number;
   error?: string;
   missing_env?: string[];
 };
 
 export type WarmupJob = {
   profile: string;
-  state: "running" | "ready" | "failed";
+  state: "running" | "ready" | "degraded" | "failed";
   seconds: number | null;
   evicted: string[];
   components: Record<string, WarmupComponent>;

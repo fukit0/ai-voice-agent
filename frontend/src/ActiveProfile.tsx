@@ -33,9 +33,10 @@ export function ActiveProfile() {
                   {LABELS[k]} {c ? <span className={c.warm ? "dot dot-ok" : "dot"} aria-label={c.warm ? "sıcak" : "soğuk"} /> : null}
                 </dt>
                 <dd>{c ? `${c.provider}${c.model ? ` · ${c.model}` : ""}` : "yok"}</dd>
-                {w?.state === "ready" && (
-                  <dd className="meta">
+                {(w?.state === "ready" || w?.state === "degraded") && (
+                  <dd className={w.state === "degraded" ? "warn" : "meta"}>
                     sıcak çağrı {fmt(w.warm_seconds)} · ilk yükleme {fmt(w.load_seconds)}
+                    {w.final_seconds !== undefined ? ` · hepsi yüklüyken ${fmt(w.final_seconds)}` : ""}
                   </dd>
                 )}
                 {w?.state === "failed" && <dd className="warn">{w.error}</dd>}
@@ -54,7 +55,12 @@ export function ActiveProfile() {
           {i}
         </p>
       ))}
-      {!active.warm && active.mode === "cascade" && (
+      {job?.state === "degraded" && job.error && (
+        <p className="warn" data-testid="degraded-warning">
+          {job.error}
+        </p>
+      )}
+      {!active.warm && active.mode === "cascade" && job?.state !== "degraded" && (
         <p className="warn" data-testid="cold-warning">
           Profil soğuk: ölçümler production koşullarında olsun diye önce "Hazırla" ile modelleri yükleyin.
         </p>

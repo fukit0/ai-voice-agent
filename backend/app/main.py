@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__
+from . import __version__, sysinfo
 from .api_profiles import router as profiles_router
 from .profiles import load_dotenv
 
@@ -45,13 +45,8 @@ def health() -> dict:
 
 @app.get("/api/system")
 def system() -> dict:
-    """Bilgisayarın bellek bilgisi: hangi profillerin aynı anda sıcak tutulabileceğine karar vermek için."""
-    try:
-        total = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
-    except (ValueError, OSError, AttributeError):
-        total = None
-    return {"platform": platform.platform(), "machine": platform.machine(),
-            "memory_gb": round(total / 1024**3, 1) if total else None}
+    """Bellek durumu (toplam RAM, swap, Ollama'da yüklü modeller): sıcak tutma kararları için."""
+    return sysinfo.memory()
 
 
 @app.get("/api/{path:path}", include_in_schema=False)

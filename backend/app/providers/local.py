@@ -54,6 +54,13 @@ class MlxWhisperSTT(STTProvider):
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
 
+    def is_loaded(self):
+        try:
+            from mlx_whisper.transcribe import ModelHolder
+        except Exception:  # noqa: BLE001
+            return False
+        return ModelHolder.model is not None and ModelHolder.model_path == self.model
+
     def unload(self):
         super().unload()
         try:
@@ -97,6 +104,9 @@ class HfWhisperSTT(STTProvider):
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
 
+    def is_loaded(self):
+        return self._pipe is not None
+
     def unload(self):
         super().unload()
         with self._lock:
@@ -132,9 +142,14 @@ class OllamaLLM(LLMProvider):
         loaded = self.loaded_models()
         return bool(loaded and self.model in loaded)
 
+    def is_loaded(self):
+        return self.is_warm()
+
     def unload(self):
         super().unload()
-        self.unload_model(self.model)
+        # Yalnızca gerçekten yüklüyse boşalt: Ollama boş istekte modeli önce YÜKLER (gereksiz 10+ GB okuma).
+        if self.model in (self.loaded_models() or set()):
+            self.unload_model(self.model)
 
     def readiness_issues(self):
         import httpx
@@ -188,6 +203,9 @@ class EmaTTS(TTSProvider):
         return TTSResult(audio=np.asarray(speech.audio, dtype=np.float32), sample_rate=24000,
                          seconds=time.perf_counter() - t0, provider=self.kind, model=self.model)
 
+    def is_loaded(self):
+        return self._engine is not None
+
     def unload(self):
         super().unload()
         with self._lock:
@@ -217,6 +235,9 @@ class ChatterboxTTS(TTSProvider):
             audio = wav.squeeze().detach().cpu().numpy().astype(np.float32)
         return TTSResult(audio=audio, sample_rate=int(self._tts.sr), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
+
+    def is_loaded(self):
+        return self._tts is not None
 
     def unload(self):
         super().unload()

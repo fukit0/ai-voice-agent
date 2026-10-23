@@ -12,13 +12,21 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .profiles import COMPONENTS, Profile
+from . import sysinfo
 from .providers import ProviderNotReady, evict_except, get_provider, provider_key, record_call
+
+# Son kontrol: tüm bileşenler yüklüyken sıcak çağrı bu sınırı aşarsa model bellekte tutulamıyor demektir
+# (ör. 36 GB Mac'te Qwen 18 GB + Chatterbox birlikte: swap / GPU bellek çekişmesi).
+DEGRADE_FACTOR = 3.0
+DEGRADE_MIN_EXTRA_S = 1.0
 
 
 @dataclass
 class WarmupJob:
     profile: str
-    state: str = "running"  # running | ready | failed
+    state: str = "running"  # running | ready | degraded | failed
+    memory_before: dict[str, Any] | None = None
+    memory_after: dict[str, Any] | None = None
     started_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     finished_at: str | None = None
     seconds: float | None = None
@@ -64,8 +72,10 @@ def start(profile: Profile, keep_others: bool = False, background: bool = True) 
 
 def _run(profile: Profile, job: WarmupJob, keep_others: bool) -> None:
     t_all = time.perf_counter()
+    final_state, final_error = "failed", None
     try:
         specs = components_of(profile)
+        job.memory_before = sysinfo.memory()
         if not keep_others:
             job.evicted = evict_except({provider_key(spec) for _, spec in specs})
         for name, spec in specs:
@@ -93,12 +103,47 @@ def _run(profile: Profile, job: WarmupJob, keep_others: bool) -> None:
                 record_call(profile.id, name, provider, time.perf_counter() - t0, ok=False, warmup=True,
                             error=str(exc)[:300])
         failed = [n for n, c in job.components.items() if c.get("state") != "ready"]
-        job.state = "failed" if failed else "ready"
+        if not failed:
+            _final_pass(profile, job, specs)
+        degraded = [n for n, c in job.components.items() if c.get("state") == "degraded"]
         if failed:
-            job.error = "Hazırlanamayan bileşen: " + ", ".join(failed)
+            final_state, final_error = "failed", "Hazırlanamayan bileşen: " + ", ".join(failed)
+        elif degraded:
+            final_state = "degraded"
+            final_error = ("Bu bilgisayarda profilin tüm modelleri aynı anda sıcak tutulamıyor; "
+                         f"{', '.join(c.upper() for c in degraded)} hepsi yüklüyken yavaşlıyor (bellek çekişmesi).")
+        else:
+            final_state = "ready"
     except Exception as exc:  # noqa: BLE001
-        job.state, job.error = "failed", f"{type(exc).__name__}: {exc}"
+        final_state, final_error = "failed", f"{type(exc).__name__}: {exc}"
     finally:
+        try:
+            job.memory_after = sysinfo.memory()
+        except Exception:  # noqa: BLE001
+            pass
         job.seconds = round(time.perf_counter() - t_all, 2)
         job.finished_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        job.error = final_error
         _running.release()
+        job.state = final_state  # en son: izleyen taraf 'bitti' gördüğünde yeni hazırlama başlatılabilir
+
+
+def _final_pass(profile: Profile, job: WarmupJob, specs: list[tuple[str, dict]]) -> None:
+    """Hepsi yüklüyken her bileşeni bir kez daha çağır: production'da bileşenler birlikte bellekte durur.
+
+    Tek başına ölçülen sıcak süre, diğer modeller yüklenince bozuluyorsa (swap, GPU çekişmesi) bileşen
+    'degraded' işaretlenir ve ölçümlere kapatılır.
+    """
+    for name, spec in specs:
+        comp = job.components[name]
+        provider = get_provider(spec, name, profile.id)
+        t0 = time.perf_counter()
+        provider.warmup_call()
+        final = round(time.perf_counter() - t0, 3)
+        comp["final_seconds"] = final
+        limit = max(comp["warm_seconds"] * DEGRADE_FACTOR, comp["warm_seconds"] + DEGRADE_MIN_EXTRA_S)
+        if final > limit:
+            comp["state"] = "degraded"
+            provider.mark_warm(False)
+        record_call(profile.id, name, provider, final, ok=True, warm=comp["state"] == "ready", warmup=True,
+                    final_pass=True)

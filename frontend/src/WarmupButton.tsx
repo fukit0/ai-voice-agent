@@ -10,11 +10,14 @@ export function WarmupButton() {
   const current = running
     ? Object.entries(job.components).find(([, c]) => c.state === "loading" || c.state === "measuring")
     : undefined;
+  const degraded = !running && job?.state === "degraded";
   const label = running
     ? `Hazırlanıyor${current ? ` · ${COMP_LABEL[current[0]] ?? current[0]}` : ""}…`
     : active.warm
       ? "Sıcak"
-      : "Soğuk";
+      : degraded
+        ? "Bellek yetmiyor"
+        : "Soğuk";
   return (
     <div className="warmup">
       <span className={`chip ${running ? "chip-busy" : active.warm ? "chip-ok" : "chip-cold"}`} data-testid="warm-state">

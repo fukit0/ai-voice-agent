@@ -53,8 +53,11 @@ def evict_except(keep: set[tuple]) -> list[str]:
         for k, _ in victims:
             del _cache[k]
     for _, p in victims:
-        p.unload()
-        evicted.append(p.describe())
+        if p.is_loaded():  # yalnızca gerçekten bellekte olanları boşalt ve raporla
+            p.unload()
+            evicted.append(p.describe())
+        else:
+            p.mark_warm(False)
     keep_ollama = {k[1] for k in keep if k[0] == "ollama"}
     for name in sorted((OllamaLLM.loaded_models() or set()) - keep_ollama):
         if f"ollama:{name}" not in evicted:

@@ -177,6 +177,27 @@ describe("Hazırla (lab-006, ADR 0001)", () => {
     expect(screen.getByText(/sıcak çağrı 310 ms · ilk yükleme 2.1 sn/)).toBeInTheDocument();
   });
 
+  it("bellek çekişmesinde uyarı gösterir", async () => {
+    const degraded = {
+      ...READY_JOB,
+      state: "degraded",
+      error: "Bu bilgisayarda profilin tüm modelleri aynı anda sıcak tutulamıyor; TTS hepsi yüklüyken yavaşlıyor (bellek çekişmesi).",
+      components: { ...READY_JOB.components, tts: { state: "degraded", load_seconds: 140, warm_seconds: 2, final_seconds: 33 } },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.startsWith("/api/profiles")
+          ? new Response(JSON.stringify(PROFILES.map((p) => (p.id === "L1" ? { ...p, warmup: degraded } : p))))
+          : new Response(JSON.stringify(HEALTH)),
+      ),
+    );
+    renderAt("/tts");
+    expect(await screen.findByText("Bellek yetmiyor")).toBeInTheDocument();
+    expect(screen.getByTestId("degraded-warning")).toHaveTextContent("bellek çekişmesi");
+    expect(screen.getByText(/hepsi yüklüyken 33.0 sn/)).toBeInTheDocument();
+  });
+
   it("eksik anahtarlı profilde Hazırla devre dışı", async () => {
     mockApi();
     renderAt("/tts");

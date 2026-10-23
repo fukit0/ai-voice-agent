@@ -80,6 +80,10 @@ class Provider:
     def mark_warm(self, warm: bool = True) -> None:
         self._warm = warm
 
+    def is_loaded(self) -> bool:
+        """Model şu an bellekte mi (yüklü ama henüz ısınmamış olabilir). Boşaltma kararı buna göre verilir."""
+        return self._warm
+
     def warmup_call(self) -> Any:
         """Isınma için küçük ama gerçek bir çıkarım. Bileşen sınıfları tanımlar."""
         raise NotImplementedError

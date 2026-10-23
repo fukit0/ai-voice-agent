@@ -52,10 +52,15 @@ def _provider(profile: Profile, component: str, allow_cold: bool = False):
                                   "message": str(exc), "missing_env": exc.missing_env}) from exc
     if not allow_cold and not provider.is_warm():
         # ADR 0001: ölçümler production koşulunda (model yüklü ve ısınmış) yapılır
+        job = warmup.get_job(profile.id)
+        if job and job.components.get(component, {}).get("state") == "degraded":
+            msg = (f"{profile.id} profilinde {component.upper()} bu bilgisayarda diğer modellerle birlikte sıcak "
+                   f"tutulamıyor (bellek çekişmesi); ölçüm production koşulunu temsil etmez.")
+        else:
+            msg = (f"{profile.id} profili hazır değil ({component.upper()} soğuk). Ölçümler production "
+                   f"koşullarında olsun diye önce 'Hazırla' ile modelleri yükleyin.")
         raise HTTPException(409, {"error": "profile_not_warm", "profile": profile.id, "component": component,
-                                  "message": f"{profile.id} profili hazır değil ({component.upper()} soğuk). "
-                                             f"Ölçümler production koşullarında olsun diye önce 'Hazırla' ile "
-                                             f"modelleri yükleyin."})
+                                  "message": msg})
     return provider
 
 

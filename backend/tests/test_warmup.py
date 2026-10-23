@@ -38,6 +38,21 @@ class CountingSTT(STTProvider):
         EVENTS.append(("unload", self.model))
 
 
+class ContendedTTS(CountingTTS):
+    """İlk iki çağrı hızlı, üçüncüsü (hepsi yüklüyken son kontrol) yavaş: bellek çekişmesini taklit eder."""
+
+    kind = "contended_tts"
+    calls = 0
+
+    def synthesize(self, text, language="tr"):
+        import time
+
+        ContendedTTS.calls += 1
+        if ContendedTTS.calls >= 3:
+            time.sleep(0.05)
+        return super().synthesize(text, language)
+
+
 class FailingTTS(CountingTTS):
     kind = "failing_tts"
 
@@ -67,6 +82,11 @@ profiles:
     stt: {provider: counting_stt, model: shared-stt}
     llm: {provider: fake_llm, model: l}
     tts: {provider: failing_tts, model: f}
+  WD:
+    name: Çekişmeli
+    stt: {provider: counting_stt, model: shared-stt}
+    llm: {provider: fake_llm, model: l}
+    tts: {provider: contended_tts, model: c}
   RT:
     name: Realtime
     mode: realtime
@@ -81,7 +101,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("SVA_PROFILES", str(cfg))
     monkeypatch.setenv("SVA_LOG_DIR", str(tmp_path / "logs"))
     monkeypatch.delenv("FAKE_TTS_API_KEY", raising=False)
-    for cls in (CountingTTS, CountingSTT, FailingTTS, FakeLLM, KeyedTTS):
+    for cls in (CountingTTS, CountingSTT, FailingTTS, ContendedTTS, FakeLLM, KeyedTTS):
         monkeypatch.setitem(registry.PROVIDERS, cls.kind, cls)
     monkeypatch.setattr(OllamaLLM, "loaded_models", staticmethod(lambda: set()))
     registry._cache.clear()
@@ -108,8 +128,9 @@ def test_warmup_loads_measures_and_marks_warm():
     for comp in ("stt", "llm", "tts"):
         c = job["components"][comp]
         assert c["state"] == "ready" and c["load_seconds"] >= 0 and c["warm_seconds"] >= 0
-    # her bileşen iki kez çağrıldı: ısınma + sıcak ölçüm
-    assert EVENTS.count(("tts_call", "tts-1")) == 2 and EVENTS.count(("stt_call", "shared-stt")) == 2
+    # her bileşen üç kez çağrıldı: ısınma, sıcak ölçüm, hepsi yüklüyken son kontrol
+    assert EVENTS.count(("tts_call", "tts-1")) == 3 and EVENTS.count(("stt_call", "shared-stt")) == 3
+    assert all("final_seconds" in job["components"][c] for c in ("stt", "llm", "tts"))
     st = status("W1")
     assert st["warm"] is True and all(c["warm"] for c in st["components"].values())
     res = client.post("/api/profiles/W1/tts", json={"text": "Merhaba"})
@@ -185,3 +206,30 @@ def test_ollama_requests_keep_model_resident(monkeypatch):
 def test_system_reports_memory():
     body = client.get("/api/system").json()
     assert "memory_gb" in body
+
+
+def test_final_pass_flags_component_that_slows_when_all_loaded(monkeypatch):
+    from backend.app import warmup as wu
+
+    monkeypatch.setattr(wu, "DEGRADE_MIN_EXTRA_S", 0.01)
+    ContendedTTS.calls = 0
+    job = warm("WD")
+    assert job["state"] == "degraded" and "TTS" in job["error"]
+    tts = job["components"]["tts"]
+    assert tts["state"] == "degraded" and tts["final_seconds"] > tts["warm_seconds"]
+    assert job["components"]["stt"]["state"] == "ready"
+    res = client.post("/api/profiles/WD/tts", json={"text": "x"})
+    assert res.status_code == 409 and "bellek" in res.json()["detail"]["message"]
+
+
+def test_eviction_skips_models_that_are_not_loaded():
+    client.get("/api/profiles")  # durum sorgusu W2'nin sağlayıcı örneklerini oluşturur ama yüklemez
+    EVENTS.clear()
+    job = client.post("/api/profiles/W1/warmup").json()
+    import time
+
+    while client.get("/api/profiles/W1/warmup").json()["state"] == "running":
+        time.sleep(0.01)
+    job = client.get("/api/profiles/W1/warmup").json()
+    assert not [e for e in EVENTS if e[0] == "unload"]
+    assert job["evicted"] == []
