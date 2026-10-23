@@ -1,0 +1,36 @@
+==> Working directory: /Users/furkan.tanriverdi/sahibinden-voice-agent
+==> Python: Python 3.11.11
+==> Bağımlılıklar senkronize ediliyor
+==> Frontend bağımlılıkları (npm ci)
+
+added 192 packages in 2s
+==> Backend testleri
+..                                                                       [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:45
+  /Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 0.29s
+==> Frontend testleri
+
+ RUN  v2.1.8 /Users/furkan.tanriverdi/sahibinden-voice-agent/frontend
+
+ ✓ src/App.test.tsx (4 tests) 57ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  09:51:30
+   Duration  711ms (transform 34ms, setup 93ms, collect 29ms, tests 57ms, environment 239ms, prepare 97ms)
+
+==> Model sağlık kontrolü
+  [PASS] ollama        14.98s  qwen3:30b-a3b-instruct-2507-q4_K_M -> 'Ankara', 61 tok/s (yükleme 15s)
+  [PASS] ema             1.9s  3.9s ses, RTF 0.05 (yükleme 0s)
+  [PASS] stt            2.79s  'Merhaba, sahibinden anketine hoş geldiniz. İlanını'
+  [SKIP] chatterbox
+==> Kanıt: evidence/healthcheck-20261023-095150.json
+==> Tüm kontroller geçti
+==> Hazır. Kanıtlar evidence/ altında.
+==> Lab'i başlatmak için: scripts/dev.sh  (arayüz http://localhost:5173)
+==> init.sh çıkış kodu: 0 (evidence/init-20261023-095125.log)
