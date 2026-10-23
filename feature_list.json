@@ -121,15 +121,17 @@
       "moscow": "must",
       "title": "STT test ekranı",
       "user_visible_behavior": "Kullanıcı ses yükler veya mikrofondan kaydeder; seçili STT modellerinin çıktısını yan yana, referans metne göre WER ve işlem süresiyle görür.",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "Örnek Türkçe ses yüklenir.",
         "En az iki STT modeli seçilir ve çalıştırılır.",
         "Her model için transkript, WER ve süre görünür.",
         "Sonuç kaydedilir ve tekrar açılabilir."
       ],
-      "evidence": [],
-      "notes": "2026-10-23: kod yazıldı (backend/app/{wer,stt_runs,api_stt}.py, frontend SttPage, STT'ye özel Hazırla: ?components=stt). Bulutta pytest 44, vitest 15, build geçti. Mac'te gerçek modellerle doğrulama bekliyor. Mikrofon kaydı tarayıcı araçlarıyla test edilemez, kullanıcı elle denemeli."
+      "evidence": [
+        "evidence/lab-002-verification.json"
+      ],
+      "notes": "2026-10-23 Mac'te doğrulandı: mlx-whisper (WER %8.3, 0.63 sn) ve Deepgram nova-3 (WER %16.7, 3.92 sn) yan yana; koşu kaydedildi ve yeniden açıldı. BuzzASR Mac'te indirilmedi (HF çevrimdışı). Mikrofon kaydı düğmesi elle denenmedi (tarayıcı araçlarıyla test edilemez). Yalnızca-STT Hazırla: POST /api/profiles/{id}/warmup?components=stt. WER normalizasyonu: Türkçe küçük harf, kesme işareti ek ile birleşik, noktalama atılır; sayı yazımı çevrilmez."
     },
     {
       "id": "norm-007",

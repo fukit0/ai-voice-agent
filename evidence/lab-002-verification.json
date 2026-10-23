@@ -1,19 +1,59 @@
 {
   "feature": "lab-002",
-  "status": "partial",
-  "checked_at": "2026-10-23T11:50:00Z",
-  "verified_on_mac_real_model": {
-    "audio": "EMA ile üretilen 5.36 sn cümle (ema-ornek.wav)",
-    "reference": "Merhaba, ben sahibinden'den arıyorum. İlanınızla ilgili iki kısa sorum olacaktı, uygun musunuz?",
-    "mlx_whisper_large_v3_turbo": {"seconds": 0.715, "rtf": 0.133, "wer_before_apostrophe_fix": 0.0769, "text": "Merhaba ben sahibinden arıyorum. İlanınızla ilgili iki kısa sorum olacaktı. Uygun musunuz?"},
-    "cold_model_reported": "BuzzASR/turkish: status=cold, ölçülmedi (ADR 0001)",
-    "run_saved_listed_reopened": true,
-    "audio_replay": {"status": 200, "content_type": "audio/wav", "bytes": 257324},
-    "ui": "/stt ekranı Mac tarayıcısında açıldı: modeller, durum çipleri, Hazırla, yükleme, mikrofon düğmesi, kayıtlı koşular"
+  "status": "passing",
+  "checked_at": "2026-10-23T12:12:00Z",
+  "audio": "EMA ile üretilen 5.36 sn Türkçe cümle (ema-ornek.wav), API ile yüklendi",
+  "reference": "Merhaba, ben sahibinden'den arıyorum. İlanınızla ilgili iki kısa sorum olacaktı, uygun musunuz?",
+  "run_id": "20261023-151147-0f60d2",
+  "stt_only_warmup": {
+    "L2": {
+      "seconds": 2.23,
+      "stt_warm_s": 0.535,
+      "evicted": []
+    },
+    "A1": {
+      "seconds": 4.93,
+      "stt_warm_s": 1.115,
+      "evicted": []
+    },
+    "note": "?components=stt: yalnızca STT ısıtıldı, Ollama'da model yüklenmedi, hiçbir model çıkarılmadı"
   },
-  "not_yet_verified": [
-    "İkinci bir modelle yan yana karşılaştırma: BuzzASR/turkish Mac'te önbellekte yok (OSError: huggingface.co'ya bağlanılamadı; HF_HUB_OFFLINE=1). Deepgram nova-3 anahtarı tanımlı, ancak yalnızca-STT Hazırla (?components=stt) çalışan backend'de yok (yeniden başlatma gerekir).",
-    "Mikrofondan kayıt (tarayıcı araçlarıyla test edilemez, kullanıcı elle denemeli)"
+  "results": [
+    {
+      "model": "mlx-community/whisper-large-v3-turbo",
+      "provider": "mlx_whisper",
+      "wer": 0.0833,
+      "seconds": 0.629,
+      "rtf": 0.117,
+      "sub": 1,
+      "del": 0,
+      "ins": 0,
+      "text": "Merhaba, ben sahibinden arıyorum. İlanınızla ilgili iki kısa sorum olacaktı. Uygun musunuz?"
+    },
+    {
+      "model": "nova-3",
+      "provider": "deepgram",
+      "wer": 0.1667,
+      "seconds": 3.922,
+      "rtf": 0.732,
+      "sub": 1,
+      "del": 0,
+      "ins": 1,
+      "text": "Merhaba, ben Sahibin Dend'den arıyorum. İlanınızla ilgili iki kısa sorum olacaktı, uygun musunuz?"
+    }
   ],
-  "cloud_tests": {"pytest": 44, "vitest": 15, "build": "ok"}
+  "cold_model_reported": "BuzzASR/turkish: status=cold (önbellekte yok, HF_HUB_OFFLINE=1), ölçülmedi",
+  "saved_listed_reopened": true,
+  "ui": "/stt: iki model yan yana, WER/süre/RTF, referans ve ses kayıttan yeniden yüklendi (Mac tarayıcısında görüldü)",
+  "cloud_tests": {
+    "pytest": 44,
+    "vitest": 17,
+    "build": "ok"
+  },
+  "not_verified": [
+    "Mikrofondan kayıt düğmesi (tarayıcı araçlarıyla test edilemez; kullanıcı elle denemeli)",
+    "Ses dosyası seçici arayüzden sürülmedi; API ile aynı uç yüklendi",
+    "BuzzASR (indirilmedi)"
+  ],
+  "observation": "Deepgram nova-3 toplu (batch) çağrıda 3.9 sn sürdü (ağ dahil, RTF 0.73); canlı konuşmada akışlı (streaming) kullanılacağından bu süre canlı gecikmeyi temsil etmez."
 }

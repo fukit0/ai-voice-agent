@@ -18,8 +18,8 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Current highest-priority unfinished feature: lab-002 (STT test ekranı, in_progress: kod ve tek model doğrulaması tamam)
-- Current blocker: lab-002 için ikinci STT modeli: BuzzASR/turkish Mac'te indirilmemiş (HF_HUB_OFFLINE) veya demo.sh yeniden başlatılıp Deepgram ?components=stt ile ısıtılmalı (kullanıcı eylemi)
+- Current highest-priority unfinished feature: lab-001 (TTS stüdyosu ve kör dinleme)
+- Current blocker: yok (lab-002 notu: mikrofon düğmesi elle denenmedi; BuzzASR indirilmedi)
 
 ## Session Log
 
@@ -69,3 +69,9 @@ agents do not update it automatically.
 - Yapıldı: STT test backend (api_stt, wer, stt_runs), arayüz (SttPage, wav.ts), yalnızca-STT Hazırla (?components=stt), bulutta pytest 44 / vitest 15 / build. Mac'te mlx-whisper ile gerçek koşu: 0.72 sn, RTF 0.13, kaydet/aç/ses çalma doğrulandı. Kanıt: evidence/lab-002-verification.json (kısmi).
 - Kalan: (1) ikinci model ile yan yana koşu, (2) mikrofon kaydı elle denemesi, ardından lab-002 passing.
 - Ayrıca CLAUDE.md'ye yeni kural eklendi: kararlar ve sınırlamalar Demo Sunumu'na, PoC Planı dokümanı oturum sonunda güncellenecek (lab-002 kapanınca yapılacak).
+
+### Session 004 sonu (lab-002 passing)
+- lab-002 passing: mlx-whisper vs Deepgram nova-3, WER ve süre yan yana, kayıt/aç. Kanıt: evidence/lab-002-verification.json.
+- Ek düzeltmeler: yalnızca-STT Hazırla (?components=stt), WER'de kesme işareti, init.sh için localStorage ortam sorunu, vite include .test.ts, healthcheck Ollama model seçimi (L2 modeli).
+- Doğrulanmamış: mikrofon kaydı düğmesi, BuzzASR (indirme gerekli: MODELS_ONLINE=1).
+- Sıradaki: lab-001 TTS stüdyosu (Chatterbox tek başına yüklenecek).
