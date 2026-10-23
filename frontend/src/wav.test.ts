@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { encodeWav, mixToMono } from "./wav";
 
+// jsdom'un Blob'unda arrayBuffer() yok; FileReader ile oku.
+const readBuffer = (blob: Blob) =>
+  new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+
 describe("wav", () => {
   it("geçerli 16-bit mono WAV başlığı yazar", async () => {
     const blob = encodeWav(new Float32Array([0, 1, -1, 0.5]), 16000);
-    const view = new DataView(await blob.arrayBuffer());
+    const view = new DataView(await readBuffer(blob));
     const tag = (o: number) => String.fromCharCode(...[0, 1, 2, 3].map((i) => view.getUint8(o + i)));
     expect([tag(0), tag(8), tag(36)]).toEqual(["RIFF", "WAVE", "data"]);
     expect(view.getUint32(24, true)).toBe(16000);

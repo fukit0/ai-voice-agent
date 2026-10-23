@@ -1,0 +1,48 @@
+==> Working directory: /Users/furkan.tanriverdi/sahibinden-voice-agent
+==> Python: Python 3.11.11
+==> Bağımlılıklar senkronize ediliyor
+==> Frontend bağımlılıkları (npm ci)
+
+added 192 packages in 3s
+==> Backend testleri
+............................................                             [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:45
+  /Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+44 passed, 1 warning in 3.08s
+==> Frontend testleri
+
+ RUN  v2.1.8 /Users/furkan.tanriverdi/sahibinden-voice-agent/frontend
+
+(node:34437) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/SttPage.test.tsx (4 tests) 1138ms
+   ✓ STT test ekranı > soğuk modeli Hazırla ile ısıtır (yalnızca STT bileşeni, diğer sıcaklar kalsın diye keep_others=true) ve listeyi yeniler 1035ms
+ ❯ src/App.test.tsx (11 tests | 1 failed) 1131ms
+   × Profil seçimi (core-003) > profil değişince ekran o profilin modellerini gösterir 9ms
+     → localStorage.getItem is not a function
+   ✓ Hazırla (lab-006, ADR 0001) > Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer 1013ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/App.test.tsx > Profil seçimi (core-003) > profil değişince ekran o profilin modellerini gösterir
+TypeError: localStorage.getItem is not a function
+ ❯ src/App.test.tsx:149:25
+    147|     fireEvent.change(screen.getByRole("combobox", { name: "Profil" }),…
+    148|     expect(screen.getByTestId("active-profile")).toHaveTextContent("ch…
+    149|     expect(localStorage.getItem("sva.profile")).toBe("L2");
+       |                         ^
+    150|   });
+    151| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+   Start at  15:05:53
+   Duration  1.88s (transform 68ms, setup 198ms, collect 85ms, tests 2.27s, environment 479ms, prepare 87ms)
+
+==> init.sh çıkış kodu: 1 (evidence/init-20261023-150545.log)
