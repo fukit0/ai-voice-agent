@@ -18,8 +18,8 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Current highest-priority unfinished feature: lab-002 (STT test ekranı)
-- Current blocker: yok
+- Current highest-priority unfinished feature: lab-002 (STT test ekranı, in_progress: kod ve tek model doğrulaması tamam)
+- Current blocker: lab-002 için ikinci STT modeli: BuzzASR/turkish Mac'te indirilmemiş (HF_HUB_OFFLINE) veya demo.sh yeniden başlatılıp Deepgram ?components=stt ile ısıtılmalı (kullanıcı eylemi)
 
 ## Session Log
 
@@ -64,3 +64,8 @@ agents do not update it automatically.
 - Karar: canlı profillerde TTS = EMA; Chatterbox 36 GB'ta Qwen3 30B ile birlikte çalışamıyor, yalnızca TTS stüdyosunda tek başına (lab-001).
 - Bilinen sınırlama: boşta sonrası ilk LLM çağrısı 2.8 sn (OS sayfalama, swap ~16 GB). Aday: keep-warm ping.
 - Sıradaki: lab-002 (STT test ekranı), lab-001 (TTS stüdyosu + kör dinleme).
+
+### Session 004 devamı (lab-002)
+- Yapıldı: STT test backend (api_stt, wer, stt_runs), arayüz (SttPage, wav.ts), yalnızca-STT Hazırla (?components=stt), bulutta pytest 44 / vitest 15 / build. Mac'te mlx-whisper ile gerçek koşu: 0.72 sn, RTF 0.13, kaydet/aç/ses çalma doğrulandı. Kanıt: evidence/lab-002-verification.json (kısmi).
+- Kalan: (1) ikinci model ile yan yana koşu, (2) mikrofon kaydı elle denemesi, ardından lab-002 passing.
+- Ayrıca CLAUDE.md'ye yeni kural eklendi: kararlar ve sınırlamalar Demo Sunumu'na, PoC Planı dokümanı oturum sonunda güncellenecek (lab-002 kapanınca yapılacak).
