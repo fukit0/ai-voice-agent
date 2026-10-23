@@ -12,6 +12,11 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
+# Tüm çıktı aynı zamanda evidence/init-<zaman>.log dosyasına yazılır: her koşu kanıt bırakır.
+mkdir -p evidence
+INIT_LOG="evidence/init-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee "$INIT_LOG") 2>&1
+trap 'echo "==> init.sh çıkış kodu: $? ($INIT_LOG)"' EXIT
 echo "==> Working directory: $PWD"
 
 # --- Python ortamı ---------------------------------------------------------
