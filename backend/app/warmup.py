@@ -52,29 +52,33 @@ def get_job(profile_id: str) -> WarmupJob | None:
         return _jobs.get(profile_id)
 
 
-def components_of(profile: Profile) -> list[tuple[str, dict]]:
-    return [(c, profile.component(c)) for c in COMPONENTS if profile.component(c)]
+def components_of(profile: Profile, only: set[str] | None = None) -> list[tuple[str, dict]]:
+    return [(c, profile.component(c)) for c in COMPONENTS if profile.component(c) and (only is None or c in only)]
 
 
-def start(profile: Profile, keep_others: bool = False, background: bool = True) -> WarmupJob:
+def start(profile: Profile, keep_others: bool = False, background: bool = True,
+          only: set[str] | None = None) -> WarmupJob:
+    """`only` verilirse yalnızca o bileşenler hazırlanır (ör. STT test ekranı yalnızca STT modelini ister);
+    bu durumda başka hiçbir model bellekten çıkarılmaz."""
     if not _running.acquire(blocking=False):
         raise WarmupBusy("Başka bir profil hazırlanıyor; bitince tekrar deneyin.")
-    job = WarmupJob(profile=profile.id, components={c: {"state": "pending"} for c, _ in components_of(profile)})
+    job = WarmupJob(profile=profile.id,
+                    components={c: {"state": "pending"} for c, _ in components_of(profile, only)})
     with _jobs_lock:
         _jobs[profile.id] = job
     if background:
-        threading.Thread(target=_run, args=(profile, job, keep_others), daemon=True,
+        threading.Thread(target=_run, args=(profile, job, keep_others or only is not None, only), daemon=True,
                          name=f"warmup-{profile.id}").start()
     else:
-        _run(profile, job, keep_others)
+        _run(profile, job, keep_others or only is not None, only)
     return job
 
 
-def _run(profile: Profile, job: WarmupJob, keep_others: bool) -> None:
+def _run(profile: Profile, job: WarmupJob, keep_others: bool, only: set[str] | None = None) -> None:
     t_all = time.perf_counter()
     final_state, final_error = "failed", None
     try:
-        specs = components_of(profile)
+        specs = components_of(profile, only)
         job.memory_before = sysinfo.memory()
         if not keep_others:
             job.evicted = evict_except({provider_key(spec) for _, spec in specs})

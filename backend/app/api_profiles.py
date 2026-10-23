@@ -89,17 +89,25 @@ def list_profiles(check: bool = True) -> list[dict]:
 
 
 @router.post("/{pid}/warmup", status_code=202)
-def start_warmup(pid: str, keep_others: bool = Query(False)) -> dict:
+def start_warmup(pid: str, keep_others: bool = Query(False), components: str | None = Query(None)) -> dict:
     """Hazırla: profilin modellerini yükler, ısıtır ve sıcak süreyi ölçer (arka planda; GET ile izlenir).
 
     Varsayılan olarak hedef profilde olmayan modeller bellekten çıkarılır (`keep_others=true` ile kalır).
+    `components=stt` gibi bir liste verilirse yalnızca o bileşenler hazırlanır ve hiçbir model çıkarılmaz.
     """
     profile = _profile(pid)
+    only = None
+    if components:
+        only = {c.strip() for c in components.split(",") if c.strip()}
+        unknown = only - {"stt", "llm", "tts"}
+        if unknown or not any(profile.component(c) for c in only):
+            raise HTTPException(400, {"error": "bad_components", "profile": pid,
+                                      "message": f"{pid} profilinde hazırlanacak bileşen yok: {components}"})
     if profile.mode != "cascade":
         raise HTTPException(400, {"error": "warmup_unsupported", "profile": pid,
                                   "message": f"{pid} realtime profil; hazırlama Playground'da (lab-003) yapılacak."})
     try:
-        job = warmup.start(profile, keep_others=keep_others)
+        job = warmup.start(profile, keep_others=keep_others, only=only)
     except warmup.WarmupBusy as exc:
         raise HTTPException(409, {"error": "warmup_busy", "message": str(exc)}) from exc
     return job.to_dict()

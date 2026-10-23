@@ -121,7 +121,7 @@
       "moscow": "must",
       "title": "STT test ekranı",
       "user_visible_behavior": "Kullanıcı ses yükler veya mikrofondan kaydeder; seçili STT modellerinin çıktısını yan yana, referans metne göre WER ve işlem süresiyle görür.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Örnek Türkçe ses yüklenir.",
         "En az iki STT modeli seçilir ve çalıştırılır.",
@@ -129,7 +129,7 @@
         "Sonuç kaydedilir ve tekrar açılabilir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "2026-10-23: kod yazıldı (backend/app/{wer,stt_runs,api_stt}.py, frontend SttPage, STT'ye özel Hazırla: ?components=stt). Bulutta pytest 44, vitest 15, build geçti. Mac'te gerçek modellerle doğrulama bekliyor. Mikrofon kaydı tarayıcı araçlarıyla test edilemez, kullanıcı elle denemeli."
     },
     {
       "id": "norm-007",

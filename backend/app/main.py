@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__, sysinfo
 from .api_profiles import router as profiles_router
+from .api_stt import router as stt_router
 from .profiles import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,6 +29,7 @@ STARTED_AT = time.time()
 load_dotenv()  # .env içindeki API anahtarları (varsa); ortamdakileri ezmez
 app = FastAPI(title="Sahibinden Voice Agent Lab", version=__version__)
 app.include_router(profiles_router)
+app.include_router(stt_router)
 
 
 @app.get("/api/health")

@@ -4,6 +4,7 @@ import { ProfileProvider } from "./ProfileContext";
 import { ProfileSelector } from "./ProfileSelector";
 import { WarmupButton } from "./WarmupButton";
 import { ScreenPlaceholder } from "./pages/ScreenPlaceholder";
+import { SttPage } from "./pages/SttPage";
 import { SCREENS } from "./screens";
 
 // React Router v7 davranışlarını şimdiden aç (uyarıları kapatır, ileride geçişi kolaylaştırır).
@@ -32,7 +33,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to={SCREENS[0].path} replace />} />
           {SCREENS.map((s) => (
-            <Route key={s.path} path={s.path} element={<ScreenPlaceholder screen={s} />} />
+            <Route key={s.path} path={s.path}
+              element={s.path === "/stt" ? <SttPage /> : <ScreenPlaceholder screen={s} />} />
           ))}
           <Route path="*" element={<p>Sayfa bulunamadı.</p>} />
         </Routes>

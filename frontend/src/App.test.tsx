@@ -151,7 +151,7 @@ describe("Profil seçimi (core-003)", () => {
 
   it("anahtarı eksik profilde anlaşılır uyarı gösterir", async () => {
     mockApi();
-    renderAt("/stt");
+    renderAt("/playground"); // ActiveProfile kartını gösteren (henüz placeholder) bir ekran; /stt artık kendi sayfası
     fireEvent.change(await screen.findByRole("combobox", { name: "Profil" }), { target: { value: "A1" } });
     expect(screen.getByRole("alert")).toHaveTextContent("Eksik API anahtarı: DEEPGRAM_API_KEY");
   });

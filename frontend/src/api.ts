@@ -57,7 +57,68 @@ async function json<T>(res: Response): Promise<T> {
   return res.json();
 }
 
-export const startWarmup = (id: string, keepOthers = false) =>
-  fetch(`/api/profiles/${id}/warmup?keep_others=${keepOthers}`, { method: "POST" }).then((r) => json<WarmupJob>(r));
+export const startWarmup = (id: string, keepOthers = false, components?: string) =>
+  fetch(`/api/profiles/${id}/warmup?keep_others=${keepOthers}${components ? `&components=${components}` : ""}`, {
+    method: "POST",
+  }).then((r) => json<WarmupJob>(r));
 
 export const getWarmup = (id: string) => fetch(`/api/profiles/${id}/warmup`).then((r) => json<WarmupJob>(r));
+
+// ---- STT test (lab-002) ----
+export type SttModel = {
+  profile: string; // modeli kullanan ilk profil (Hazırla bu profille yapılır)
+  profiles: string[];
+  provider: string;
+  model: string;
+  ready: boolean;
+  warm: boolean;
+  missing_env: string[];
+};
+
+export type SttResult = {
+  profile: string;
+  provider: string;
+  model: string;
+  status: "ok" | "cold" | "not_ready" | "failed";
+  error?: string;
+  text?: string;
+  seconds?: number;
+  rtf?: number;
+  wer?: number | null;
+  ref_words?: number;
+  substitutions?: number;
+  deletions?: number;
+  insertions?: number;
+};
+
+export type SttRun = {
+  id: string;
+  created_at: string;
+  filename: string | null;
+  audio_seconds: number;
+  reference: string;
+  results: SttResult[];
+};
+
+export type SttRunSummary = {
+  id: string;
+  created_at: string;
+  filename: string | null;
+  audio_seconds: number;
+  reference: string;
+  models: string[];
+  best_wer: number | null;
+};
+
+export const fetchSttModels = () => fetch("/api/stt/models").then((r) => json<SttModel[]>(r));
+export const fetchSttRuns = () => fetch("/api/stt/runs").then((r) => json<SttRunSummary[]>(r));
+export const fetchSttRun = (id: string) => fetch(`/api/stt/runs/${id}`).then((r) => json<SttRun>(r));
+export const sttAudioUrl = (id: string) => `/api/stt/runs/${id}/audio`;
+
+export function compareStt(audio: Blob, filename: string, profiles: string[], reference: string): Promise<SttRun> {
+  const form = new FormData();
+  form.append("audio", audio, filename);
+  form.append("profiles", profiles.join(","));
+  form.append("reference", reference);
+  return fetch("/api/stt/compare", { method: "POST", body: form }).then((r) => json<SttRun>(r));
+}

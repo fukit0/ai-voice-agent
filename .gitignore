@@ -12,3 +12,5 @@ frontend/e2e-artifacts/
 frontend/test-results/
 frontend/playwright-report/
 logs/
+# STT test koşuları (lab-002): yerel ses ve sonuç kayıtları
+data/

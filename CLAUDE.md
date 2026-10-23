@@ -25,6 +25,7 @@ you either verify it or document why it is blocked.
 - Do not remove or weaken tests just to make the task look complete.
 - Use repository artifacts as the system of record.
 - Sahibinden Sesli Anket Ajanı — PoC Planı dokümanına bağlı kal
+- Değişen kararları sebepleriyle, "Demoda anlatırken “ilk yükleme” bahanesi değil, bu sınırlamayı bil." gibi bilgileri Demo Sunumu dosyasına ekle
 
 ## Required Files
 
