@@ -70,6 +70,23 @@ class Provider:
     def __init__(self, model: str | None = None, **options: Any):
         self.model = model or ""
         self.options = options
+        self._warm = False
+
+    # --- Ön yükleme (ADR 0001) -------------------------------------------------
+    def is_warm(self) -> bool:
+        """Model bellekte ve en az bir çıkarım yapılmış mı (ilk çağrı maliyeti ödenmiş mi)."""
+        return self._warm
+
+    def mark_warm(self, warm: bool = True) -> None:
+        self._warm = warm
+
+    def warmup_call(self) -> Any:
+        """Isınma için küçük ama gerçek bir çıkarım. Bileşen sınıfları tanımlar."""
+        raise NotImplementedError
+
+    def unload(self) -> None:
+        """Modeli bellekten çıkarır. Alt sınıflar kendi nesnelerini bırakır."""
+        self._warm = False
 
     def describe(self) -> str:
         return f"{self.kind}:{self.model}" if self.model else self.kind
@@ -82,12 +99,21 @@ class Provider:
 class STTProvider(Provider):
     component = "stt"
 
+    def warmup_call(self):
+        # 1,5 sn hafif gürültü: modeli yükler ve kod yollarını ısıtır; çıktı metni önemsiz
+        noise = (np.random.default_rng(0).standard_normal(24000) * 0.01).astype(np.float32)
+        return self.transcribe(noise, 16000)
+
     def transcribe(self, audio: np.ndarray, sample_rate: int, language: str = "tr") -> STTResult:
         raise NotImplementedError
 
 
 class LLMProvider(Provider):
     component = "llm"
+
+    def warmup_call(self):
+        return self.complete([{"role": "user", "content": "Tek kelimeyle cevap ver: hazır mısın?"}],
+                             max_tokens=8, temperature=0)
 
     def complete(self, messages: list[dict[str, str]], max_tokens: int = 256,
                  temperature: float = 0.3) -> LLMResult:
@@ -96,6 +122,9 @@ class LLMProvider(Provider):
 
 class TTSProvider(Provider):
     component = "tts"
+
+    def warmup_call(self):
+        return self.synthesize("Merhaba, hazırım.")
 
     def synthesize(self, text: str, language: str = "tr") -> TTSResult:
         raise NotImplementedError

@@ -22,6 +22,8 @@ const profile = (over: Partial<ProfileStatus>): ProfileStatus => ({
   missing_env: [],
   issues: [],
   ready: true,
+  warm: false,
+  warmup: null,
   ...over,
 });
 
@@ -49,16 +51,38 @@ const PROFILES: ProfileStatus[] = [
   }),
 ];
 
+const READY_JOB = {
+  profile: "L1",
+  state: "ready",
+  seconds: 3.2,
+  evicted: ["chatterbox:"],
+  error: null,
+  components: {
+    stt: { state: "ready", load_seconds: 2.1, warm_seconds: 0.31 },
+    llm: { state: "ready", load_seconds: 0.9, warm_seconds: 0.12 },
+    tts: { state: "ready", load_seconds: 0.2, warm_seconds: 0.05 },
+  },
+};
+
 function mockApi({ healthStatus = 200 } = {}) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (url: string) => {
-      if (url.startsWith("/api/health"))
-        return healthStatus === 200 ? new Response(JSON.stringify(HEALTH)) : new Response("", { status: healthStatus });
-      if (url.startsWith("/api/profiles")) return new Response(JSON.stringify(PROFILES));
-      return new Response("", { status: 404 });
-    }),
-  );
+  let warmed = false;
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.startsWith("/api/health"))
+      return healthStatus === 200 ? new Response(JSON.stringify(HEALTH)) : new Response("", { status: healthStatus });
+    if (url.includes("/warmup") && init?.method === "POST")
+      return new Response(JSON.stringify({ ...READY_JOB, state: "running", components: { stt: { state: "loading" } } }), { status: 202 });
+    if (url.includes("/warmup")) {
+      warmed = true;
+      return new Response(JSON.stringify(READY_JOB));
+    }
+    if (url.startsWith("/api/profiles"))
+      return new Response(
+        JSON.stringify(PROFILES.map((p) => (warmed && p.id === "L1" ? { ...p, warm: true, warmup: READY_JOB } : p))),
+      );
+    return new Response("", { status: 404 });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
 }
 
 function renderAt(path: string) {
@@ -130,5 +154,33 @@ describe("Profil seçimi (core-003)", () => {
     renderAt("/stt");
     fireEvent.change(await screen.findByRole("combobox", { name: "Profil" }), { target: { value: "A1" } });
     expect(screen.getByRole("alert")).toHaveTextContent("Eksik API anahtarı: DEEPGRAM_API_KEY");
+  });
+});
+
+describe("Hazırla (lab-006, ADR 0001)", () => {
+  it("soğuk profilde uyarı ve Hazırla düğmesi gösterir", async () => {
+    mockApi();
+    renderAt("/tts");
+    expect(await screen.findByTestId("warm-state")).toHaveTextContent("Soğuk");
+    expect(screen.getByTestId("cold-warning")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hazırla" })).toBeEnabled();
+  });
+
+  it("Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer", async () => {
+    const fetchMock = mockApi();
+    renderAt("/tts");
+    fireEvent.click(await screen.findByRole("button", { name: "Hazırla" }));
+    expect(await screen.findByText(/Hazırlanıyor · STT/)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/profiles/L1/warmup?keep_others=false", { method: "POST" });
+    expect(await screen.findByText("Sıcak", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.queryByTestId("cold-warning")).not.toBeInTheDocument();
+    expect(screen.getByText(/sıcak çağrı 310 ms · ilk yükleme 2.1 sn/)).toBeInTheDocument();
+  });
+
+  it("eksik anahtarlı profilde Hazırla devre dışı", async () => {
+    mockApi();
+    renderAt("/tts");
+    fireEvent.change(await screen.findByRole("combobox", { name: "Profil" }), { target: { value: "A1" } });
+    expect(screen.getByRole("button", { name: "Hazırla" })).toBeDisabled();
   });
 });

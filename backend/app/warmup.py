@@ -1,0 +1,104 @@
+"""Profil ön yükleme ("Hazırla") işleri — ADR 0001.
+
+Her bileşen için: sağlayıcıyı oluştur, ısınma çıkarımı yap (yükleme + ilk çağrı maliyeti), ardından
+ikinci bir çağrıyla sıcak süreyi ölç. Aynı anda tek ısınma çalışır (bellek ve doğru ölçüm için).
+"""
+from __future__ import annotations
+
+import threading
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any
+
+from .profiles import COMPONENTS, Profile
+from .providers import ProviderNotReady, evict_except, get_provider, provider_key, record_call
+
+
+@dataclass
+class WarmupJob:
+    profile: str
+    state: str = "running"  # running | ready | failed
+    started_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    finished_at: str | None = None
+    seconds: float | None = None
+    evicted: list[str] = field(default_factory=list)
+    components: dict[str, dict[str, Any]] = field(default_factory=dict)
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+_jobs: dict[str, WarmupJob] = {}
+_jobs_lock = threading.Lock()
+_running = threading.Lock()  # tek seferde tek ısınma
+
+
+class WarmupBusy(Exception):
+    pass
+
+
+def get_job(profile_id: str) -> WarmupJob | None:
+    with _jobs_lock:
+        return _jobs.get(profile_id)
+
+
+def components_of(profile: Profile) -> list[tuple[str, dict]]:
+    return [(c, profile.component(c)) for c in COMPONENTS if profile.component(c)]
+
+
+def start(profile: Profile, keep_others: bool = False, background: bool = True) -> WarmupJob:
+    if not _running.acquire(blocking=False):
+        raise WarmupBusy("Başka bir profil hazırlanıyor; bitince tekrar deneyin.")
+    job = WarmupJob(profile=profile.id, components={c: {"state": "pending"} for c, _ in components_of(profile)})
+    with _jobs_lock:
+        _jobs[profile.id] = job
+    if background:
+        threading.Thread(target=_run, args=(profile, job, keep_others), daemon=True,
+                         name=f"warmup-{profile.id}").start()
+    else:
+        _run(profile, job, keep_others)
+    return job
+
+
+def _run(profile: Profile, job: WarmupJob, keep_others: bool) -> None:
+    t_all = time.perf_counter()
+    try:
+        specs = components_of(profile)
+        if not keep_others:
+            job.evicted = evict_except({provider_key(spec) for _, spec in specs})
+        for name, spec in specs:
+            comp = job.components[name]
+            comp.update(state="loading", provider=spec.get("provider"), model=spec.get("model") or "")
+            try:
+                provider = get_provider(spec, name, profile.id)
+            except ProviderNotReady as exc:
+                comp.update(state="failed", error=str(exc), missing_env=exc.missing_env)
+                continue
+            try:
+                t0 = time.perf_counter()
+                provider.warmup_call()  # yükleme + ilk çıkarım
+                comp["load_seconds"] = round(time.perf_counter() - t0, 2)
+                comp["state"] = "measuring"
+                t1 = time.perf_counter()
+                provider.warmup_call()  # sıcak çağrı: production'da beklenen süre
+                comp["warm_seconds"] = round(time.perf_counter() - t1, 3)
+                provider.mark_warm()
+                comp["state"] = "ready"
+                record_call(profile.id, name, provider, comp["warm_seconds"], ok=True, warm=True, warmup=True,
+                            load_seconds=comp["load_seconds"])
+            except Exception as exc:  # noqa: BLE001 — bileşen hatası diğerlerini durdurmasın
+                comp.update(state="failed", error=f"{type(exc).__name__}: {exc}"[:400])
+                record_call(profile.id, name, provider, time.perf_counter() - t0, ok=False, warmup=True,
+                            error=str(exc)[:300])
+        failed = [n for n, c in job.components.items() if c.get("state") != "ready"]
+        job.state = "failed" if failed else "ready"
+        if failed:
+            job.error = "Hazırlanamayan bileşen: " + ", ".join(failed)
+    except Exception as exc:  # noqa: BLE001
+        job.state, job.error = "failed", f"{type(exc).__name__}: {exc}"
+    finally:
+        job.seconds = round(time.perf_counter() - t_all, 2)
+        job.finished_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        _running.release()

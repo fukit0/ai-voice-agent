@@ -28,6 +28,41 @@ def missing_env(cls: type[Provider]) -> list[str]:
     return [name for name in cls.required_env if not os.environ.get(name)]
 
 
+def provider_key(spec: dict[str, Any]) -> tuple:
+    options = {k: v for k, v in spec.items() if k not in ("provider", "model")}
+    return (spec.get("provider"), spec.get("model"), tuple(sorted(options.items())))
+
+
+def cached(spec: dict[str, Any]) -> Provider | None:
+    """Önbellekte varsa sağlayıcı örneği; yoksa None (model yüklemez, örnek oluşturmaz)."""
+    with _cache_lock:
+        return _cache.get(provider_key(spec))
+
+
+def evict_except(keep: set[tuple]) -> list[str]:
+    """`keep` dışındaki tüm sağlayıcıları bellekten çıkarır (ADR 0001, tek bilgisayarda bellek bütçesi).
+
+    Ollama ayrı süreç olduğu için, hedef profilde olmayan ve Ollama'da yüklü duran modeller de boşaltılır
+    (backend yeniden başlamış olsa bile).
+    """
+    from .local import OllamaLLM
+
+    evicted: list[str] = []
+    with _cache_lock:
+        victims = [(k, p) for k, p in _cache.items() if k not in keep]
+        for k, _ in victims:
+            del _cache[k]
+    for _, p in victims:
+        p.unload()
+        evicted.append(p.describe())
+    keep_ollama = {k[1] for k in keep if k[0] == "ollama"}
+    for name in sorted((OllamaLLM.loaded_models() or set()) - keep_ollama):
+        if f"ollama:{name}" not in evicted:
+            OllamaLLM.unload_model(name)
+            evicted.append(f"ollama:{name}")
+    return evicted
+
+
 def get_provider(spec: dict[str, Any], component: str, profile_id: str = "") -> Provider:
     """Profil bileşen tanımından (ör. {"provider": "ema"}) sağlayıcı örneği döndürür.
 
@@ -46,7 +81,7 @@ def get_provider(spec: dict[str, Any], component: str, profile_id: str = "") -> 
             f"Anahtarı ortam değişkeni olarak veya proje kökündeki .env dosyasına ekleyip backend'i yeniden başlatın.",
             missing_env=missing)
     options = {k: v for k, v in spec.items() if k not in ("provider", "model")}
-    key = (kind, spec.get("model"), tuple(sorted(options.items())))
+    key = provider_key(spec)
     with _cache_lock:
         if key not in _cache:
             _cache[key] = cls(spec.get("model"), **options)

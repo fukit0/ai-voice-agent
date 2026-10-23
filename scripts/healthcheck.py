@@ -68,6 +68,9 @@ def ollama():
     if not tags:
         raise RuntimeError("Ollama çalışıyor ama yüklü model yok. Örn: ollama pull qwen3:30b-a3b (32 GB+) veya ollama pull gemma4:e4b (16 GB)")
     model = os.environ.get("OLLAMA_MODEL") or tags[0]["name"]
+    # Model Lab'de "Hazırla" ile zaten ısıtılmışsa bellekten atma (ADR 0001); değilse kontrol sonrası boşalt.
+    loaded = {m.get("name") for m in requests.get(f"{OLLAMA_URL}/api/ps", timeout=5).json().get("models", [])}
+    keep_alive = -1 if model in loaded else 0
     t0 = time.perf_counter()
     r = requests.post(f"{OLLAMA_URL}/api/generate", timeout=120, json={
         "model": model,
@@ -76,8 +79,8 @@ def ollama():
         # Qwen3 gibi "düşünen" modeller önce düşünce token'ı üretir; kısa limitte cevap boş kalır.
         # Ajan da gecikme için düşünmeyi kapalı kullanacak.
         "think": False,
-        # Kontrolden sonra modeli bellekten at: STT/TTS ile aynı RAM'i paylaşıyor.
-        "keep_alive": 0,
+        # Kontrolden sonra modeli bellekten at (STT/TTS ile aynı RAM'i paylaşıyor) — Lab'de sıcaksa dokunma.
+        "keep_alive": keep_alive,
         "options": {"num_predict": 32, "temperature": 0},
     })
     r.raise_for_status()

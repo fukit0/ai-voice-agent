@@ -1,0 +1,45 @@
+==> Working directory: /Users/furkan.tanriverdi/sahibinden-voice-agent
+==> Python: Python 3.11.11
+==> Bağımlılıklar senkronize ediliyor
+==> Frontend bağımlılıkları (npm ci)
+
+added 192 packages in 2s
+==> Backend testleri
+..............                                                           [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:45
+  /Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 1 warning in 1.67s
+==> Frontend testleri
+
+ RUN  v2.1.8 /Users/furkan.tanriverdi/sahibinden-voice-agent/frontend
+
+(node:83910) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/App.test.tsx (7 tests | 1 failed) 85ms
+   × Profil seçimi (core-003) > profil değişince ekran o profilin modellerini gösterir 9ms
+     → localStorage.getItem is not a function
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/App.test.tsx > Profil seçimi (core-003) > profil değişince ekran o profilin modellerini gösterir
+TypeError: localStorage.getItem is not a function
+ ❯ src/App.test.tsx:125:25
+    123|     fireEvent.change(screen.getByRole("combobox", { name: "Profil" }),…
+    124|     expect(screen.getByTestId("active-profile")).toHaveTextContent("ch…
+    125|     expect(localStorage.getItem("sva.profile")).toBe("L2");
+       |                         ^
+    126|   });
+    127| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  11:28:42
+   Duration  745ms (transform 43ms, setup 85ms, collect 40ms, tests 85ms, environment 230ms, prepare 89ms)
+
+==> init.sh çıkış kodu: 1 (evidence/init-20261023-112836.log)

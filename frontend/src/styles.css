@@ -34,3 +34,12 @@ body { margin: 0; }
 .components dd { margin: 2px 0 0; overflow-wrap: anywhere; }
 .warn { color: var(--err); margin: 10px 0 0; font-size: 13px; }
 @media (max-width: 640px) { .components { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; gap: 8px; } }
+.warmup { display: flex; align-items: center; gap: 8px; }
+.warmup button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.warmup button:disabled { opacity: 0.5; cursor: default; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip-ok { color: var(--ok); border-color: var(--ok); }
+.chip-cold { color: var(--err); border-color: var(--err); }
+.chip-busy { color: var(--accent); border-color: var(--accent); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--line); vertical-align: middle; }
+.dot-ok { background: var(--ok); }

@@ -6,7 +6,7 @@ export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
   return res.json();
 }
 
-export type ComponentStatus = { provider: string; model: string; missing_env?: string[] } | null;
+export type ComponentStatus = { provider: string; model: string; missing_env?: string[]; warm?: boolean } | null;
 
 export type ProfileStatus = {
   id: string;
@@ -19,6 +19,27 @@ export type ProfileStatus = {
   missing_env: string[];
   issues: string[];
   ready: boolean;
+  warm: boolean;
+  warmup: WarmupJob | null;
+};
+
+export type WarmupComponent = {
+  state: "pending" | "loading" | "measuring" | "ready" | "failed";
+  provider?: string;
+  model?: string;
+  load_seconds?: number;
+  warm_seconds?: number;
+  error?: string;
+  missing_env?: string[];
+};
+
+export type WarmupJob = {
+  profile: string;
+  state: "running" | "ready" | "failed";
+  seconds: number | null;
+  evicted: string[];
+  components: Record<string, WarmupComponent>;
+  error: string | null;
 };
 
 export async function fetchProfiles(signal?: AbortSignal): Promise<ProfileStatus[]> {
@@ -26,3 +47,16 @@ export async function fetchProfiles(signal?: AbortSignal): Promise<ProfileStatus
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+
+async function json<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail?.message ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export const startWarmup = (id: string, keepOthers = false) =>
+  fetch(`/api/profiles/${id}/warmup?keep_others=${keepOthers}`, { method: "POST" }).then((r) => json<WarmupJob>(r));
+
+export const getWarmup = (id: string) => fetch(`/api/profiles/${id}/warmup`).then((r) => json<WarmupJob>(r));

@@ -17,6 +17,28 @@ from .base import LLMResult, LLMProvider, ProviderError, STTProvider, STTResult,
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 
 
+def _keep_alive():
+    """Ollama'nın modeli bellekte tutma süresi. Varsayılan -1: ısınan model boşta kalınca atılmaz (ADR 0001)."""
+    raw = os.environ.get("OLLAMA_KEEP_ALIVE", "-1")
+    try:
+        return int(raw)
+    except ValueError:
+        return raw  # "30m" gibi süre ifadeleri
+
+
+def _free_accelerator_memory() -> None:
+    import gc
+
+    gc.collect()
+    try:
+        import torch
+
+        if torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+    except Exception:  # noqa: BLE001 — torch yoksa sorun değil
+        pass
+
+
 class MlxWhisperSTT(STTProvider):
     kind = "mlx_whisper"
     _lock = threading.Lock()  # mlx aynı anda tek çağrı
@@ -31,6 +53,20 @@ class MlxWhisperSTT(STTProvider):
                                          verbose=None, condition_on_previous_text=False)
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
+
+    def unload(self):
+        super().unload()
+        try:
+            import mlx.core as mx
+            from mlx_whisper.transcribe import ModelHolder
+
+            with self._lock:
+                if ModelHolder.model_path == self.model:
+                    ModelHolder.model = None
+                    ModelHolder.model_path = None
+                mx.clear_cache()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 class HfWhisperSTT(STTProvider):
@@ -61,9 +97,44 @@ class HfWhisperSTT(STTProvider):
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
 
+    def unload(self):
+        super().unload()
+        with self._lock:
+            self._pipe = None
+        _free_accelerator_memory()
+
 
 class OllamaLLM(LLMProvider):
     kind = "ollama"
+
+    @staticmethod
+    def loaded_models() -> set[str] | None:
+        """Ollama'da şu an bellekte olan modeller (/api/ps). Ulaşılamazsa None."""
+        import httpx
+
+        try:
+            models = httpx.get(f"{OLLAMA_URL}/api/ps", timeout=1.0).json().get("models", [])
+        except Exception:  # noqa: BLE001
+            return None
+        return {m.get("name") or m.get("model") for m in models}
+
+    @staticmethod
+    def unload_model(name: str) -> None:
+        import httpx
+
+        try:
+            httpx.post(f"{OLLAMA_URL}/api/generate", json={"model": name, "keep_alive": 0}, timeout=30)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def is_warm(self):
+        # Ollama ayrı bir süreç: backend yeniden başlasa da model bellekte kalmış olabilir, gerçeği /api/ps söyler.
+        loaded = self.loaded_models()
+        return bool(loaded and self.model in loaded)
+
+    def unload(self):
+        super().unload()
+        self.unload_model(self.model)
 
     def readiness_issues(self):
         import httpx
@@ -85,6 +156,7 @@ class OllamaLLM(LLMProvider):
             res = httpx.post(f"{OLLAMA_URL}/api/chat", timeout=120, json={
                 "model": self.model, "messages": messages, "stream": False,
                 "think": False,  # sesli ajanda düşünme gecikmesi kabul edilemez
+                "keep_alive": _keep_alive(),
                 "options": {"num_predict": max_tokens, "temperature": temperature},
             })
             res.raise_for_status()
@@ -116,6 +188,12 @@ class EmaTTS(TTSProvider):
         return TTSResult(audio=np.asarray(speech.audio, dtype=np.float32), sample_rate=24000,
                          seconds=time.perf_counter() - t0, provider=self.kind, model=self.model)
 
+    def unload(self):
+        super().unload()
+        with self._lock:
+            self._engine = None
+        _free_accelerator_memory()
+
 
 class ChatterboxTTS(TTSProvider):
     kind = "chatterbox"
@@ -139,3 +217,9 @@ class ChatterboxTTS(TTSProvider):
             audio = wav.squeeze().detach().cpu().numpy().astype(np.float32)
         return TTSResult(audio=audio, sample_rate=int(self._tts.sr), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
+
+    def unload(self):
+        super().unload()
+        with self._lock:
+            self._tts = None
+        _free_accelerator_memory()

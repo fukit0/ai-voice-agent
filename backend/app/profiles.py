@@ -51,10 +51,13 @@ class Profile:
                 m = missing_env(cls)
                 missing.update(m)
                 entry["missing_env"] = m
+                entry["warm"] = False
                 if check_local and not m:
                     from .providers import get_provider
 
-                    issues += [f"{name}: {i}" for i in get_provider(spec, name, self.id).readiness_issues()]
+                    provider = get_provider(spec, name, self.id)
+                    issues += [f"{name}: {i}" for i in provider.readiness_issues()]
+                    entry["warm"] = provider.is_warm()
             comps[name] = entry
         if self.realtime:
             # Realtime sağlayıcı core-003 kapsamında yok (lab-003); sadece anahtar kontrolü
@@ -70,7 +73,10 @@ class Profile:
                 "missing_env": sorted(missing), "issues": issues,
                 # hazır = anahtar eksik değil, bilinen sorun yok, üç bileşen de var (cascade)
                 "ready": (not missing and not issues and self.mode == "cascade"
-                          and not any(c is None for c in comps.values()))}
+                          and not any(c is None for c in comps.values())),
+                # sıcak = bileşenlerin hepsi yüklü ve ısınmış; ölçümler yalnızca sıcak profilde yapılır (ADR 0001)
+                "warm": (self.mode == "cascade" and any(comps.values())
+                         and all(c.get("warm") for c in comps.values() if c))}
 
 
 def load_profiles(path: Path | None = None) -> dict[str, Profile]:

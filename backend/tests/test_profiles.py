@@ -97,6 +97,20 @@ def fake_env(tmp_path, monkeypatch):
     registry._cache.clear()
 
 
+def warm(pid):
+    """Profili 'Hazırla' ile ısıtır ve bitmesini bekler (ADR 0001: ölçümler sıcak profilde)."""
+    import time
+
+    res = client.post(f"/api/profiles/{pid}/warmup", params={"keep_others": "true"})
+    assert res.status_code == 202, res.text
+    for _ in range(200):
+        job = client.get(f"/api/profiles/{pid}/warmup").json()
+        if job["state"] != "running":
+            return job
+        time.sleep(0.01)
+    raise AssertionError("warmup bitmedi")
+
+
 def calls(tmp_path):
     path = tmp_path / "logs" / "provider-calls.jsonl"
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
@@ -137,17 +151,20 @@ def test_realtime_profiles_report_their_own_key(monkeypatch):
 
 
 def test_switching_profile_routes_tts_to_its_provider_and_logs(fake_env):
+    warm("P1"), warm("P2")
     r1 = client.post("/api/profiles/P1/tts", json={"text": "Merhaba"})
     r2 = client.post("/api/profiles/P2/tts", json={"text": "Merhaba"})
     assert r1.status_code == r2.status_code == 200
     assert r1.headers["content-type"] == "audio/wav"
     assert (r1.headers["X-Provider"], r1.headers["X-Model"]) == ("fake_tts_a", "a")
     assert (r2.headers["X-Provider"], r2.headers["X-Model"]) == ("fake_tts_b", "b")
-    logged = [(c["profile"], c["component"], c["provider"], c["ok"]) for c in calls(fake_env)]
-    assert logged == [("P1", "tts", "fake_tts_a", True), ("P2", "tts", "fake_tts_b", True)]
+    logged = [(c["profile"], c["component"], c["provider"], c["ok"], c["warm"])
+              for c in calls(fake_env) if not c.get("warmup")]
+    assert logged == [("P1", "tts", "fake_tts_a", True, True), ("P2", "tts", "fake_tts_b", True, True)]
 
 
 def test_stt_upload_routed_to_profile_provider(fake_env):
+    warm("P2")
     wav = encode_wav(np.zeros(8000, dtype=np.float32), 8000)
     res = client.post("/api/profiles/P2/stt", files={"audio": ("a.wav", wav, "audio/wav")})
     assert res.status_code == 200, res.text
@@ -157,6 +174,7 @@ def test_stt_upload_routed_to_profile_provider(fake_env):
 
 
 def test_llm_routed(fake_env):
+    warm("P1")
     res = client.post("/api/profiles/P1/llm", json={"prompt": "Başkent?"})
     assert res.status_code == 200
     assert res.json()["text"] == "Ankara"
@@ -173,7 +191,9 @@ def test_missing_api_key_gives_clear_error(fake_env):
 
 def test_key_present_makes_profile_usable(fake_env, monkeypatch):
     monkeypatch.setenv("FAKE_TTS_API_KEY", "x")
-    assert client.post("/api/profiles/KEY/tts", json={"text": "Merhaba"}).status_code == 200
+    assert client.post("/api/profiles/KEY/tts", json={"text": "x"}).status_code == 409  # anahtar var ama soğuk
+    assert client.post("/api/profiles/KEY/tts", params={"allow_cold": "true"},
+                       json={"text": "Merhaba"}).status_code == 200
 
 
 def test_missing_component_and_realtime_profile(fake_env):
@@ -189,12 +209,13 @@ def test_unknown_profile_404(fake_env):
 
 
 def test_provider_failure_is_502_and_logged(fake_env):
-    res = client.post("/api/profiles/BROKEN/tts", json={"text": "x"})
+    res = client.post("/api/profiles/BROKEN/tts", params={"allow_cold": "true"}, json={"text": "x"})
     assert res.status_code == 502 and "patladı" in res.json()["detail"]["message"]
     assert calls(fake_env)[-1]["ok"] is False
 
 
 def test_provider_instances_are_cached(fake_env):
+    warm("P1")
     client.post("/api/profiles/P1/tts", json={"text": "a"})
     client.post("/api/profiles/P1/tts", json={"text": "b"})
     assert sum(1 for k in registry._cache if k[0] == "fake_tts_a") == 1

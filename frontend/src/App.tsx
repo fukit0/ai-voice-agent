@@ -2,6 +2,7 @@ import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { BackendStatus } from "./BackendStatus";
 import { ProfileProvider } from "./ProfileContext";
 import { ProfileSelector } from "./ProfileSelector";
+import { WarmupButton } from "./WarmupButton";
 import { ScreenPlaceholder } from "./pages/ScreenPlaceholder";
 import { SCREENS } from "./screens";
 
@@ -16,6 +17,7 @@ export function App() {
         <h1>Voice Agent Lab</h1>
         <div className="topbar-right">
           <ProfileSelector />
+          <WarmupButton />
           <BackendStatus />
         </div>
       </header>

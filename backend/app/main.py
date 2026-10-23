@@ -8,6 +8,7 @@ Tek süreç:   frontend/dist varsa aynı uygulama arayüzü de sunar (npm run bu
 """
 from __future__ import annotations
 
+import os
 import platform
 import time
 from pathlib import Path
@@ -40,6 +41,17 @@ def health() -> dict:
         "python": platform.python_version(),
         "uptime_seconds": round(time.time() - STARTED_AT, 1),
     }
+
+
+@app.get("/api/system")
+def system() -> dict:
+    """Bilgisayarın bellek bilgisi: hangi profillerin aynı anda sıcak tutulabileceğine karar vermek için."""
+    try:
+        total = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+    except (ValueError, OSError, AttributeError):
+        total = None
+    return {"platform": platform.platform(), "machine": platform.machine(),
+            "memory_gb": round(total / 1024**3, 1) if total else None}
 
 
 @app.get("/api/{path:path}", include_in_schema=False)
