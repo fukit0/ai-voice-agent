@@ -12,6 +12,8 @@ from .providers import PROVIDERS, missing_env
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPONENTS = ("stt", "llm", "tts")
+# Realtime (speech-to-speech) sağlayıcıların gerektirdiği anahtar
+REALTIME_ENV = {"openai_realtime": "OPENAI_API_KEY", "gemini_live": "GEMINI_API_KEY"}
 
 
 def profiles_path() -> Path:
@@ -56,8 +58,12 @@ class Profile:
             comps[name] = entry
         if self.realtime:
             # Realtime sağlayıcı core-003 kapsamında yok (lab-003); sadece anahtar kontrolü
-            if not os.environ.get("OPENAI_API_KEY"):
-                missing.add("OPENAI_API_KEY")
+            kind = self.realtime.get("provider")
+            key = REALTIME_ENV.get(kind)
+            if key is None:
+                issues.append(f"realtime: bilinmeyen sağlayıcı '{kind}'")
+            elif not os.environ.get(key):
+                missing.add(key)
             issues.append("Realtime profil: STT/LLM/TTS ayrı çağrılamaz; Playground'da (lab-003) desteklenecek")
         return {"id": self.id, "name": self.name, "purpose": self.purpose, "mode": self.mode,
                 "notes": self.notes, "components": comps, "realtime": self.realtime,

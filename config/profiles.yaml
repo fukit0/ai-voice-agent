@@ -55,3 +55,13 @@ profiles:
     stt: null
     llm: null
     tts: null
+
+  A3:
+    name: Realtime referansı (Gemini)
+    purpose: A2 ile aynı test setinde ikinci speech-to-speech seçeneği
+    mode: realtime
+    realtime: {provider: gemini_live, model: gemini-3.8-live}
+    stt: null
+    llm: null
+    tts: null
+    notes: Türkçe desteği Google dokümanında doğrulanamadı; kıyas matrisinde test edilecek.

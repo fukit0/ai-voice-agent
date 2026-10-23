@@ -104,11 +104,12 @@ def calls(tmp_path):
 
 def test_real_config_defines_plan_profiles():
     profiles = load_profiles()
-    assert list(profiles) == ["L1", "L2", "L3", "L4", "L5", "A1", "A2"]
+    assert list(profiles) == ["L1", "L2", "L3", "L4", "L5", "A1", "A2", "A3"]
     assert profiles["L1"].component("tts")["provider"] == "ema"
     assert profiles["L2"].component("llm")["model"] == "qwen3:30b-a3b-instruct-2507-q4_K_M"
     assert profiles["L5"].component("stt") is None
     assert profiles["A2"].mode == "realtime"
+    assert profiles["A3"].mode == "realtime" and profiles["A3"].realtime["provider"] == "gemini_live"
     for p in profiles.values():
         for comp in ("stt", "llm", "tts"):
             spec = p.component(comp)
@@ -125,6 +126,14 @@ def test_api_profile_status_lists_missing_keys(monkeypatch):
     assert a1["ready"] is False
     assert set(a1["missing_env"]) == {"DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY",
                                       "ELEVENLABS_VOICE_ID"}
+
+
+def test_realtime_profiles_report_their_own_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    res = {p["id"]: p for p in client.get("/api/profiles", params={"check": "false"}).json()}
+    assert res["A2"]["missing_env"] == ["OPENAI_API_KEY"]
+    assert res["A3"]["missing_env"] == ["GEMINI_API_KEY"]
 
 
 def test_switching_profile_routes_tts_to_its_provider_and_logs(fake_env):

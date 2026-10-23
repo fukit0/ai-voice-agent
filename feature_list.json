@@ -75,7 +75,7 @@
       "phase": "faz-0",
       "moscow": "must",
       "title": "STT / LLM / TTS sağlayıcı soyutlaması ve profiller",
-      "user_visible_behavior": "Kullanıcı Lab'de bir profil (L1–L5, A1, A2) seçer; aynı ekran o profilin modellerini kullanır.",
+      "user_visible_behavior": "Kullanıcı Lab'de bir profil (L1–L5, A1–A3) seçer; aynı ekran o profilin modellerini kullanır.",
       "status": "passing",
       "verification": [
         "Profiller config dosyasında tanımlıdır.",
@@ -87,7 +87,7 @@
         "evidence/core-003-mac-L2.jpg",
         "evidence/core-003-mac-A1.jpg"
       ],
-      "notes": "Lab ekranları ve ajan aynı soyutlamayı kullanır. 2026-10-23 tamamlandı: backend/app/providers/ (base, local: mlx_whisper/hf_whisper/ollama/ema/chatterbox, remote: deepgram/anthropic/elevenlabs, registry: önbellek + logs/provider-calls.jsonl), config/profiles.yaml, /api/profiles (+ /{id}/stt|llm|tts), arayüzde profil seçici. A2 realtime sağlayıcısı lab-003'e bırakıldı."
+      "notes": "Lab ekranları ve ajan aynı soyutlamayı kullanır. 2026-10-23 tamamlandı: backend/app/providers/ (base, local: mlx_whisper/hf_whisper/ollama/ema/chatterbox, remote: deepgram/anthropic/elevenlabs, registry: önbellek + logs/provider-calls.jsonl), config/profiles.yaml, /api/profiles (+ /{id}/stt|llm|tts), arayüzde profil seçici. A2 realtime sağlayıcısı lab-003'e bırakıldı. 2026-10-23: A3 (Gemini 3.8 Live, speech-to-speech, GEMINI_API_KEY) eklendi."
     },
     {
       "id": "lab-002",
@@ -197,7 +197,7 @@
         "Telefon filtresi açılıp kapatılabilir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "Realtime profiller A2 (OpenAI gpt-realtime-2.1-mini) ve A3 (Gemini 3.8 Live) burada desteklenecek."
     },
     {
       "id": "core-002",
@@ -349,7 +349,7 @@
       "user_visible_behavior": "Kriter, ağırlık ve profil bazında puanlar tek tabloda toplanır; production yığını seçilir.",
       "status": "not_started",
       "verification": [
-        "7 profilin tümü için matris satırları doludur.",
+        "8 profilin tümü (L1–L5, A1–A3) için matris satırları doludur.",
         "Ağırlıklı puan hesaplanır.",
         "Lisans eleme kriteri uygulanır.",
         "Seçilen yığın ve gerekçesi kayda geçer."
