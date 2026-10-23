@@ -302,3 +302,18 @@ def test_generation_logged_with_source(env):
     lines = [json.loads(x) for x in (env / "logs" / "provider-calls.jsonl").read_text().splitlines()]
     studio = [x for x in lines if x.get("source") == "tts-studio"]
     assert len(studio) == 2 and all(x["first_audio_seconds"] > 0 and x["rtf"] > 0 for x in studio)
+
+
+def test_interrupted_session_is_not_stuck_running(env):
+    """Backend üretim sırasında ölürse oturum 'running' kalmaz; tamamlanan klipler dinlenebilir."""
+    clip = {"id": "c001-Q", "sentence_idx": 0, "profile": "Q", "provider": "tts_quiet", "model": "mq", "status": "ok",
+            "first_audio_seconds": 0.1, "rtf": 0.1, "audio_seconds": 1.0}
+    from backend.app.providers.audio import encode_wav
+    stale = tts_studio.save_session({"id": "20260101-000000-abcdef", "language": "tr", "phone": False,
+                                     "sentences": ["a", "b"], "profiles": ["Q"], "clips": [clip], "done": 1,
+                                     "total": 2, "state": "running"}, {"c001-Q": encode_wav(tone(1.0, 0.3), RATE)})
+    got = client.get(f"/api/tts/sessions/{stale['id']}").json()
+    assert got["state"] == "interrupted" and "yarıda" in got["error"]
+    assert client.get(f"/api/tts/sessions/{stale['id']}").json()["state"] == "interrupted"  # kalıcı
+    assert client.post(f"/api/tts/sessions/{stale['id']}/listen", json={"listener": "Ayşe"}).status_code == 200
+    assert client.post("/api/tts/sessions", json={"sentences": ["a"], "profiles": ["Q"]}).status_code in (202, 409)

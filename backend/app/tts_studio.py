@@ -112,7 +112,7 @@ def list_sessions(limit: int = 50) -> list[dict]:
         s = get_session(folder.name)
         if s:
             ok = [c for c in s["clips"] if c["status"] == "ok"]
-            out.append({"id": s["id"], "created_at": s["created_at"], "sentences": len(s["sentences"]),
+            out.append({"id": s["id"], "created_at": s["created_at"], "state": s.get("state"), "sentences": len(s["sentences"]),
                         "models": sorted({c["profile"] for c in s["clips"]}), "clips": len(ok),
                         "phone": s.get("phone", False)})
     return out

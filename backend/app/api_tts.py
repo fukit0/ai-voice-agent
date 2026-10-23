@@ -20,6 +20,7 @@ from .providers.audio import encode_wav
 router = APIRouter(prefix="/api/tts", tags=["tts-studio"])
 MAX_SENTENCES, MAX_CHARS, MAX_MODELS = 30, 400, 8
 _busy = threading.Lock()
+_active: set[str] = set()  # bu süreçte üretimi süren oturumlar
 
 
 def _tts_models() -> dict[tuple, dict]:
@@ -55,6 +56,7 @@ class SessionRequest(BaseModel):
 
 def _generate(session: dict, pids: list[str]) -> None:
     """Her model × cümle için klip üretir; her kliple birlikte oturum dosyasını günceller."""
+    _active.add(session["id"])
     profiles = load_profiles(include_studio=True)
     pending: dict[str, bytes] = {}
     try:
@@ -106,6 +108,7 @@ def _generate(session: dict, pids: list[str]) -> None:
         session["state"], session["error"] = "failed", str(exc)
     finally:
         studio.save_session(session, pending)
+        _active.discard(session["id"])
         _busy.release()
 
 
@@ -144,6 +147,10 @@ def _session(session_id: str) -> dict:
     found = studio.get_session(session_id)
     if found is None:
         raise HTTPException(404, {"error": "unknown_session", "message": f"Oturum bulunamadı: {session_id}"})
+    if found.get("state") == "running" and found["id"] not in _active:
+        # Backend üretim sırasında durmuş / yeniden başlamış: yarım kalan oturum sonsuza dek "running" kalmasın.
+        found = studio.save_session({**found, "state": "interrupted", "error":
+                                     "Üretim yarıda kesildi (backend durdu veya yeniden başladı); tamamlanan klipler dinlenebilir."}, {})
     return found
 
 
