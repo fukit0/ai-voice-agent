@@ -44,3 +44,13 @@ soğuk bir modelle konuşmaz. Demo ve kıyas ölçümleri bu koşulu temsil etme
 - Ölçülen her gecikme sıcak koşulda alınır; production projeksiyonu bu değerleri kullanır.
 - Production'da her profilin modelleri ayrı sunucuda sürekli yüklü olacağı için bu kısıt yalnızca
   tek bilgisayarlı PoC'ye özgüdür.
+
+## Ölçüm sonrası ek (2026-10-23, Mac 36 GB)
+
+- L2 hazırlanırken Qwen3 30B (18 GB) ve Chatterbox birlikte bellekteyken Chatterbox'ın sıcak çağrısı
+  33–163 sn'ye, Qwen'in zaten sıcak çağrısı 52 sn'ye çıktı (tek başına: 0,4 sn). Neden: birleşik
+  bellekte GPU çalışma alanı aşılıyor, sistem swap'e ve sayfa geri yüklemeye düşüyor.
+- Bu yüzden Hazırla, tüm modeller yüklüyken son bir kontrol yapar; bu kontrolde yavaşlayan bileşen
+  `degraded` işaretlenir ve ölçümlere kapatılır.
+- Karar (kullanıcı onayı): L2/L3/L4'te canlı TTS EMA Lightning; Chatterbox yalnızca TTS stüdyosunda tek
+  başına yüklenerek kör dinleme testinde kullanılır. Production'da Chatterbox seçilirse ayrı GPU'da çalışır.

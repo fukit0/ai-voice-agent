@@ -16,22 +16,22 @@ profiles:
     purpose: Önerilen başlangıç yığını
     stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
     llm: {provider: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M"}
-    tts: {provider: chatterbox, language: tr}
-    notes: Chatterbox bu Mac'te gerçek zamandan ~6,5 kat yavaş (setup-001); canlı konuşma için değil, dinleme testi için.
+    tts: {provider: ema}
+    notes: "Canlıda EMA. Chatterbox, Qwen3 30B ile aynı anda bellekteyken (36 GB Mac) ikisini de bozuyor (ADR 0001); yalnızca TTS stüdyosunda tek başına, kör dinleme için kullanılır."
 
   L3:
     name: Doğruluk
     purpose: Türkçe ince ayarlı STT'nin katkısı
     stt: {provider: hf_whisper, model: BuzzASR/turkish}
     llm: {provider: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M"}
-    tts: {provider: chatterbox, language: tr}
+    tts: {provider: ema}
 
   L4:
     name: Alternatif LLM
     purpose: Fonksiyon çağrısı güvenilirliği
     stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
     llm: {provider: ollama, model: "gpt-oss:20b"}
-    tts: {provider: chatterbox, language: tr}
+    tts: {provider: ema}
 
   L5:
     name: Sesli LLM
