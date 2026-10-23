@@ -60,9 +60,11 @@
         "evidence/lab-000-mac-verification.json",
         "evidence/healthcheck-20261022-193554.json",
         "evidence/lab-000-verification.json",
-        "evidence/lab-000-e2e.png"
+        "evidence/lab-000-e2e.png",
+        "evidence/lab-000-mac-tts.jpg",
+        "evidence/lab-000-mac-matrix.jpg"
       ],
-      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac doğrulaması: ./init.sh (npm ci + pytest + vitest + hızlı model kontrolü) ve scripts/dev.sh 2026-10-22 19:35-19:37'de Mac'te koştu; bkz. lab-000-mac-verification.json. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil."
+      "notes": "Faz 2 panelinin iskeleti; F1.3 sağlayıcı soyutlaması bu backend'de yaşar. 2026-10-22 tamamlandı: backend/ (FastAPI, /api/health, build varsa SPA sunar), frontend/ (Vite + React + TS, 5 ekran src/screens.ts'ten), scripts/dev.sh, init.sh'ye npm ci + pytest + vitest eklendi. Doğrulama bulut çalışma alanında aynı kaynakla koştu; Mac doğrulaması: ./init.sh (npm ci + pytest + vitest + hızlı model kontrolü) ve scripts/dev.sh 2026-10-22 19:35-19:37'de Mac'te koştu; bkz. lab-000-mac-verification.json. Sağlayıcı soyutlaması (core-003) bu feature'a dahil değil. 2026-10-23: Mac'te çalışan Lab'e tarayıcıdan bağlanılarak 5 ekran ve /api/health doğrudan doğrulandı."
     },
     {
       "id": "core-003",
