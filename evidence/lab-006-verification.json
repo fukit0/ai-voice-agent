@@ -1,0 +1,57 @@
+{
+  "feature": "lab-006",
+  "checked_at": "2026-10-23T10:31:58Z",
+  "profile": "L2",
+  "profile_config": "mlx-whisper large-v3-turbo + qwen3:30b-a3b-instruct-2507-q4_K_M + EMA Lightning",
+  "hazirla": {
+    "seconds": 44.94,
+    "state": "ready",
+    "evicted": [],
+    "stt": {
+      "load_s": 2.02,
+      "warm_s": 0.757,
+      "final_s": 0.786
+    },
+    "llm": {
+      "load_s": 39.33,
+      "warm_s": 0.122,
+      "final_s": 0.106
+    },
+    "tts": {
+      "load_s": 1.59,
+      "warm_s": 0.063,
+      "final_s": 0.061
+    }
+  },
+  "cold_guard": {
+    "request": "POST /api/profiles/L1/llm",
+    "status": 409,
+    "error": "profile_not_warm"
+  },
+  "residency": {
+    "minutes_since_warm": 5.82,
+    "profile_warm": true,
+    "components_warm": {
+      "stt": true,
+      "llm": true,
+      "tts": true
+    },
+    "ollama_loaded": "qwen3:30b-a3b-instruct-2507-q4_K_M 21.8 GB, expires_at 2319 (keep_alive=-1)",
+    "llm_load_seconds": 0
+  },
+  "latency": {
+    "warm_llm_before_s": 0.405,
+    "first_llm_after_5min_idle_s": 2.804,
+    "next_calls_s": [
+      0.3,
+      0.245,
+      0.228,
+      0.225
+    ]
+  },
+  "memory": {
+    "swap_used_gb": 16.59,
+    "note": "Mac'te baska uygulamalar da bellek tutuyor; swap kalici yuksek"
+  },
+  "known_limitation": "Bosta kaldiktan sonraki ilk LLM cagrisi 2.8 sn (model yuklu ama OS sayfalari geri yukluyor). Cozum adayi: periyodik keep-warm ping (ayri is)."
+}

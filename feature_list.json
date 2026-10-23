@@ -98,7 +98,7 @@
       "moscow": "must",
       "title": "Profil hazırlama (Hazırla / preload) ve sıcak ölçüm zorunluluğu",
       "user_visible_behavior": "Kullanıcı profil seçip 'Hazırla'ya basar; profilin modelleri yüklenip ısıtılır, sıcak çağrı süreleri görünür. Profil sıcak olmadan test/ölçüm çağrıları reddedilir; demo sırasında hiçbir test ilk yükleme beklemez.",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "Soğuk profilde STT/LLM/TTS çağrısı 409 profile_not_warm döner ve arayüz 'Soğuk' uyarısı gösterir.",
         "Hazırla sonrası profil 'Sıcak' olur; bileşen başına ilk yükleme ve sıcak çağrı süreleri görünür.",
@@ -106,7 +106,10 @@
         "Profil değişiminde hedef profilde kullanılmayan modeller bellekten çıkarılır, paylaşılanlar kalır.",
         "scripts/demo.sh backend'i --reload olmadan çalıştırır."
       ],
-      "evidence": [],
+      "evidence": [
+        "evidence/lab-006-verification.json",
+        "docs/adr/0001-model-preload.md"
+      ],
       "notes": "Kullanıcı talebi 2026-10-23: demoda ilk yükleme bahanesi kabul edilemez. Karar: docs/adr/0001-model-preload.md."
     },
     {
