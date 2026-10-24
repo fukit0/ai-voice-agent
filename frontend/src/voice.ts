@@ -7,6 +7,12 @@ export type VoiceEvent =
   | { type: "turn"; turn: number; stt_s?: number; llm_s?: number; tts_first_s?: number; first_audio_after_end_s?: number;
       endpoint_wait_ms?: number; user_seconds?: number; greeting?: boolean }
   | { type: "barge_in" }
+  | { type: "node"; key: string; code: string | null; title: string; kind: string; group: string; spoken: string; terminal: boolean }
+  | { type: "understood"; step: string; intent: string; value: unknown; llm_s: number | null; valid: boolean }
+  | { type: "answer"; step: string; code: string | null; title: string; kind: string; value: unknown; utterance: string; unanswered: boolean }
+  | { type: "outcome"; outcome: string | null; label: string }
+  | { type: "finished"; outcome: string | null }
+  | { type: "phone_filter"; on: boolean }
   | { type: "error"; message: string };
 
 export type VoiceHooks = {
@@ -14,7 +20,8 @@ export type VoiceHooks = {
   onLevels?: (mic: number, agent: number) => void; // 0..1
 };
 
-export type VoiceHandle = { sessionId: string; close: () => Promise<void> };
+export type VoiceOptions = { scenario?: string; phoneFilter?: boolean; values?: Record<string, string> };
+export type VoiceHandle = { sessionId: string; close: () => Promise<void>; setPhoneFilter: (on: boolean) => void };
 
 const MIC_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1,
@@ -37,7 +44,7 @@ function rms(analyser: AnalyserNode, buf: Float32Array): number {
   return Math.sqrt(sum / buf.length);
 }
 
-export async function startVoice(profile: string, hooks: VoiceHooks): Promise<VoiceHandle> {
+export async function startVoice(profile: string, hooks: VoiceHooks, options: VoiceOptions = {}): Promise<VoiceHandle> {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error("Bu tarayıcı mikrofon erişimini desteklemiyor (HTTPS veya localhost gerekir).");
   let stream: MediaStream;
   try {
@@ -89,7 +96,10 @@ export async function startVoice(profile: string, hooks: VoiceHooks): Promise<Vo
     await waitIce(pc);
     const res = await fetch("/api/voice/offer", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sdp: pc.localDescription!.sdp, type: pc.localDescription!.type, profile }),
+      body: JSON.stringify({
+        sdp: pc.localDescription!.sdp, type: pc.localDescription!.type, profile,
+        scenario: options.scenario || null, phone_filter: !!options.phoneFilter, values: options.values ?? null,
+      }),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => null);
@@ -105,6 +115,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks): Promise<Vo
     };
     return {
       sessionId: answer.session_id,
+      setPhoneFilter: (on: boolean) => { if (channel.readyState === "open") channel.send(JSON.stringify({ type: "phone_filter", on })); },
       close: async () => {
         await fetch(`/api/voice/${answer.session_id}`, { method: "DELETE" }).catch(() => {});
         await cleanup();

@@ -22,6 +22,9 @@ class OfferRequest(BaseModel):
     sdp: str
     type: str = "offer"
     profile: str
+    scenario: str | None = None          # verilirse konuşmayı senaryo akışı yönetir (lab-003)
+    phone_filter: bool = False           # dar bant telefon sesi (300-3400 Hz)
+    values: dict[str, str] | None = None  # müşteri değerleri: HITAP, MT_HITAP, GORUSME_TARIHI...
 
 
 @router.post("/offer")
@@ -47,7 +50,15 @@ async def offer(req: OfferRequest) -> dict:
         CONNECTIONS.pop(sid, None)
     if len(CONNECTIONS) >= MAX_SESSIONS:
         raise HTTPException(429, {"error": "too_many_sessions", "message": f"En fazla {MAX_SESSIONS} açık oturum."})
-    conn = RtcVoiceConnection(req.profile, stt, llm, tts)
+    flow = None
+    if req.scenario:
+        from . import scenario as S
+        from .voice.flow import FlowDriver
+        try:
+            flow = FlowDriver(S.get(req.scenario), llm, req.values)
+        except KeyError:
+            raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
+    conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter)
     CONNECTIONS[conn.sid] = conn
     try:
         answer = await conn.accept(req.sdp, req.type)
@@ -56,6 +67,19 @@ async def offer(req: OfferRequest) -> dict:
         CONNECTIONS.pop(conn.sid, None)
         raise HTTPException(400, {"error": "bad_offer", "message": f"SDP teklifi işlenemedi: {exc}"}) from exc
     return {"session_id": conn.sid, "sdp": answer.sdp, "type": answer.type}
+
+
+class PhoneBody(BaseModel):
+    on: bool
+
+
+@router.post("/{sid}/phone-filter")
+async def phone_filter(sid: str, body: PhoneBody) -> dict:
+    conn = CONNECTIONS.get(sid)
+    if conn is None:
+        raise HTTPException(404, {"error": "unknown_session", "message": f"Oturum bulunamadı: {sid}"})
+    conn.session.set_phone_filter(body.on)
+    return {"phone_filter": body.on}
 
 
 @router.get("/sessions")

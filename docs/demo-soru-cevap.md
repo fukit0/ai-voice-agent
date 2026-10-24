@@ -45,3 +45,10 @@ Demoda gelebilecek sorular ve dürüst, kısa cevaplar. Her cevapta "bugün çal
 - Senaryolar ekranında müşterinin örnek anketi (33 adım) birebir yüklü: adımlar gruplu, her adımın okunacak metni düzenlenir, yer tutucular ({HITAP}, {Q2}…) eklenir, "Asistan böyle okuyacak" satırı sayı ve tarihleri Türkçe okunuşa çevirerek gösterir; "Orijinal metne dön" ile geri alınır.
 - Sınır (bilerek): **akış (hangi cevapta nereye gidileceği) şimdilik düzenlenemez**, yalnızca görüntülenir; referans demo da böyle. Akış editörü Faz 2'dedir. Demoda "kodsuz akış kurulur" demeyin, "kodsuz metin düzenlenir, akış sabit" deyin.
 - Senaryo şu an referans firmanın örnek senaryosunun kopyasıdır; Sahibinden'in onaylı metinleri değildir. Welcome Call senaryosu henüz alınmadı.
+
+## S5. "Ajan anketi gerçekten kendisi mi yürütüyor? Cevabı nasıl anlıyor?"
+- Playground'da senaryoyu seçip konuşursunuz; sağda **aktif düğüm** (hangi soruda olduğu) ve **çıkarılan cevaplar** (Q2 = 8, "sekiz veririm") canlı görünür; altta her turun STT / LLM / TTS gecikmesi.
+- Akışı bir motor yönetir (hangi cevapta nereye gidileceği JSON'da sabit); LLM sadece müşterinin cümlesinden cevabı çıkarır. Bu yüzden aynı cevap her zaman aynı dala gider ve test edilebilir. LLM cevabı tip kontrolünden geçmezse "anlaşılamadı" sayılır.
+- Anlaşılmazsa en fazla iki kez farklı biçimde tekrar sorar; hâlâ olmazsa puan sorularında "cevap yok" diye geçer, evet/hayır sorusunda nazikçe kapatır. "Tekrar eder misiniz" hakkı harcamaz. "Beni aramayın" ve ret doğrudan ilgili kapanışa gider.
+- **Telefon filtresi:** sesi 300–3400 Hz'e kısıtlar (müşterinin telefondan duyacağı/göndereceği kalite). Bu bir yaklaşıktır: gerçek operatör codec'i ve paket kaybı yoktur; "telefonda test ettik" demeyin, "telefon bandında test ettik" deyin.
+- Bilmeniz gereken sınırlar: gerçek mikrofon + gerçek modellerle uçtan uca anket tamamlama henüz bizim tarafımızdan ölçülmedi; sessiz hat kapanışı ve OpenAI/Gemini realtime profiller Playground'da yok; Welcome Call senaryosu alınmadı.

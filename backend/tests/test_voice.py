@@ -389,3 +389,62 @@ def test_offer_without_aiortc_returns_503_and_backend_still_imports(env, monkeyp
     r = client.post("/api/voice/offer", json={"sdp": "v=0", "type": "offer", "profile": "V1"})
     assert r.status_code == 503 and r.json()["detail"]["error"] == "voice_deps_missing"
     assert "pip install aiortc" in r.json()["detail"]["message"]
+
+
+def test_webrtc_scenario_flow_reads_question_extracts_answer_and_toggles_phone_filter(env):
+    warm("V1")
+    app_client = TestClient(app).__enter__()
+
+    async def main():
+        pc = RTCPeerConnection()
+        events = []
+        channel = pc.createDataChannel("events")
+        channel.on("message", lambda m: events.append(json.loads(m)))
+        pc.addTrack(MicTrack())
+
+        @pc.on("track")
+        def on_track(track):
+            async def drain():
+                try:
+                    while True:
+                        await track.recv()
+                except Exception:
+                    pass
+            asyncio.ensure_future(drain())
+
+        await pc.setLocalDescription(await pc.createOffer())
+        res = await asyncio.to_thread(app_client.post, "/api/voice/offer", json={
+            "sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "profile": "V1",
+            "scenario": "anket", "phone_filter": True, "values": {"ASISTAN": "Zeynep"}})
+        assert res.status_code == 200, res.text
+        body = res.json()
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=body["sdp"], type=body["type"]))
+        for _ in range(300):
+            await asyncio.sleep(0.05)
+            if any(e["type"] == "answer" for e in events) and any(e["type"] == "turn" and "stt_s" in e for e in events):
+                break
+        toggled = await asyncio.to_thread(app_client.post, f"/api/voice/{body['session_id']}/phone-filter", json={"on": False})
+        await asyncio.sleep(0.2)
+        bad = await asyncio.to_thread(app_client.post, "/api/voice/offer", json={
+            "sdp": "v=0", "type": "offer", "profile": "V1", "scenario": "yok"})
+        closed = await asyncio.to_thread(app_client.delete, f"/api/voice/{body['session_id']}")
+        await pc.close()
+        return events, toggled, bad, closed
+
+    try:
+        events, toggled, bad, closed = asyncio.run(main())
+    finally:
+        app_client.__exit__(None, None, None)
+    nodes = [e["key"] for e in events if e["type"] == "node"]
+    assert nodes[:3] == ["giris", "kvkk_metni", "musaitlik"], events    # selam sorusu; "dinle" -> KVKK anonsu -> sıradaki soru
+    first = next(e for e in events if e["type"] == "node")
+    assert "benim adım Zeynep" in first["spoken"]                       # müşteri değerleri yer tutucuya girdi
+    answer = next(e for e in events if e["type"] == "answer")
+    assert answer["step"] == "giris" and answer["value"] == "dinle" and "ses geldi" in answer["utterance"]
+    assert any(e["type"] == "understood" and e["valid"] for e in events)
+    assert toggled.status_code == 200 and {"type": "phone_filter", "on": False} in events
+    assert bad.status_code == 404 and bad.json()["detail"]["error"] == "unknown_scenario"
+    assert closed.status_code == 200
+    saved = json.loads(next((env / "data" / "voice-sessions").glob("*.json")).read_text(encoding="utf-8"))
+    assert saved["flow"]["scenario"] == "anket" and saved["flow"]["answers"][0]["value"] == "dinle"
+    assert saved["flow"]["path"][:3] == ["giris", "kvkk_metni", "musaitlik"]

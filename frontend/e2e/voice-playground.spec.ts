@@ -15,6 +15,7 @@ test("Başlat → bağlanır, ajan selamlar, sahte mikrofon konuşması ajana ul
   await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
   await page.reload();
 
+  await page.getByLabel("Senaryo").selectOption("");   // bu test serbest sohbet; senaryo modu aşağıda
   await page.getByRole("button", { name: "Başlat" }).click();
   await expect(page.getByRole("button", { name: "Durdur" })).toBeVisible({ timeout: 15_000 });
 
@@ -23,7 +24,8 @@ test("Başlat → bağlanır, ajan selamlar, sahte mikrofon konuşması ajana ul
   // sahte mikrofon konuşması → STT metni → ajan cevabı
   await expect(page.getByTestId("voice-lines")).toContainText("Siz: ses geldi", { timeout: 30_000 });
   await expect(page.getByTestId("voice-lines")).toContainText("Anladım", { timeout: 30_000 });
-  await expect(page.getByTestId("voice-latency")).toContainText("ilk sese", { timeout: 30_000 });
+  await expect(page.getByTestId("voice-latency")).toContainText("açılış", { timeout: 30_000 });
+  await expect(page.getByTestId("voice-latency").getByRole("row")).toHaveCount(3, { timeout: 30_000 }); // başlık + açılış + 1 tur
 
   // ajanın sesi gerçekten alındı (WebRTC uzak iz üzerinde enerji ölçüldü)
   await expect.poll(() => page.evaluate(() => (window as unknown as { __voiceStats: { remoteSamples: number } }).__voiceStats.remoteSamples),
@@ -35,5 +37,29 @@ test("Başlat → bağlanır, ajan selamlar, sahte mikrofon konuşması ajana ul
 
   await page.getByRole("button", { name: "Durdur" }).click();
   await expect(page.getByRole("button", { name: "Başlat" })).toBeVisible();
+  await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
+});
+
+// lab-003: senaryo + telefon filtresi. Sahte LLM değer kuralına göre cevap verir: 'giris' -> dinle (KVKK anonsu),
+// ardından 'musaitlik' sorusu. Sahte mikrofon tek konuşma yapar, yani tek cevap doğrulanır.
+test("Senaryo modu: aktif düğüm ilerler, çıkarılan cevap listelenir, telefon filtresi konuşma sırasında kapatılır", async ({ page, request }) => {
+  await request.post("/api/profiles/V1/warmup?keep_others=true");
+  await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
+  await page.goto("/playground");
+  await expect(page.getByLabel("Senaryo")).toHaveValue("anket");
+  await page.getByRole("checkbox", { name: /Telefon filtresi/ }).check();
+  await page.getByRole("button", { name: "Başlat" }).click();
+  await expect(page.getByRole("button", { name: "Durdur" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("active-node")).toContainText("Giriş ve KVKK aydınlatma", { timeout: 15_000 });
+  await expect(page.getByTestId("voice-lines")).toContainText("benim adım Elif", { timeout: 15_000 });
+
+  await expect(page.getByTestId("voice-answers")).toContainText("dinle", { timeout: 30_000 });
+  await expect(page.getByTestId("active-node")).toContainText("Müsaitlik", { timeout: 30_000 });
+  const sessions = await (await request.get("/api/voice/sessions")).json();
+  expect(sessions[0].stats.utterances).toBeGreaterThanOrEqual(1);
+  await page.screenshot({ path: "e2e-artifacts/lab-003-playground.png", fullPage: true });
+
+  await page.getByRole("checkbox", { name: /Telefon filtresi/ }).uncheck();   // konuşma sürerken
+  await page.getByRole("button", { name: "Durdur" }).click();
   await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
 });

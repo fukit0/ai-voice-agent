@@ -24,8 +24,28 @@ class FakeLLM(LLMProvider):
     kind = "fake_llm"
 
     def complete(self, messages, max_tokens=256, temperature=0.3):
+        system = next((m["content"] for m in messages if m["role"] == "system"), "")
+        if "cevap ayrıştırıcısısın" in system:  # senaryo akışı: değer kuralına göre deterministik cevap
+            return LLMResult(self._extract(system, messages[-1]["content"]), 0.01, self.kind, self.model)
         last = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         return LLMResult(f"Anladım, {last} dediniz. Devam edelim mi?", 0.01, self.kind, self.model)
+
+
+    @staticmethod
+    def _extract(system: str, user: str) -> str:
+        import json
+        rule = system.split("value kuralı:", 1)[1].split("\n", 1)[0]
+        if "true (evet)" in rule:
+            value = "katıldınız mı" not in user.lower()      # elemeyi geçen müşteri: Q3 hayır, diğerleri evet
+        elif "arası tam sayı" in rule:
+            value = 8
+        elif "seçenek anahtarlarından" in rule:
+            value = rule.split(":", 1)[1].split(",")[0].strip().rstrip(".")
+        elif "saniye" in rule:
+            value = 30
+        else:
+            value = "yarın saat on beşte"
+        return json.dumps({"intent": "answer", "value": value}, ensure_ascii=False)
 
 
 class FakeTTS(TTSProvider):

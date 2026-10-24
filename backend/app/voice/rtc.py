@@ -90,13 +90,14 @@ class AgentAudioTrack(MediaStreamTrack):
 
 
 class RtcVoiceConnection:
-    def __init__(self, profile_id: str, stt, llm, tts):
+    def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False):
         self.sid = uuid.uuid4().hex[:12]
         self.pc = RTCPeerConnection()
         self.track = AgentAudioTrack()
         self.channel = None
         self._pending_events: list[dict] = []
-        self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send)
+        self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send, flow=flow,
+                                    phone_filter=phone_filter)
         self._reader: asyncio.Task | None = None
         self.closed = False
         self.pc.addTrack(self.track)
@@ -104,6 +105,16 @@ class RtcVoiceConnection:
         @self.pc.on("datachannel")
         def on_channel(channel):
             self.channel = channel
+
+            @channel.on("message")
+            def on_message(message):  # tarayıcıdan komutlar: {"type": "phone_filter", "on": true}
+                try:
+                    cmd = json.loads(message)
+                except (TypeError, ValueError):
+                    return
+                if isinstance(cmd, dict) and cmd.get("type") == "phone_filter":
+                    self.session.set_phone_filter(bool(cmd.get("on")))
+
             for event in self._pending_events:
                 channel.send(json.dumps(event, ensure_ascii=False))
             self._pending_events.clear()

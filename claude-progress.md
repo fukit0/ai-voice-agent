@@ -18,8 +18,8 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001 (9 / 50)
-- Current highest-priority unfinished feature: lab-003 (in_progress: Senaryolar ekranı tamam; Playground akış entegrasyonu kaldı)
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003 (10 / 50)
+- Current highest-priority unfinished feature: core-002 (söz sırası tespiti ve söz kesme; barge-in kısmen var) / core-004 (anket yürütme; FlowDriver ile büyük ölçüde var, gerçek model ölçümü eksik)
 - Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
 
 ## Session Log
@@ -128,3 +128,10 @@ agents do not update it automatically.
 - Karar: akış (dallar) sabit, yalnız metin düzenlenir (referansla aynı); metin düzenlemeleri data/scenario-overrides/. Genel çıkışlar (ret, aranma yasağı, sessiz hat) dal tablosunda görünmez, motorda GLOBAL_EXITS.
 - Hata ayıklama: e2e'nin gerçek data/ klasörüne düzenleme yazması (test sızıntısı) -> lab sunucusu artık SVA_DATA_DIR=/tmp/sva-lab-e2e ile açılıyor.
 - Açık: Playground'un senaryoyu akış motoruyla yürütmesi (aktif düğüm, çıkarılan cevaplar, telefon filtresi), Welcome Call senaryosu (referans API yanıtı kesildi), realtime profiller. Passing DEĞİL.
+
+### Session 008 sonu (lab-003 passing)
+- Playground senaryo modu: oturum FlowDriver ile yürür (backend/app/voice/flow.py, ADR 0003). Olaylar: node (aktif düğüm), understood, answer, outcome, finished, phone_filter. API: /api/voice/offer {scenario, phone_filter, values}, POST /api/voice/{id}/phone-filter, datachannel komutu {type:'phone_filter'}. Telefon filtresi: voice/phone.py (bant sınırı, müşteri ve ajan sesi).
+- Hata bulundu/düzeltildi: açık uçlu cevaplar doğrulamadan geçemiyordu (check_value OpenText eksikti) — test yakaladı. Fake LLM değer kuralına göre cevap veriyor (SVA_FAKE_PROVIDERS).
+- Doğrulama (bulut): pytest 232, vitest 37, build, Playwright 7; kanıt evidence/lab-003-scenarios.png, lab-003-playground.png.
+- Doğrulanmamış: gerçek mikrofon + gerçek modellerle anket tamamlama, STT gürültüsünde cevap çıkarma, sessiz hat, realtime profiller (A2/A3), Welcome Call senaryosu.
+- Kullanıcı eylemi (Mac): backend yeniden başlat, Hazırla L2, /playground'da senaryo seçili Başlat; kulaklık kullan. Tamamlanan anketin cevapları data/voice-sessions/*.json içinde (flow.answers, flow.path).

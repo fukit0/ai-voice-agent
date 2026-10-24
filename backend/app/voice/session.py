@@ -20,6 +20,7 @@ import numpy as np
 from .. import stt_runs, trnorm
 from ..providers import record_call
 from ..providers.audio import resample
+from . import phone
 from .vad import FRAME, SAMPLE_RATE, Endpointer
 
 OUT_RATE = 48000
@@ -50,12 +51,16 @@ def to_int16(audio: np.ndarray) -> np.ndarray:
 
 class VoiceSession:
     def __init__(self, sid: str, profile_id: str, stt, llm, tts, out, send_event: Callable[[dict], None],
-                 endpointer: Endpointer | None = None, persona: str = PERSONA, greeting: str = GREETING):
+                 endpointer: Endpointer | None = None, persona: str = PERSONA, greeting: str = GREETING,
+                 flow=None, phone_filter: bool = False):
         self.sid, self.profile_id = sid, profile_id
         self.stt, self.llm, self.tts, self.out = stt, llm, tts, out
         self.emit = send_event
         self.vad = endpointer or Endpointer()
         self.greeting = greeting
+        self.flow = flow  # FlowDriver: verilirse konuşmayı senaryo akışı yönetir (aksi halde serbest persona)
+        self.phone_filter = phone_filter
+        self._in_filter = phone.PhoneFilter(SAMPLE_RATE)
         self.history: list[dict] = [{"role": "system", "content": persona}]
         self.state = "idle"
         self.started_at = datetime.now(timezone.utc)
@@ -85,13 +90,32 @@ class VoiceSession:
     # ---- giriş ----------------------------------------------------------------------------------
     async def start(self) -> None:
         self._set_state("listening")
+        if self.flow is not None:
+            reply = self.flow.start()
+            self._emit_reply(reply)
+            self._spawn(self._speak_turn(" ".join(reply.utterances), turn=self._next_turn(), t_end=time.perf_counter(),
+                                         reply=reply))
+            return
         self._spawn(self._speak_turn(self.greeting, turn=self._next_turn(), t_end=time.perf_counter(), role_text=True))
+
+    def set_phone_filter(self, on: bool) -> None:
+        if on != self.phone_filter:
+            self.phone_filter = on
+            self._in_filter.reset()
+        self.emit({"type": "phone_filter", "on": self.phone_filter})
+
+    def _emit_reply(self, reply) -> None:
+        for event in reply.events:
+            self.emit(event)
 
     def feed(self, samples: np.ndarray) -> None:
         """16 kHz mono float32 örnekler (rastgele uzunlukta parçalar)."""
         if self._closed or self.state == "idle":
             return
-        self._buf = np.concatenate([self._buf, samples.astype(np.float32, copy=False)])
+        samples = samples.astype(np.float32, copy=False)
+        if self.phone_filter:
+            samples = self._in_filter.process(samples)
+        self._buf = np.concatenate([self._buf, samples])
         while len(self._buf) >= FRAME:
             frame, self._buf = self._buf[:FRAME], self._buf[FRAME:]
             self._on_frame(frame)
@@ -154,6 +178,9 @@ class VoiceSession:
                 self._set_state("listening")
                 return
             self._say("user", text)
+            if self.flow is not None:
+                await self._flow_turn(text, turn, t_end, rec)
+                return
             self.history.append({"role": "user", "content": text})
             t1 = time.perf_counter()
             llm_res = await asyncio.to_thread(self.llm.complete, self.history[:1] + self.history[1:][-12:], 120, 0.3)
@@ -173,7 +200,21 @@ class VoiceSession:
             if turn == self._turn_id:
                 self._set_state("listening")
 
-    async def _speak_turn(self, text: str, turn: int, t_end: float, rec: dict | None = None, role_text: bool = False) -> None:
+    async def _flow_turn(self, text: str, turn: int, t_end: float, rec: dict) -> None:
+        reply = await asyncio.to_thread(self.flow.handle, text)
+        if reply.llm_s is not None:
+            rec["llm_s"] = reply.llm_s
+            record_call(self.profile_id, "llm", self.llm, reply.llm_s, ok=True, warm=True, chars=len(text), source="voice")
+        if turn != self._turn_id:
+            return
+        self._emit_reply(reply)
+        if not reply.utterances:
+            self._set_state("listening")
+            return
+        await self._speak_turn(" ".join(reply.utterances), turn, t_end, rec=rec, reply=reply)
+
+    async def _speak_turn(self, text: str, turn: int, t_end: float, rec: dict | None = None, role_text: bool = False,
+                          reply=None) -> None:
         rec = rec if rec is not None else {"turn": turn, "greeting": True}
         if role_text:
             self.history.append({"role": "assistant", "content": text})
@@ -191,7 +232,8 @@ class VoiceSession:
                 record_call(self.profile_id, "tts", self.tts, dt, ok=True, warm=True, chars=len(spoken), source="voice")
                 if turn != self._turn_id:
                     return
-                pcm = to_int16(resample(res.audio, res.sample_rate, OUT_RATE))
+                audio = phone.apply(res.audio, res.sample_rate) if self.phone_filter else res.audio
+                pcm = to_int16(resample(audio, res.sample_rate, OUT_RATE))
                 if first_audio is None:
                     first_audio = time.perf_counter() - t_end
                     rec["tts_first_s"] = round(dt, 3)
@@ -208,6 +250,8 @@ class VoiceSession:
         rec["tts_total_s"] = round(tts_total, 3)
         self.turns.append(rec)
         self.emit({"type": "turn", **rec})
+        if self.flow is not None and self.flow.finished and turn == self._turn_id:
+            self.emit({"type": "finished", "outcome": self.flow.outcome})
 
     def _say(self, role: str, text: str) -> None:
         item = {"role": role, "text": text, "t": round((datetime.now(timezone.utc) - self.started_at).total_seconds(), 2)}
@@ -229,6 +273,9 @@ class VoiceSession:
         path = folder / f"{self.sid}.json"
         path.write_text(json.dumps({
             "id": self.sid, "profile": self.profile_id, "started_at": self.started_at.isoformat(timespec="seconds"),
-            "stats": self.stats, "turns": self.turns, "transcript": self.transcript}, ensure_ascii=False, indent=2),
+            "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
+            "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
+                                                    "path": self.flow.path, "answers": self.flow.answers},
+            "phone_filter": self.phone_filter}, ensure_ascii=False, indent=2),
             encoding="utf-8")
         return path
