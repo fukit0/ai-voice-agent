@@ -18,7 +18,7 @@ def test_acceptance_sentence_from_feature_list():
     # norm-007 doğrulama maddesi: '1.250.000 TL', '22.10.2026', '0532 123 45 67'
     out = normalize("Fiyat 1.250.000 TL, ilan 22.10.2026 tarihinde yayınlandı, 0532 123 45 67 numarasını arayın.")
     assert out == ("Fiyat bir milyon iki yüz elli bin lira, ilan yirmi iki Ekim iki bin yirmi altı tarihinde "
-                   "yayınlandı, sıfır beş üç iki, bir iki üç, dört beş, altı yedi numarasını arayın.")
+                   "yayınlandı, sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi numarasını arayın.")
 
 
 @pytest.mark.parametrize("text,expected", [
@@ -42,12 +42,13 @@ def test_money(text, expected):
 
 
 @pytest.mark.parametrize("text,expected", [
-    ("0532 123 45 67", "sıfır beş üç iki, bir iki üç, dört beş, altı yedi"),
-    ("05321234567", "sıfır beş üç iki, bir iki üç, dört beş, altı yedi"),
-    ("532 123 45 67", "beş üç iki, bir iki üç, dört beş, altı yedi"),
-    ("+90 532 123 45 67", "artı dokuz sıfır, beş üç iki, bir iki üç, dört beş, altı yedi"),
-    ("(0212) 555 12 34", "sıfır iki bir iki, beş beş beş, bir iki, üç dört"),
-    ("0532-123-45-67'yi", "sıfır beş üç iki, bir iki üç, dört beş, altı yediyi"),
+    ("0532 123 45 67", "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi"),
+    ("05321234567", "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi"),
+    ("532 123 45 67", "beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi"),
+    ("+90 532 123 45 67", "artı doksan, beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi"),
+    ("(0212) 555 12 34", "sıfır iki yüz on iki, beş yüz elli beş, on iki, otuz dört"),
+    ("0532 105 05 07", "sıfır beş yüz otuz iki, yüz beş, sıfır beş, sıfır yedi"),  # grup içi baştaki sıfır korunur
+    ("0532-123-45-67'yi", "sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yediyi"),
 ])
 def test_phone(text, expected):
     assert normalize(text) == expected

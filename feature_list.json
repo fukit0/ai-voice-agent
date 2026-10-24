@@ -152,7 +152,7 @@
         "evidence/norm-007-verification.json",
         "evidence/norm-007-preview.png"
       ],
-      "notes": "2026-10-24 doğrulandı: backend/app/trnorm.py (bağımlılıksız, kurala dayalı): sayı, para (TL/₺/$/€, kuruş, 'milyon TL'), tarih (22.10.2026, 2026-10-23), saat, telefon (rakam rakam), yüzde, 3+1, m²/km/kg, sıra sayısı, ek uyumu (TL'ye -> liraya). Bulutta pytest 144 (65+ normalizasyon testi), vitest 24, Playwright e2e: stüdyo önizlemesi gerçek backend+SPA ile. Mac'te modül gerçek dosyalarla çalıştırıldı; Mac tarayıcısında stüdyo önizlemesi ve normalize metnin gerçek TTS ile dinlenerek doğrulanması yapılmadı (backend kapalıydı). Bilinen sınırlar: '3.5' noktalı ondalık çevrilmez, yazıyla sayılar çevrilmez, genel ek üretimi scn-008. POST /api/tts/normalize; oturum alanları normalize_text / text_normalized / spoken."
+      "notes": "2026-10-24 doğrulandı: backend/app/trnorm.py (bağımlılıksız, kurala dayalı): sayı, para (TL/₺/$/€, kuruş, 'milyon TL'), tarih (22.10.2026, 2026-10-23), saat, telefon (gruplu: 'sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi'), yüzde, 3+1, m²/km/kg, sıra sayısı, ek uyumu (TL'ye -> liraya). Bulutta pytest 144 (65+ normalizasyon testi), vitest 24, Playwright e2e: stüdyo önizlemesi gerçek backend+SPA ile. Mac'te modül gerçek dosyalarla çalıştırıldı; Mac tarayıcısında stüdyo önizlemesi ve normalize metnin gerçek TTS ile dinlenerek doğrulanması yapılmadı (backend kapalıydı). Bilinen sınırlar: '3.5' noktalı ondalık çevrilmez, yazıyla sayılar çevrilmez, genel ek üretimi scn-008. POST /api/tts/normalize; oturum alanları normalize_text / text_normalized / spoken."
     },
     {
       "id": "lab-001",

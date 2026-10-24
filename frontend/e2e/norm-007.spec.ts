@@ -8,7 +8,7 @@ test("TTS stüdyosu normalize edilmiş metni önizler", async ({ page }) => {
   const preview = page.getByLabel("Normalize önizleme");
   await expect(preview).toContainText("Fiyat bir milyon iki yüz elli bin lira");
   await expect(preview).toContainText("yirmi iki Ekim iki bin yirmi altı");
-  await expect(preview).toContainText("sıfır beş üç iki, bir iki üç, dört beş, altı yedi");
+  await expect(preview).toContainText("sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi");
   await expect(preview).toContainText("1 cümlede değişiklik");  // 'Merhaba' değişmez
   await page.screenshot({ path: "e2e-artifacts/norm-007-preview.png", fullPage: true });
   await page.getByLabel(/Metni okunur Türkçeye çevir/).uncheck();

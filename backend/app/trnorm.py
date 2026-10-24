@@ -83,6 +83,14 @@ def _int_words(s: str) -> str:
     return number_to_words(value) if value <= MAX_NUMBER else _digits(raw)
 
 
+def _phone_group(group: str) -> str:
+    """Telefon grubu: '532' -> 'beş yüz otuz iki', '45' -> 'kırk beş', '05' -> 'sıfır beş' (baştaki sıfır korunur)."""
+    zeros = len(group) - len(group.lstrip("0"))
+    rest = group.lstrip("0")
+    lead = " ".join(["sıfır"] * zeros)
+    return " ".join(x for x in (lead, number_to_words(int(rest)) if rest else "") if x)
+
+
 def _frac_words(frac: str) -> str:
     # ,5 -> "beş"; ,25 -> "yirmi beş"; ,05 -> "sıfır beş"; 4+ hane rakam rakam
     return _digits(frac) if frac.startswith("0") or len(frac) > 3 else number_to_words(int(frac))
@@ -173,9 +181,10 @@ def _convert(m: re.Match) -> str:
             words[-1] = _ORD_LAST.get(words[-1], words[-1])
             return " ".join(words)
         if kind == "phone":
+            # Türkçede numara gruplar halinde okunur (rakam rakam okuma EMA'da yapay duyuldu; geri bildirim 2026-10-24)
             pre = g["phone_pre"] or ""
-            head = "artı dokuz sıfır, " if pre.startswith("+") else ("sıfır " if pre else "")
-            body = ", ".join(_digits(g[k]) for k in ("phone_a", "phone_b", "phone_c", "phone_d"))
+            head = "artı doksan, " if pre.startswith("+") else ("sıfır " if pre else "")
+            body = ", ".join(_phone_group(g[k]) for k in ("phone_a", "phone_b", "phone_c", "phone_d"))
             return _join(head + body, g["phone_suf"])
         if kind in ("money", "moneyp"):
             cur, whole, frac = g[f"{kind}_c"], g[f"{kind}_n"], g[f"{kind}_f"]

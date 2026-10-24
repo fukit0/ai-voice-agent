@@ -327,7 +327,7 @@ def test_interrupted_session_is_not_stuck_running(env):
 
 NUMERIC = "Fiyat 1.250.000 TL, ilan 22.10.2026, tel 0532 123 45 67."
 NUMERIC_SPOKEN = ("Fiyat bir milyon iki yüz elli bin lira, ilan yirmi iki Ekim iki bin yirmi altı, "
-                  "tel sıfır beş üç iki, bir iki üç, dört beş, altı yedi.")
+                  "tel sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi.")
 
 
 def test_normalize_preview_endpoint(env):
