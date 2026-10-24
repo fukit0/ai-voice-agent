@@ -34,6 +34,14 @@ export const SCREENS: Screen[] = [
       "30 örnek müşteri cevabı seçili LLM'lerden geçer; doğru normalize (değer) ve doğru dal oranı, JSON geçerliliği ve gecikme yan yana görünür.",
   },
   {
+    path: "/scenarios",
+    label: "Senaryolar",
+    featureId: "lab-003",
+    planRef: "F7.3",
+    summary:
+      "Anket senaryosunun adımları, okunacak metinler ve cevaba göre akış; metin düzenlenir, okunuşu örnek değerlerle önizlenir.",
+  },
+  {
     path: "/playground",
     label: "Playground",
     featureId: "lab-003",

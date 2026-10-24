@@ -198,3 +198,31 @@ export const runLlmEval = (profiles: string[], limit?: number) =>
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ profiles, ...(limit ? { limit } : {}) }),
   }).then((r) => json<EvalRun>(r));
+
+// ---- Senaryolar (lab-003) ----
+export type ScenarioBranch = { on: string; to: string; to_title: string };
+export type ScenarioStep = {
+  key: string; title: string; code: string | null; group: string; kind: string; condition: string | null;
+  dtmf: boolean; min: number; max: number; longAnswer: boolean; outcome: string | null; applicable: boolean;
+  choices: { value: string; label: string; dtmf?: string }[]; defaultText: string; text: string; edited: boolean;
+  placeholders: string[]; branches: ScenarioBranch[]; spoken: string; chars: number;
+};
+export type ScenarioOutcome = { key: string; label: string; tone: string; description: string };
+export type ScenarioSummary = { key: string; label: string; shortLabel: string; description: string; steps: number; outcomes: ScenarioOutcome[]; problems: string[] };
+export type ScenarioDoc = {
+  key: string; label: string; description: string; outcomes: ScenarioOutcome[]; placeholders: Record<string, string>;
+  sample_values: Record<string, string>; problems: string[]; steps: ScenarioStep[];
+};
+
+export const fetchScenarios = () => fetch("/api/scenarios").then((r) => json<ScenarioSummary[]>(r));
+export const fetchScenario = (key: string) => fetch(`/api/scenarios/${key}`).then((r) => json<ScenarioDoc>(r));
+export const saveStepText = (key: string, step: string, text: string) =>
+  fetch(`/api/scenarios/${key}/steps/${step}/text`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
+  }).then((r) => json<ScenarioStep>(r));
+export const resetStepText = (key: string, step: string) =>
+  fetch(`/api/scenarios/${key}/steps/${step}/text`, { method: "DELETE" }).then((r) => json<ScenarioStep>(r));
+export const previewScenarioText = (key: string, text: string) =>
+  fetch(`/api/scenarios/${key}/preview`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
+  }).then((r) => json<{ spoken: string; chars: number; unknown_placeholders: string[] }>(r));

@@ -40,3 +40,8 @@ Demoda gelebilecek sorular ve dürüst, kısa cevaplar. Her cevapta "bugün çal
 - Söz kesme: ajan konuşurken siz konuşmaya başlarsanız ajan anında susar (çıkış kuyruğu boşaltılır).
 - Karar değişti: plan Pipecat diyordu; bunun yerine doğrudan aiortc (Pipecat'in de altındaki kütüphane). Sebep: mevcut sağlayıcı/ölçüm düzeneğimizi yeniden yazmamak, modelsiz CI. Üretim (telefon/SIP) için Pipecat/LiveKit yeniden değerlendirilir (ADR 0002).
 - Demoda bilin (bahane değil, sınır): konuşma bitişi enerji tabanlı, gürültülü odada yanlış tetikleyebilir; hoparlörde ajan kendi sesini duyup kendini kesebilir, **kulaklık kullanın**; bitiş için 0,6 sn beklenir, bu gecikmenin parçasıdır. Gerçek mikrofon + gerçek modellerle p50 < 1,2 sn henüz ölçülmedi; "ölçtük" demeyin.
+
+## S4. "Senaryoyu kim, nasıl değiştirir? Akışı kodsuz kurabiliyor muyuz?"
+- Senaryolar ekranında müşterinin örnek anketi (33 adım) birebir yüklü: adımlar gruplu, her adımın okunacak metni düzenlenir, yer tutucular ({HITAP}, {Q2}…) eklenir, "Asistan böyle okuyacak" satırı sayı ve tarihleri Türkçe okunuşa çevirerek gösterir; "Orijinal metne dön" ile geri alınır.
+- Sınır (bilerek): **akış (hangi cevapta nereye gidileceği) şimdilik düzenlenemez**, yalnızca görüntülenir; referans demo da böyle. Akış editörü Faz 2'dedir. Demoda "kodsuz akış kurulur" demeyin, "kodsuz metin düzenlenir, akış sabit" deyin.
+- Senaryo şu an referans firmanın örnek senaryosunun kopyasıdır; Sahibinden'in onaylı metinleri değildir. Welcome Call senaryosu henüz alınmadı.

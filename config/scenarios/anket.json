@@ -1,0 +1,1016 @@
+{
+ "version": 1,
+ "source": "sahibinden-demo.intalkive.com/senaryolar (2026-10-24, demo firması örnek senaryosu; birebir kopya)",
+ "placeholders": {
+  "ASISTAN": "Asistanın kendini tanıttığı ad (Ayarlar)",
+  "MUSTERI_ADI": "Aranan kişinin adı soyadı",
+  "HITAP": "Hitap — \"Ahmet Bey\" / \"Ayşe Hanım\"",
+  "MT_HITAP": "Değerlendirilen temsilci — \"Mehmet Bey\"",
+  "GORUSME_TARIHI": "Temsilci görüşmesinin tarihi — \"yirmi iki Eylül\"",
+  "GORUSME_SAATI": "Görüşme saati, -de ekiyle — \"on dört otuzda\"",
+  "Q2": "Q2'de verilen puan — \"sekiz\"",
+  "KVKK_METNI": "KVKK aydınlatma metni (Ayarlar)",
+  "CAGRI_MERKEZI": "Çağrı merkezi numarasının okunuşu (Ayarlar)",
+  "RANDEVU": "Müşterinin verdiği geri arama zamanı — \"yarın saat on beşte\"",
+  "ILAN_ADEDI": "Paketteki ilan adedi — \"yüz\"",
+  "ODEME_GUNU": "Ödeme günü — \"onunda\"",
+  "AYLIK_UCRET": "Aylık mağaza ücreti — \"dokuz bin beş yüz lira\"",
+  "ASIM_UCRETI": "Paket aşımında ilan başı ücret — \"yüz elli lira\"",
+  "TAAHHUT_BITIS": "Taahhüt bitiş tarihi — \"yirmi beş Eylül iki bin yirmi yedi\"",
+  "IKI_FA_ADIMLARI": "2FA açma adımları (Ayarlar)"
+ },
+ "sample_profile": {
+  "key": "senaryo_1",
+  "packageName": "Premium Plus",
+  "committed": true,
+  "listingCount": 100,
+  "monthlyFee": 9500,
+  "overageFee": 150,
+  "paymentDay": 10,
+  "commitmentEnd": "2027-09-27",
+  "posterBannerRight": true,
+  "twoFactorEnabled": false,
+  "usedFreeWebsite": false
+ },
+ "scenario": {
+  "key": "anket",
+  "label": "Çağrı Merkezi Memnuniyet Anketi",
+  "shortLabel": "Anket",
+  "description": "Çağrı merkezi temsilcisinden hizmet alan müşteriyi arar, temsilci performansı ve sahibinden.com tavsiye skorunu ölçen anketi uygular.",
+  "outcomes": [
+   {
+    "key": "tamamlandi",
+    "label": "Anket tamamlandı",
+    "tone": "success",
+    "description": "Tüm sorular cevaplandı, onay sorusu soruldu."
+   },
+   {
+    "key": "geri_arama",
+    "label": "Randevu verildi",
+    "tone": "info",
+    "description": "Müşteri müsait değildi; tekrar aranacağı zaman alındı."
+   },
+   {
+    "key": "musait_degil",
+    "label": "Müsait değil",
+    "tone": "warning",
+    "description": "Görüşmeye müsait olmadığını söyledi."
+   },
+   {
+    "key": "son_3_ay_katilim",
+    "label": "Son 3 ayda katılmış",
+    "tone": "neutral",
+    "description": "Q3 — son 3 ayda çağrı merkezi anketine katılmış (elendi)."
+   },
+   {
+    "key": "gorusmeyi_hatirlamiyor",
+    "label": "Görüşmeyi hatırlamıyor",
+    "tone": "neutral",
+    "description": "Q3X — ilgili görüşmeyi hatırlamıyor (elendi)."
+   },
+   {
+    "key": "katilmak_istemedi",
+    "label": "Katılmak istemedi",
+    "tone": "danger",
+    "description": "Anketi reddetti."
+   },
+   {
+    "key": "aranmak_istemiyor",
+    "label": "Aranmak istemiyor",
+    "tone": "danger",
+    "description": "\"Beni aramayın\" talebi."
+   },
+   {
+    "key": "yarim_kaldi",
+    "label": "Yarım kaldı",
+    "tone": "warning",
+    "description": "Müşteri anket bitmeden kapattı."
+   },
+   {
+    "key": "sessiz_cagri",
+    "label": "Sessiz çağrı",
+    "tone": "neutral",
+    "description": "Karşı taraftan ses alınamadı."
+   },
+   {
+    "key": "acilista_kapatti",
+    "label": "Açılışta kapattı",
+    "tone": "danger",
+    "description": "Müşteri ilk soruya cevap vermeden kapattı."
+   },
+   {
+    "key": "sistem_sonlandirdi",
+    "label": "Sistem sonlandırdı",
+    "tone": "neutral",
+    "description": "Süre aşımı ya da panelden sonlandırma."
+   }
+  ],
+  "steps": [
+   {
+    "key": "giris",
+    "title": "Giriş ve KVKK aydınlatma",
+    "code": null,
+    "group": "Giriş",
+    "kind": "Choice",
+    "text": "İyi günler, benim adım {ASISTAN}. Sahibinden.com adına Nielsen Araştırma Hizmetleri'nden arıyorum. Sahibinden.com'un verdiği yetkiye istinaden, çağrı merkezi temsilcisinden aldığınız hizmetten memnuniyetinizi ölçmek adına, beş dakika sürecek bir görüşme yapmak istiyoruz. Görüşmemiz kayıt altına alınacak ve hizmet kalitesinin ölçümlenmesi amacıyla kullanılacaktır. Detaylar için Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni'ni dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "defaultText": "İyi günler, benim adım {ASISTAN}. Sahibinden.com adına Nielsen Araştırma Hizmetleri'nden arıyorum. Sahibinden.com'un verdiği yetkiye istinaden, çağrı merkezi temsilcisinden aldığınız hizmetten memnuniyetinizi ölçmek adına, beş dakika sürecek bir görüşme yapmak istiyoruz. Görüşmemiz kayıt altına alınacak ve hizmet kalitesinin ölçümlenmesi amacıyla kullanılacaktır. Detaylar için Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni'ni dinlemek ister misiniz? Dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "preview": "İyi günler, benim adım Elif. Sahibinden.com adına Nielsen Araştırma Hizmetleri'nden arıyorum. Sahibinden.com'un verdiği yetkiye istinaden, çağrı merkezi temsilcisinden aldığınız hizmetten memnuniyetinizi ölçmek adına, beş dakika sürecek bir görüşme yapmak istiyoruz. Görüşmemiz kayıt altına alınacak ve hizmet kalitesinin ölçümlenmesi amacıyla kullanılacaktır. Detaylar için Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni'ni dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "custom": true,
+    "condition": "1 → aydınlatma metni okunur (IVR), 2 → devam edilir.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "ASISTAN"
+    ],
+    "choices": [
+     {
+      "value": "dinle",
+      "label": "Evet, dinlemek istedi",
+      "dtmf": "1"
+     },
+     {
+      "value": "devam",
+      "label": "Hayır, dinlemek istemedi",
+      "dtmf": "2"
+     }
+    ],
+    "branches": [
+     {
+      "on": "Evet, dinlemek istedi",
+      "to": "kvkk_metni"
+     },
+     {
+      "on": "Hayır, dinlemek istemedi",
+      "to": "musaitlik"
+     }
+    ]
+   },
+   {
+    "key": "kvkk_metni",
+    "title": "KVKK aydınlatma metni (IVR)",
+    "code": null,
+    "group": "Giriş",
+    "kind": "Statement",
+    "text": "{KVKK_METNI}",
+    "defaultText": "{KVKK_METNI}",
+    "preview": "Kişisel verileriniz, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında, hizmet kalitesinin ölçülmesi ve geliştirilmesi amacıyla işlenmektedir. Görüşme kaydınız ve anket cevaplarınız yalnızca bu araştırma kapsamında kullanılır ve mevzuatta öngörülen süre boyunca saklanır. Kanunun on birinci maddesi kapsamındaki haklarınıza ilişkin taleplerinizi sahibinden.com'a iletebilirsiniz.",
+    "custom": false,
+    "condition": "Yalnızca aydınlatma metnini dinlemek isteyenlere okunur. Metin Ayarlar'dan gelir.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "KVKK_METNI"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "musaitlik"
+     }
+    ]
+   },
+   {
+    "key": "musaitlik",
+    "title": "Müsaitlik",
+    "code": null,
+    "group": "Giriş",
+    "kind": "YesNo",
+    "text": "Görüşme yapmak için müsait misiniz?",
+    "defaultText": "Görüşme yapmak için müsait misiniz?",
+    "preview": "Görüşme yapmak için müsait misiniz?",
+    "custom": false,
+    "condition": "Hayır → randevu teklifi (Ayarlar'dan kapatılabilir) ya da anket sonlandırılır.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "q3"
+     },
+     {
+      "on": "Hayır",
+      "to": "randevu"
+     }
+    ]
+   },
+   {
+    "key": "q3",
+    "title": "Son 3 ayda ankete katılım",
+    "code": "Q3",
+    "group": "Eleme",
+    "kind": "YesNo",
+    "text": "Son üç ay içerisinde çağrı merkezi ile ilgili herhangi bir ankete katıldınız mı?",
+    "defaultText": "Son üç ay içerisinde çağrı merkezi ile ilgili herhangi bir ankete katıldınız mı?",
+    "preview": "Son üç ay içerisinde çağrı merkezi ile ilgili herhangi bir ankete katıldınız mı?",
+    "custom": false,
+    "condition": "Evet → anket sonlandırılır.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "kapanis_son3ay"
+     },
+     {
+      "on": "Hayır",
+      "to": "q3x"
+     }
+    ]
+   },
+   {
+    "key": "q3x",
+    "title": "Görüşmeyi hatırlama",
+    "code": "Q3X",
+    "group": "Eleme",
+    "kind": "YesNo",
+    "text": "{GORUSME_TARIHI} tarihinde saat {GORUSME_SAATI}, sahibinden.com çağrı merkezi müşteri temsilcisi {MT_HITAP} ile telefonda yaptığınız görüşmeyi hatırlıyor musunuz?",
+    "defaultText": "{GORUSME_TARIHI} tarihinde saat {GORUSME_SAATI}, sahibinden.com çağrı merkezi müşteri temsilcisi {MT_HITAP} ile telefonda yaptığınız görüşmeyi hatırlıyor musunuz?",
+    "preview": "Yirmi üç Ekim tarihinde saat on dört otuzda, sahibinden.com çağrı merkezi müşteri temsilcisi Ayşe Hanım ile telefonda yaptığınız görüşmeyi hatırlıyor musunuz?",
+    "custom": false,
+    "condition": "Hayır → anket sonlandırılır.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "GORUSME_TARIHI",
+     "GORUSME_SAATI",
+     "MT_HITAP"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "anketor_oku"
+     },
+     {
+      "on": "Hayır",
+      "to": "kapanis_hatirlamiyor"
+     }
+    ]
+   },
+   {
+    "key": "anketor_oku",
+    "title": "Anketör açıklaması",
+    "code": null,
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Statement",
+    "text": "Müşteri temsilcimiz {MT_HITAP} ile yapmış olduğunuz görüşmeyle ilgili birkaç soru sormak istiyorum. Sorularımı cevaplarken lütfen sahibinden.com'u değil, sadece telefonda görüştüğünüz çağrı merkezi müşteri temsilcisini düşünerek cevap veriniz. Sahibinden.com ile ilgili yorumlarınızı anketimizin sonunda paylaşabilirsiniz.",
+    "defaultText": "Çağrı merkezi müşteri temsilcisi {MT_HITAP} ile yapmış olduğunuz görüşmeyle ilgili birkaç soru sormak istiyorum. Sorularımı cevaplarken lütfen sahibinden.com'u değil, sadece telefonda görüştüğünüz çağrı merkezi müşteri temsilcisini düşünerek cevap veriniz. Sahibinden.com ile ilgili yorumlarınızı anketimizin sonunda paylaşabilirsiniz.",
+    "preview": "Müşteri temsilcimiz Ayşe Hanım ile yapmış olduğunuz görüşmeyle ilgili birkaç soru sormak istiyorum. Sorularımı cevaplarken lütfen sahibinden.com'u değil, sadece telefonda görüştüğünüz çağrı merkezi müşteri temsilcisini düşünerek cevap veriniz. Sahibinden.com ile ilgili yorumlarınızı anketimizin sonunda paylaşabilirsiniz.",
+    "custom": true,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "MT_HITAP"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q2"
+     }
+    ]
+   },
+   {
+    "key": "q2",
+    "title": "Temsilciden genel memnuniyet",
+    "code": "Q2",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir.",
+    "defaultText": "Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir. Memnuniyet derecenize göre 1 ile 10 arasındaki puanları da kullanabilirsiniz.",
+    "preview": "Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir.",
+    "custom": true,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q4"
+     },
+     {
+      "on": "Cevap vermedi",
+      "to": "q3_giris"
+     }
+    ]
+   },
+   {
+    "key": "q4",
+    "title": "Puanın nedeni",
+    "code": "Q4",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "OpenText",
+    "text": "Hizmet aldığınız çağrı merkezi temsilcisinin performansını {Q2} olarak değerlendirdiniz. Bu puanı vermiş olma nedenlerinizi detaylı açıklar mısınız?",
+    "defaultText": "Hizmet aldığınız çağrı merkezi temsilcisinin performansını {Q2} olarak değerlendirdiniz. Bu puanı vermiş olma nedenlerinizi detaylı açıklar mısınız?",
+    "preview": "Hizmet aldığınız çağrı merkezi temsilcisinin performansını sekiz olarak değerlendirdiniz. Bu puanı vermiş olma nedenlerinizi detaylı açıklar mısınız?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": true,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "Q2"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_giris"
+     }
+    ]
+   },
+   {
+    "key": "q3_giris",
+    "title": "İfade değerlendirme açıklaması",
+    "code": null,
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Statement",
+    "text": "Şimdi okuyacağım ifadeleri düşündüğünüzde, bu ifadeye ilişkin duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir.",
+    "defaultText": "Şimdi okuyacağım ifadeleri düşündüğünüzde, bu ifadeye ilişkin duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir.",
+    "preview": "Şimdi okuyacağım ifadeleri düşündüğünüzde, bu ifadeye ilişkin duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_1"
+     }
+    ]
+   },
+   {
+    "key": "q3_1",
+    "title": "Süre – Hız",
+    "code": "Q3_1",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Müşteri temsilcisine bağlanana kadar geçen bekleme süresine kaç puan verirsiniz?",
+    "defaultText": "Müşteri temsilcisine bağlanana kadar geçen bekleme süresine kaç puan verirsiniz?",
+    "preview": "Müşteri temsilcisine bağlanana kadar geçen bekleme süresine kaç puan verirsiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_2"
+     }
+    ]
+   },
+   {
+    "key": "q3_2",
+    "title": "Davranış",
+    "code": "Q3_2",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Müşteri temsilcisinin size olan hitap tarzına, ses tonuna ve iletişim şekline kaç puan verirsiniz?",
+    "defaultText": "Müşteri temsilcisinin size olan hitap tarzına, ses tonuna ve iletişim şekline kaç puan verirsiniz?",
+    "preview": "Müşteri temsilcisinin size olan hitap tarzına, ses tonuna ve iletişim şekline kaç puan verirsiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_3"
+     }
+    ]
+   },
+   {
+    "key": "q3_3",
+    "title": "Etkinlik",
+    "code": "Q3_3",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Müşteri temsilcisinin sizi etkin bir biçimde dinlemesine ve talebinizi anlamasına, yani sözünüzü kesmeden talebinizi anlatmanıza izin vermesine kaç puan verirsiniz?",
+    "defaultText": "Müşteri temsilcisinin sizi etkin bir biçimde dinlemesine ve talebinizi anlamasına, yani sözünüzü kesmeden talebinizi anlatmanıza izin vermesine kaç puan verirsiniz?",
+    "preview": "Müşteri temsilcisinin sizi etkin bir biçimde dinlemesine ve talebinizi anlamasına, yani sözünüzü kesmeden talebinizi anlatmanıza izin vermesine kaç puan verirsiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_4"
+     }
+    ]
+   },
+   {
+    "key": "q3_4",
+    "title": "Bilgi Düzeyi",
+    "code": "Q3_4",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Hizmet almak istediğiniz konuyla ilgili açık ve anlaşılır bilgi verilmesine, yani hızlı konuşmadan ve konuyu geçiştirmeden anlatılmasına kaç puan verirsiniz?",
+    "defaultText": "Hizmet almak istediğiniz konuyla ilgili açık ve anlaşılır bilgi verilmesine, yani hızlı konuşmadan ve konuyu geçiştirmeden anlatılmasına kaç puan verirsiniz?",
+    "preview": "Hizmet almak istediğiniz konuyla ilgili açık ve anlaşılır bilgi verilmesine, yani hızlı konuşmadan ve konuyu geçiştirmeden anlatılmasına kaç puan verirsiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q3_5"
+     }
+    ]
+   },
+   {
+    "key": "q3_5",
+    "title": "Çaba",
+    "code": "Q3_5",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Hizmet almak istediğiniz konunun çözümü için yeterli çabanın gösterilmesine kaç puan verirsiniz?",
+    "defaultText": "Hizmet almak istediğiniz konunun çözümü için yeterli çabanın gösterilmesine kaç puan verirsiniz?",
+    "preview": "Hizmet almak istediğiniz konunun çözümü için yeterli çabanın gösterilmesine kaç puan verirsiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q5"
+     }
+    ]
+   },
+   {
+    "key": "q5",
+    "title": "Bekleme süresi",
+    "code": "Q5",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Duration",
+    "text": "Müşteri temsilcisine bağlanana kadar yaklaşık olarak kaç saniye ya da dakika beklediniz?",
+    "defaultText": "Müşteri temsilcisine bağlanana kadar yaklaşık olarak kaç saniye ya da dakika beklediniz?",
+    "preview": "Müşteri temsilcisine bağlanana kadar yaklaşık olarak kaç saniye ya da dakika beklediniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q6"
+     }
+    ]
+   },
+   {
+    "key": "q6",
+    "title": "Tekrar tercih",
+    "code": "Q6",
+    "group": "Temsilci Değerlendirmesi",
+    "kind": "Score",
+    "text": "Sahibinden.com çağrı merkezinden tekrar hizmet almayı tercih etme ya da etmeme konusundaki düşüncenizi 1 ile 10 arasında değerlendirir misiniz? 10 kesinlikle tercih ederim, 1 kesinlikle tercih etmem anlamına gelmektedir.",
+    "defaultText": "Sahibinden.com çağrı merkezinden tekrar hizmet almayı tercih etme ya da etmeme konusundaki düşüncenizi 1 ile 10 arasında değerlendirir misiniz? 10 kesinlikle tercih ederim, 1 kesinlikle tercih etmem anlamına gelmektedir.",
+    "preview": "Sahibinden.com çağrı merkezinden tekrar hizmet almayı tercih etme ya da etmeme konusundaki düşüncenizi 1 ile 10 arasında değerlendirir misiniz? 10 kesinlikle tercih ederim, 1 kesinlikle tercih etmem anlamına gelmektedir.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "gecis"
+     }
+    ]
+   },
+   {
+    "key": "gecis",
+    "title": "Genel değerlendirmeye geçiş",
+    "code": null,
+    "group": "Sahibinden.com Genel",
+    "kind": "Statement",
+    "text": "Şu ana kadar sorduğum sorular sahibinden.com çağrı merkezi temsilcisi ile ilgili sorulardı, cevapladığınız için teşekkür ederim. Son olarak çağrı merkezi temsilcisini değil, genel olarak sahibinden.com'u düşünmenizi rica edeceğim.",
+    "defaultText": "Şu ana kadar sorduğum sorular sahibinden.com çağrı merkezi temsilcisi ile ilgili sorulardı, cevapladığınız için teşekkür ederim. Son olarak çağrı merkezi temsilcisini değil, genel olarak sahibinden.com'u düşünmenizi rica edeceğim.",
+    "preview": "Şu ana kadar sorduğum sorular sahibinden.com çağrı merkezi temsilcisi ile ilgili sorulardı, cevapladığınız için teşekkür ederim. Son olarak çağrı merkezi temsilcisini değil, genel olarak sahibinden.com'u düşünmenizi rica edeceğim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q12"
+     }
+    ]
+   },
+   {
+    "key": "q12",
+    "title": "Tavsiye (NPS)",
+    "code": "Q12",
+    "group": "Sahibinden.com Genel",
+    "kind": "Score",
+    "text": "Sahibinden.com'dan aldığınız hizmetleri arkadaşlarınıza ve tanıdıklarınıza ne düzeyde tavsiye edersiniz? 0 kesinlikle tavsiye etmem, 10 kesinlikle tavsiye ederim anlamına gelmektedir. Arada bir puan da verebilirsiniz.",
+    "defaultText": "Sahibinden.com'dan aldığınız hizmetleri arkadaşlarınıza ve tanıdıklarınıza ne düzeyde tavsiye edersiniz? 0 kesinlikle tavsiye etmem, 10 kesinlikle tavsiye ederim anlamına gelmektedir. Arada bir puan da verebilirsiniz.",
+    "preview": "Sahibinden.com'dan aldığınız hizmetleri arkadaşlarınıza ve tanıdıklarınıza ne düzeyde tavsiye edersiniz? 0 kesinlikle tavsiye etmem, 10 kesinlikle tavsiye ederim anlamına gelmektedir. Arada bir puan da verebilirsiniz.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 0,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q12_neden"
+     }
+    ]
+   },
+   {
+    "key": "q12_neden",
+    "title": "Tavsiye puanının nedeni",
+    "code": "Q12_NEDEN",
+    "group": "Sahibinden.com Genel",
+    "kind": "OpenText",
+    "text": "Sahibinden.com için neden bu puanı verdiniz, detaylı açıklar mısınız?",
+    "defaultText": "Sahibinden.com için neden bu puanı verdiniz, detaylı açıklar mısınız?",
+    "preview": "Sahibinden.com için neden bu puanı verdiniz, detaylı açıklar mısınız?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": true,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "q8"
+     }
+    ]
+   },
+   {
+    "key": "q8",
+    "title": "Eklemek istenen",
+    "code": "Q8",
+    "group": "Sahibinden.com Genel",
+    "kind": "OpenText",
+    "text": "Eklemek istediğiniz bir konu var mı?",
+    "defaultText": "Eklemek istediğiniz bir konu var mı?",
+    "preview": "Eklemek istediğiniz bir konu var mı?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": true,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "geri_arama_istegi"
+     }
+    ]
+   },
+   {
+    "key": "q100",
+    "title": "Yetki belgesi bilgilendirmesi",
+    "code": "Q100",
+    "group": "Sahibinden.com Genel",
+    "kind": "Choice",
+    "text": "Son olarak, çağrı merkezi ile yaptığınız görüşmeniz sırasında sektörel zorunluluk olan yetki belgesi ile ilgili size bilgi verildi mi?",
+    "defaultText": "Son olarak, çağrı merkezi ile yaptığınız görüşmeniz sırasında sektörel zorunluluk olan yetki belgesi ile ilgili size bilgi verildi mi?",
+    "preview": "Son olarak, çağrı merkezi ile yaptığınız görüşmeniz sırasında sektörel zorunluluk olan yetki belgesi ile ilgili size bilgi verildi mi?",
+    "custom": false,
+    "condition": "Yalnızca müşteri tipi KURUMSAL ve yetki belgesi no BOŞ ya da '-' ise sorulur.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": false,
+    "placeholders": [],
+    "choices": [
+     {
+      "value": "evet",
+      "label": "Evet",
+      "dtmf": "1"
+     },
+     {
+      "value": "hayir",
+      "label": "Hayır",
+      "dtmf": "2"
+     },
+     {
+      "value": "muaf",
+      "label": "Yetki belgesinden muaf",
+      "dtmf": "3"
+     }
+    ],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "geri_arama_istegi"
+     },
+     {
+      "on": "Hayır",
+      "to": "geri_arama_istegi"
+     },
+     {
+      "on": "Yetki belgesinden muaf",
+      "to": "geri_arama_istegi"
+     }
+    ]
+   },
+   {
+    "key": "geri_arama_istegi",
+    "title": "Sahibinden.com tarafından aranma isteği",
+    "code": null,
+    "group": "Onay",
+    "kind": "YesNo",
+    "text": "Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz?",
+    "defaultText": "Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz?",
+    "preview": "Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz?",
+    "custom": false,
+    "condition": "Sahibinden'in önerdiği ek soru — onay sorusundan hemen önce sorulur.",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "onay"
+     },
+     {
+      "on": "Hayır",
+      "to": "onay"
+     }
+    ]
+   },
+   {
+    "key": "onay",
+    "title": "Onay sorusu",
+    "code": null,
+    "group": "Onay",
+    "kind": "YesNo",
+    "text": "Sahibinden araştırma süreçlerini prensip olarak anonim bazda yürütmeyi tercih etmektedir. Verdiğiniz bilgiler kesinlikle gizli tutulacak ve yalnızca Sahibinden tarafından araştırma amaçlı kullanılacaktır. Aldığınız hizmetlerin gelişimini sağlamak adına, anket cevaplarınızın iletişim bilgileriniz ile birlikte Sahibinden ile paylaşılmasına izin verir misiniz? İzin veriyorsanız 1'i, vermiyorsanız 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "defaultText": "Sahibinden araştırma süreçlerini prensip olarak anonim bazda yürütmeyi tercih etmektedir. Verdiğiniz bilgiler kesinlikle gizli tutulacak ve yalnızca Sahibinden tarafından araştırma amaçlı kullanılacaktır. Aldığınız hizmetlerin gelişimini sağlamak adına, anket cevaplarınızın iletişim bilgileriniz ile birlikte Sahibinden ile paylaşılmasına izin verir misiniz? İzin veriyorsanız 1'i, vermiyorsanız 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "preview": "Sahibinden araştırma süreçlerini prensip olarak anonim bazda yürütmeyi tercih etmektedir. Verdiğiniz bilgiler kesinlikle gizli tutulacak ve yalnızca Sahibinden tarafından araştırma amaçlı kullanılacaktır. Aldığınız hizmetlerin gelişimini sağlamak adına, anket cevaplarınızın iletişim bilgileriniz ile birlikte Sahibinden ile paylaşılmasına izin verir misiniz? İzin veriyorsanız 1'i, vermiyorsanız 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+    "custom": false,
+    "condition": null,
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "kapanis"
+     },
+     {
+      "on": "Hayır",
+      "to": "onay_tekrar"
+     }
+    ]
+   },
+   {
+    "key": "onay_tekrar",
+    "title": "Onay sorusu (tekrar)",
+    "code": null,
+    "group": "Onay",
+    "kind": "YesNo",
+    "text": "Değerlendirmelerinizin ve iletişim bilgilerinizin sahibinden.com ile paylaşılmasına izin vermediğinizi belirttiniz. Bir önceki soruda ise sahibinden.com tarafından aranmak istediğinizi söylemiştiniz. Size ulaşabilmeleri için iletişim bilgilerinizin paylaşılması gerekmektedir. Bu durumda değerlendirmelerinizin ve iletişim bilgilerinizin paylaşılmasına izin veriyor musunuz?",
+    "defaultText": "Değerlendirmelerinizin ve iletişim bilgilerinizin sahibinden.com ile paylaşılmasına izin vermediğinizi belirttiniz. Bir önceki soruda ise sahibinden.com tarafından aranmak istediğinizi söylemiştiniz. Size ulaşabilmeleri için iletişim bilgilerinizin paylaşılması gerekmektedir. Bu durumda değerlendirmelerinizin ve iletişim bilgilerinizin paylaşılmasına izin veriyor musunuz?",
+    "preview": "Değerlendirmelerinizin ve iletişim bilgilerinizin sahibinden.com ile paylaşılmasına izin vermediğinizi belirttiniz. Bir önceki soruda ise sahibinden.com tarafından aranmak istediğinizi söylemiştiniz. Size ulaşabilmeleri için iletişim bilgilerinizin paylaşılması gerekmektedir. Bu durumda değerlendirmelerinizin ve iletişim bilgilerinizin paylaşılmasına izin veriyor musunuz?",
+    "custom": false,
+    "condition": "Onay = HAYIR ve aranmak istiyor = EVET ise okunur (ANKETÖR NOT).",
+    "dtmf": true,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "kapanis"
+     },
+     {
+      "on": "Hayır",
+      "to": "kapanis"
+     }
+    ]
+   },
+   {
+    "key": "kapanis",
+    "title": "Kapanış",
+    "code": null,
+    "group": "Kapanış",
+    "kind": "Terminal",
+    "text": "Sahibinden.com'daki iletişim izninizi ya da ticari elektronik ileti izninizi, sahibinden.com adresinde üyelik sayfanıza girerek ya da {CAGRI_MERKEZI} numaralı çağrı merkezini arayarak geri alabilirsiniz. Anketimize katıldığınız için çok teşekkür ederiz, iyi günler dilerim.",
+    "defaultText": "Sahibinden.com'daki iletişim izninizi ya da ticari elektronik ileti izninizi, sahibinden.com adresinde üyelik sayfanıza girerek ya da {CAGRI_MERKEZI} numaralı çağrı merkezini arayarak geri alabilirsiniz. Anketimize katıldığınız için çok teşekkür ederiz, iyi günler dilerim.",
+    "preview": "Sahibinden.com'daki iletişim izninizi ya da ticari elektronik ileti izninizi, sahibinden.com adresinde üyelik sayfanıza girerek ya da 0 850 222 44 44 numaralı çağrı merkezini arayarak geri alabilirsiniz. Anketimize katıldığınız için çok teşekkür ederiz, iyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "tamamlandi",
+    "applicable": true,
+    "placeholders": [
+     "CAGRI_MERKEZI"
+    ],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "randevu",
+    "title": "Randevu",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "CallbackTime",
+    "text": "Anlıyorum. Size daha uygun bir zamanda tekrar ulaşabilmemiz için hangi gün ve saat sizin için uygun olur?",
+    "defaultText": "Anlıyorum. Size daha uygun bir zamanda tekrar ulaşabilmemiz için hangi gün ve saat sizin için uygun olur?",
+    "preview": "Anlıyorum. Size daha uygun bir zamanda tekrar ulaşabilmemiz için hangi gün ve saat sizin için uygun olur?",
+    "custom": false,
+    "condition": "Müşteri müsait değilse. Ayarlar → Anket → 'Müsait değilse randevu al' kapalıysa atlanır.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Zaman verdi",
+      "to": "kapanis_randevu"
+     },
+     {
+      "on": "Zaman vermedi",
+      "to": "kapanis_musait_degil"
+     }
+    ]
+   },
+   {
+    "key": "kapanis_randevu",
+    "title": "Randevu kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Teşekkür ederim, sizi {RANDEVU} tekrar arayacağız. İyi günler dilerim.",
+    "defaultText": "Teşekkür ederim, sizi {RANDEVU} tekrar arayacağız. İyi günler dilerim.",
+    "preview": "Teşekkür ederim, sizi yarın saat on beşte tekrar arayacağız. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "geri_arama",
+    "applicable": true,
+    "placeholders": [
+     "RANDEVU"
+    ],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_musait_degil",
+    "title": "Müsait değil kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Anlıyorum, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "defaultText": "Anlıyorum, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "preview": "Anlıyorum, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "musait_degil",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_son3ay",
+    "title": "Q3 eleme kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Bilgi verdiğiniz için teşekkür ederim. Kısa süre önce bir ankete katıldığınız için sizi tekrar rahatsız etmeyelim. İyi günler dilerim.",
+    "defaultText": "Bilgi verdiğiniz için teşekkür ederim. Kısa süre önce bir ankete katıldığınız için sizi tekrar rahatsız etmeyelim. İyi günler dilerim.",
+    "preview": "Bilgi verdiğiniz için teşekkür ederim. Kısa süre önce bir ankete katıldığınız için sizi tekrar rahatsız etmeyelim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "son_3_ay_katilim",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_hatirlamiyor",
+    "title": "Q3X eleme kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Anlıyorum, bilgi verdiğiniz için teşekkür ederim. İyi günler dilerim.",
+    "defaultText": "Anlıyorum, bilgi verdiğiniz için teşekkür ederim. İyi günler dilerim.",
+    "preview": "Anlıyorum, bilgi verdiğiniz için teşekkür ederim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "gorusmeyi_hatirlamiyor",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_ret",
+    "title": "Ret kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. İyi günler dilerim.",
+    "defaultText": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. İyi günler dilerim.",
+    "preview": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "katilmak_istemedi",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_dnc",
+    "title": "Aranmak istemiyor kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Talebinizi not aldım, sizi tekrar aramayacağız. Rahatsız ettiğim için özür dilerim, iyi günler dilerim.",
+    "defaultText": "Talebinizi not aldım, sizi tekrar aramayacağız. Rahatsız ettiğim için özür dilerim, iyi günler dilerim.",
+    "preview": "Talebinizi not aldım, sizi tekrar aramayacağız. Rahatsız ettiğim için özür dilerim, iyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "aranmak_istemiyor",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_sessiz",
+    "title": "Sessiz hat kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "defaultText": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "preview": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "sessiz_cagri",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   }
+  ]
+ }
+}
