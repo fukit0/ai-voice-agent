@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   blindAudioUrl, createTtsSession, fetchTtsModels, fetchTtsSession, fetchTtsSessions, fetchTtsSummary, getWarmup,
-  rateClip, startListening, startWarmup, ttsClipUrl, ttsRatingsCsvUrl,
-  type BlindRating, type BlindView, type TtsModel, type TtsSession, type TtsSessionSummary, type TtsSummaryRow,
+  previewNormalize, rateClip, startListening, startWarmup, ttsClipUrl, ttsRatingsCsvUrl,
+  type BlindRating, type BlindView, type NormalizePreview, type TtsModel, type TtsSession, type TtsSessionSummary,
+  type TtsSummaryRow,
 } from "../api";
 
 const DEFAULT_SENTENCES = [
@@ -10,8 +11,8 @@ const DEFAULT_SENTENCES = [
   "İlanınızla ilgili deneyiminizi bire ile beş arasında bir puanla değerlendirir misiniz?",
   "Anladım, geri bildiriminiz için çok teşekkür ederim.",
   "Ödeme sürecinde yaşadığınız bir sorun oldu mu?",
-  "Yirmi üç Ekim iki bin yirmi altı tarihinde yayınlanan ilanınız için bin beş yüz lira ödeme yaptınız.",
-  "Telefon numaranız sıfır beş yüz otuz iki, yüz yirmi üç, kırk beş, altmış yedi, doğru mu?",
+  "23.10.2026 tarihinde yayınlanan ilanınız için 1.500 TL ödeme yaptınız.",
+  "Telefon numaranız 0532 123 45 67, doğru mu?",
   "Müşteri hizmetlerimizle ilgili önerileriniz varsa memnuniyetle dinlerim.",
   "Biraz daha açar mısınız? Tam olarak anlayamadım.",
   "Rahatsız ettiysem özür dilerim, daha sonra tekrar arayabilirim.",
@@ -55,6 +56,8 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [text, setText] = useState(DEFAULT_SENTENCES);
   const [phone, setPhone] = useState(false);
+  const [normalizeText, setNormalizeText] = useState(true);
+  const [preview, setPreview] = useState<NormalizePreview[]>([]);
   const [session, setSession] = useState<TtsSession | null>(null);
   const [summary, setSummary] = useState<TtsSummaryRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -72,6 +75,18 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
 
   const sentences = text.split("\n").map((s) => s.trim()).filter(Boolean);
   const chosen = models.filter((m) => selected.has(modelKey(m)));
+
+  // norm-007: TTS'e gidecek hali, yazarken kısa gecikmeyle önizlenir (yalnızca değişen cümleler gösterilir).
+  const sentenceKey = sentences.join("\n");
+  useEffect(() => {
+    if (!normalizeText || !sentences.length) { setPreview([]); return; }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      previewNormalize(sentences.slice(0, 30)).then((p) => { if (!cancelled && Array.isArray(p)) setPreview(p); }).catch(() => {});
+    }, 300);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [sentenceKey, normalizeText]); // eslint-disable-line react-hooks/exhaustive-deps
+  const changed = preview.filter((p) => p.changes.length > 0);
 
   async function prepare(m: TtsModel) {
     const key = modelKey(m);
@@ -105,7 +120,7 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
   async function generate() {
     setBusy(true); setError(null); setSummary([]);
     try {
-      const started = await createTtsSession(sentences, chosen.map((m) => m.profile), phone);
+      const started = await createTtsSession(sentences, chosen.map((m) => m.profile), phone, normalizeText);
       const done = await poll(started.id);
       if (done.state === "failed") setError(done.error ?? "Üretim başarısız.");
       onCreated();
@@ -160,6 +175,26 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
         <input type="checkbox" checked={phone} onChange={(e) => setPhone(e.target.checked)} />
         {" "}Telefon turu (300–3400 Hz, 8 kHz)
       </label>
+      <label className="check">
+        <input type="checkbox" checked={normalizeText} onChange={(e) => setNormalizeText(e.target.checked)} />
+        {" "}Metni okunur Türkçeye çevir (sayı, fiyat, tarih, telefon)
+      </label>
+      {normalizeText && (
+        <div className="norm-preview" aria-label="Normalize önizleme">
+          {changed.length === 0 ? (
+            <p className="meta">Cümlelerde çevrilecek sayı, fiyat, tarih veya telefon yok.</p>
+          ) : (
+            <>
+              <p className="meta">TTS'e giden hali ({changed.length} cümlede değişiklik):</p>
+              <ul>
+                {changed.map((p) => (
+                  <li key={p.text}><span className="meta">{p.text}</span><br /><strong>{p.spoken}</strong></li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
 
       <p>
         <button type="button" className="primary" disabled={busy || !sentences.length || !chosen.length} onClick={generate}>
@@ -179,7 +214,11 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
             <tbody>
               {session.clips.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.sentence_idx + 1}. {session.sentences[c.sentence_idx].slice(0, 48)}</td>
+                  <td title={session.spoken?.[c.sentence_idx]}>
+                    {c.sentence_idx + 1}. {session.sentences[c.sentence_idx].slice(0, 48)}
+                    {session.text_normalized && session.spoken && session.spoken[c.sentence_idx] !== session.sentences[c.sentence_idx] &&
+                      <span className="meta"> · okunuşu: {session.spoken[c.sentence_idx].slice(0, 60)}</span>}
+                  </td>
                   <td>{label(c.profile)}</td>
                   {c.status === "ok" ? (
                     <>

@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
+from . import trnorm
 from . import tts_studio as studio
 from .api_profiles import _call, _provider
 from .profiles import load_profiles
@@ -47,11 +48,26 @@ def list_models() -> list[dict]:
     return [{**m, "ready": m["known"] and not m["missing_env"]} for m in _tts_models().values()]
 
 
+class NormalizeRequest(BaseModel):
+    sentences: list[str] = Field(min_length=1, max_length=MAX_SENTENCES)
+
+
+@router.post("/normalize")
+def normalize_preview(req: NormalizeRequest) -> list[dict]:
+    """norm-007: TTS'e gidecek metnin önizlemesi (Türkçe sayı / fiyat / tarih / telefon normalizasyonu)."""
+    out = []
+    for s in req.sentences:
+        s = s[:MAX_CHARS * 2]
+        out.append({"text": s, "spoken": trnorm.normalize(s), "changes": trnorm.changes(s)})
+    return out
+
+
 class SessionRequest(BaseModel):
     sentences: list[str] = Field(min_length=1)
     profiles: list[str] = Field(min_length=1)
     language: str = "tr"
     phone: bool = False  # telefon turu: 300–3400 Hz süzgeç, 8 kHz
+    normalize_text: bool = True  # norm-007: sayı, fiyat, tarih, telefon sentezden önce okunur Türkçeye çevrilir
 
 
 def _generate(session: dict, pids: list[str]) -> None:
@@ -72,14 +88,15 @@ def _generate(session: dict, pids: list[str]) -> None:
                 stop_model = False
                 try:
                     provider = _provider(profile, "tts")
+                    spoken = session["spoken"][idx]  # normalize kapalıysa cümlenin kendisi
                     result, seconds = _call(profile, "tts", provider,
-                                            lambda p=provider, t=text: p.synthesize(t, session["language"]))
+                                            lambda p=provider, t=spoken: p.synthesize(t, session["language"]))
                     audio, rate = result.audio, result.sample_rate
                     first_audio = float(result.extra.get("first_audio_seconds", result.seconds))
                     if session["phone"]:
                         audio, rate = studio.phone_filter(audio, rate)
                     audio = studio.normalize_level(audio)
-                    record_call(pid, "tts", provider, seconds, ok=True, warm=True, chars=len(text),
+                    record_call(pid, "tts", provider, seconds, ok=True, warm=True, chars=len(spoken),
                                 audio_seconds=round(result.audio_seconds, 2), rtf=round(result.rtf or 0, 3),
                                 first_audio_seconds=round(first_audio, 3), source="tts-studio")
                     pending[clip_id] = encode_wav(audio, rate)
@@ -135,7 +152,9 @@ def create_session(req: SessionRequest) -> dict:
             pids.append(pid)
     if not _busy.acquire(blocking=False):
         raise HTTPException(409, {"error": "studio_busy", "message": "Başka bir üretim sürüyor; bitince tekrar deneyin."})
+    spoken = [trnorm.normalize(s) for s in sentences] if req.normalize_text else list(sentences)
     session = {"id": studio.new_id(), "language": req.language, "phone": req.phone, "sentences": sentences,
+               "text_normalized": req.normalize_text, "spoken": spoken,
                "profiles": pids, "clips": [], "done": 0, "total": len(sentences) * len(pids), "state": "running",
                "normalize": {"target_rms_dbfs": studio.TARGET_RMS_DBFS}}
     session = studio.save_session(session, {})

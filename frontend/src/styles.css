@@ -69,3 +69,6 @@ textarea { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--lin
 .rate { display: grid; grid-template-columns: 1fr 160px 24px; align-items: center; gap: 12px; margin: 10px 0; font-size: 14px; }
 .check { display: block; margin: 8px 0; font-size: 14px; }
 .error { color: var(--err); }
+.norm-preview { margin: 8px 0 16px; padding: 8px 12px; border-left: 3px solid var(--accent, #b9741a); font-size: 14px; }
+.norm-preview ul { margin: 4px 0 0; padding-left: 18px; }
+.norm-preview li { margin: 6px 0; }

@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-22",
+  "last_updated": "2026-10-24",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -142,14 +142,17 @@
       "moscow": "must",
       "title": "Türkçe metin normalizasyonu (trnorm)",
       "user_visible_behavior": "TTS'e giden metindeki sayı, fiyat, tarih ve telefon numaraları doğru okunur.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "'1.250.000 TL', '22.10.2026', '0532 123 45 67' içeren cümle normalize edilir.",
         "Normalize çıktı birim testlerle doğrulanır.",
         "TTS stüdyosunda normalize edilmiş hali önizlenir."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "evidence/norm-007-verification.json",
+        "evidence/norm-007-preview.png"
+      ],
+      "notes": "2026-10-24 doğrulandı: backend/app/trnorm.py (bağımlılıksız, kurala dayalı): sayı, para (TL/₺/$/€, kuruş, 'milyon TL'), tarih (22.10.2026, 2026-10-23), saat, telefon (rakam rakam), yüzde, 3+1, m²/km/kg, sıra sayısı, ek uyumu (TL'ye -> liraya). Bulutta pytest 144 (65+ normalizasyon testi), vitest 24, Playwright e2e: stüdyo önizlemesi gerçek backend+SPA ile. Mac'te modül gerçek dosyalarla çalıştırıldı; Mac tarayıcısında stüdyo önizlemesi ve normalize metnin gerçek TTS ile dinlenerek doğrulanması yapılmadı (backend kapalıydı). Bilinen sınırlar: '3.5' noktalı ondalık çevrilmez, yazıyla sayılar çevrilmez, genel ek üretimi scn-008. POST /api/tts/normalize; oturum alanları normalize_text / text_normalized / spoken."
     },
     {
       "id": "lab-001",
@@ -171,7 +174,7 @@
       "evidence": [
         "evidence/lab-001-verification.json"
       ],
-      "notes": "Faz 0 adım 3. Telefon filtreli (8 kHz) tur da desteklenmeli."
+      "notes": "2026-10-23 Mac'te doğrulandı: 10 cümle x 3 model (EMA, ElevenLabs flash v2.5, Chatterbox tek başına) = 30/30 klip; ilk ses/RTF: EMA 0.19 sn/0.05, ElevenLabs 0.57 sn/0.15, Chatterbox 10.8 sn/1.85; klipler -22..-20 dBFS. Kör dinleme + puan + CSV çalışıyor (puanlar otomatik test, gerçek dinleme yapılmadı). Telefon turu (8 kHz) birim testle doğrulandı, Mac'te gerçek modelle denenmedi. Chatterbox bir kez backend'i durdurdu (neden bilinmiyor). Hazırla stüdyoda yalnızca TTS bileşenini ısıtır; Anthropic için ANTHROPIC_WORKSPACE_ID gerekebilir."
     },
     {
       "id": "eval-llm",

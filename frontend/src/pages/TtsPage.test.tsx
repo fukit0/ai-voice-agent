@@ -28,6 +28,12 @@ let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === "/api/tts/models") return new Response(JSON.stringify(MODELS));
+    if (url === "/api/tts/normalize") {
+      const { sentences } = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify(sentences.map((s: string) => s.includes("1.250.000 TL")
+        ? { text: s, spoken: s.replace("1.250.000 TL", "bir milyon iki yüz elli bin lira"), changes: [{ from: "1.250.000 TL", to: "bir milyon iki yüz elli bin lira" }] }
+        : { text: s, spoken: s, changes: [] })));
+    }
     if (url === "/api/tts/sessions" && init?.method === "POST") return new Response(JSON.stringify({ ...SESSION, state: "running", clips: [], done: 0 }), { status: 202 });
     if (url === "/api/tts/sessions") return new Response(JSON.stringify([{ id: SID, created_at: SESSION.created_at, sentences: 2, models: ["L2"], clips: 2, phone: false }]));
     if (url === `/api/tts/sessions/${SID}`) return new Response(JSON.stringify(SESSION));
@@ -58,7 +64,28 @@ describe("TtsPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Ses üret \(2 × 1\)/ }));
     expect(await screen.findByText("0.07 sn*", {}, { timeout: 4000 })).toBeTruthy();
     const post = fetchMock.mock.calls.find((c) => c[0] === "/api/tts/sessions" && c[1]?.method === "POST");
-    expect(JSON.parse(post![1].body)).toEqual({ sentences: ["Birinci cümle.", "İkinci cümle."], profiles: ["L2"], phone: false });
+    expect(JSON.parse(post![1].body)).toEqual({ sentences: ["Birinci cümle.", "İkinci cümle."], profiles: ["L2"], phone: false, normalize_text: true });
+  });
+
+  it("previews how numbers, prices, dates and phones will be spoken (norm-007)", async () => {
+    render(<TtsPage />);
+    await screen.findByText("Sıcak");
+    fireEvent.change(screen.getByLabelText("Cümle seti"), { target: { value: "Fiyat 1.250.000 TL.\nMerhaba." } });
+    expect(await screen.findByText("Fiyat bir milyon iki yüz elli bin lira.")).toBeTruthy();
+    expect(screen.getByText(/1 cümlede değişiklik/)).toBeTruthy();
+  });
+
+  it("can switch normalization off and sends the choice with the session", async () => {
+    render(<TtsPage />);
+    await screen.findByText("Sıcak");
+    fireEvent.change(screen.getByLabelText("Cümle seti"), { target: { value: "Fiyat 1.250.000 TL." } });
+    await screen.findByText("Fiyat bir milyon iki yüz elli bin lira.");
+    fireEvent.click(screen.getByLabelText(/Metni okunur Türkçeye çevir/));
+    await waitFor(() => expect(screen.queryByText("Fiyat bir milyon iki yüz elli bin lira.")).toBeNull());
+    fireEvent.click(await screen.findByRole("button", { name: /Ses üret \(1 × 1\)/ }));
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => c[0] === "/api/tts/sessions" && c[1]?.method === "POST")).toBe(true));
+    const post = fetchMock.mock.calls.find((c) => c[0] === "/api/tts/sessions" && c[1]?.method === "POST");
+    expect(JSON.parse(post![1].body).normalize_text).toBe(false);
   });
 
   it("prepares a studio-only model alone (evicting others)", async () => {

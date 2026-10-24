@@ -1,0 +1,37 @@
+{
+  "feature": "norm-007",
+  "verified_at": "2026-10-24",
+  "commit_note": "bkz. feature_list.json",
+  "checks": {
+    "backend_pytest": "144 passed, 1 warning in 15.75s",
+    "frontend_vitest": "Tests  24 passed (24)",
+    "vite_build": "✓ built in 2.00s",
+    "e2e_playwright": "2 passed (6.2s)",
+    "mac_module_run": "Mac deposundaki backend/app/trnorm.py, Mac VM'de python3 ile çalıştırıldı; kabul cümlesi beklenen çıktıyı verdi (2026-10-24)."
+  },
+  "samples": [
+    {
+      "in": "Fiyat 1.250.000 TL, ilan 22.10.2026 tarihinde yayınlandı, 0532 123 45 67 numarasını arayın.",
+      "out": "Fiyat bir milyon iki yüz elli bin lira, ilan yirmi iki Ekim iki bin yirmi altı tarihinde yayınlandı, sıfır beş üç iki, bir iki üç, dört beş, altı yedi numarasını arayın."
+    },
+    {
+      "in": "3+1, 120 m², 2. kat, %25 indirim, saat 14:30'da",
+      "out": "üç artı bir, yüz yirmi metrekare, ikinci kat, yüzde yirmi beş indirim, saat on dört otuzda"
+    },
+    {
+      "in": "12,50 TL",
+      "out": "on iki lira elli kuruş"
+    },
+    {
+      "in": "750 TL'ye",
+      "out": "yedi yüz elli liraya"
+    }
+  ],
+  "screenshot": "evidence/norm-007-preview.png",
+  "caveats": [
+    "Mac'te backend çalışmıyordu; stüdyo önizlemesi gerçek backend + SPA ile bulutta (Playwright) doğrulandı, Mac tarayıcısında henüz denenmedi.",
+    "Normalize edilmiş metnin EMA / ElevenLabs / Chatterbox ile gerçekten nasıl okunduğu (telaffuz) dinlenerek doğrulanmadı.",
+    "Bilinen sınırlar: noktalı ondalık ('3.5') çevrilmez; yazıyla verilmiş sayılar çevrilmez; ek uyumu yalnızca para ve birimler için; genel ek üretimi scn-008.",
+    "Karar: telefon rakam rakam okunur ('sıfır beş üç iki, bir iki üç, dört beş, altı yedi'); '18:00' -> 'on sekiz'."
+  ]
+}

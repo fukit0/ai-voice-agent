@@ -26,10 +26,14 @@ def tone(seconds, amp, freq=220.0, rate=RATE):
     return (amp * np.sin(2 * np.pi * freq * t)).astype(np.float32)
 
 
+SPOKEN: list[str] = []  # sağlayıcıya gerçekte giden metinler
+
+
 class TtsQuiet(TTSProvider):
     kind = "tts_quiet"
 
     def synthesize(self, text, language="tr"):
+        SPOKEN.append(text)
         return TTSResult(tone(0.5 + 0.02 * len(text), 0.05), RATE, 0.1, self.kind, self.model)
 
 
@@ -317,3 +321,44 @@ def test_interrupted_session_is_not_stuck_running(env):
     assert client.get(f"/api/tts/sessions/{stale['id']}").json()["state"] == "interrupted"  # kalıcı
     assert client.post(f"/api/tts/sessions/{stale['id']}/listen", json={"listener": "Ayşe"}).status_code == 200
     assert client.post("/api/tts/sessions", json={"sentences": ["a"], "profiles": ["Q"]}).status_code in (202, 409)
+
+
+# ---- norm-007: Türkçe metin normalizasyonu stüdyoda ---------------------------------------------------------
+
+NUMERIC = "Fiyat 1.250.000 TL, ilan 22.10.2026, tel 0532 123 45 67."
+NUMERIC_SPOKEN = ("Fiyat bir milyon iki yüz elli bin lira, ilan yirmi iki Ekim iki bin yirmi altı, "
+                  "tel sıfır beş üç iki, bir iki üç, dört beş, altı yedi.")
+
+
+def test_normalize_preview_endpoint(env):
+    res = client.post("/api/tts/normalize", json={"sentences": [NUMERIC, "Merhaba."]})
+    assert res.status_code == 200
+    first, second = res.json()
+    assert first["spoken"] == NUMERIC_SPOKEN and first["text"] == NUMERIC
+    assert [c["from"] for c in first["changes"]] == ["1.250.000 TL", "22.10.2026", "0532 123 45 67"]
+    assert second["spoken"] == "Merhaba." and second["changes"] == []
+    assert client.post("/api/tts/normalize", json={"sentences": []}).status_code == 422
+
+
+def test_session_synthesizes_normalized_text_but_shows_original(env):
+    warm("Q")
+    SPOKEN.clear()
+    s = make_session(["Q"], sentences=[NUMERIC], normalize_text=True)
+    assert SPOKEN == [NUMERIC_SPOKEN]  # TTS'e normalize edilmiş metin gitti
+    assert s["sentences"] == [NUMERIC] and s["spoken"] == [NUMERIC_SPOKEN] and s["text_normalized"] is True
+    view = client.post(f"/api/tts/sessions/{s['id']}/listen", json={"listener": "Ayşe"}).json()
+    assert view["items"][0]["sentence"] == NUMERIC  # dinleyici özgün cümleyi görür
+
+
+def test_normalize_can_be_switched_off(env):
+    warm("Q")
+    SPOKEN.clear()
+    s = make_session(["Q"], sentences=[NUMERIC], normalize_text=False)
+    assert SPOKEN == [NUMERIC] and s["spoken"] == [NUMERIC] and s["text_normalized"] is False
+
+
+def test_default_is_normalized(env):
+    warm("Q")
+    SPOKEN.clear()
+    make_session(["Q"], sentences=["Oda sayısı 3+1."])
+    assert SPOKEN == ["Oda sayısı üç artı bir."]

@@ -134,8 +134,10 @@ export type TtsClip = {
   gen_seconds?: number; first_audio_seconds?: number; first_audio_measured?: boolean;
   audio_seconds?: number; rtf?: number; rms_dbfs?: number; sample_rate?: number;
 };
+export type NormalizePreview = { text: string; spoken: string; changes: { from: string; to: string }[] };
 export type TtsSession = {
   id: string; created_at: string; language: string; phone: boolean; sentences: string[]; profiles: string[];
+  spoken?: string[]; text_normalized?: boolean;
   clips: TtsClip[]; done: number; total: number; state: "running" | "done" | "failed"; error?: string;
 };
 export type TtsSessionSummary = { id: string; created_at: string; sentences: number; models: string[]; clips: number; phone: boolean };
@@ -150,8 +152,10 @@ const post = (url: string, body: unknown) =>
 export const fetchTtsModels = () => fetch("/api/tts/models").then((r) => json<TtsModel[]>(r));
 export const fetchTtsSessions = () => fetch("/api/tts/sessions").then((r) => json<TtsSessionSummary[]>(r));
 export const fetchTtsSession = (id: string) => fetch(`/api/tts/sessions/${id}`).then((r) => json<TtsSession>(r));
-export const createTtsSession = (sentences: string[], profiles: string[], phone: boolean) =>
-  post("/api/tts/sessions", { sentences, profiles, phone }).then((r) => json<TtsSession>(r));
+export const createTtsSession = (sentences: string[], profiles: string[], phone: boolean, normalizeText = true) =>
+  post("/api/tts/sessions", { sentences, profiles, phone, normalize_text: normalizeText }).then((r) => json<TtsSession>(r));
+export const previewNormalize = (sentences: string[]) =>
+  post("/api/tts/normalize", { sentences }).then((r) => json<NormalizePreview[]>(r));
 export const ttsClipUrl = (sid: string, clip: string) => `/api/tts/sessions/${sid}/clips/${clip}/audio`;
 export const startListening = (sid: string, listener: string, restart = false) =>
   post(`/api/tts/sessions/${sid}/listen`, { listener, restart }).then((r) => json<BlindView>(r));
