@@ -207,13 +207,18 @@
       "moscow": "must",
       "title": "Tarayıcıdan mikrofonla konuşma (yerel WebRTC)",
       "user_visible_behavior": "Kullanıcı playground'da mikrofon iznini verir ve ajanla sesli konuşur.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Playground açılır, 'Başlat' ile bağlantı kurulur.",
         "Kullanıcının sesi ajana ulaşır, ajanın sesi tarayıcıda duyulur."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "evidence/core-001-playground.png",
+        "frontend/e2e/voice-playground.spec.ts",
+        "backend/tests/test_voice.py",
+        "docs/adr/0002-webrtc-aiortc.md"
+      ],
+      "notes": "Bulut kaniti: gercek Chromium (fake-mic WAV) + gercek WebRTC (aiortc, Opus/DTLS) ile Playground 'Baslat' baglanir, ajan selami ve sahte-mikrofon konusmasi STT->LLM->TTS'e ulasir, ajan sesi tarayicida alinir (uzak iz enerjisi olculdu), 'Durdur' oturumu kapatir; pytest 206, vitest 31, Playwright 5. Karar: Pipecat yerine dogrudan aiortc (ADR 0002). VAD enerji tabanli (PoC). DOGRULANMAMIS: gercek mikrofon + gercek modellerle uctan uca gecikme (Faz 1 kapisi p50<1,2 sn, core-0xx'te olculur), hoparlorde yanki/soz kesme, gurultulu ortam VAD'i. Mac'te: pip install aiortc, backend yeniden baslat, Hazirla L2, /playground, Baslat."
     },
     {
       "id": "lab-003",

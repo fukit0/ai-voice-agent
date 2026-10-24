@@ -19,6 +19,11 @@ PROVIDERS: dict[str, type[Provider]] = {
                 DeepgramSTT, AnthropicLLM, ElevenLabsTTS)
 }
 
+if os.environ.get("SVA_FAKE_PROVIDERS") == "1":  # modelsiz uçtan uca testler için (üretimde kapalı)
+    from .fake import FakeLLM, FakeSTT, FakeTTS
+
+    PROVIDERS.update({cls.kind: cls for cls in (FakeSTT, FakeLLM, FakeTTS)})
+
 log = logging.getLogger("sva.providers")
 _cache: dict[tuple, Provider] = {}
 _cache_lock = threading.Lock()

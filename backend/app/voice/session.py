@@ -1,0 +1,234 @@
+"""Sesli konuşma oturumu: taşıma katmanından bağımsız dinle -> anla -> düşün -> konuş döngüsü.
+
+Taşıma (WebRTC, ileride telefon/SIP) 16 kHz mono float32 örnekleri `feed` ile verir, ajanın sesini `out` kanalından
+alır. Burada: konuşma bitişi (VAD), STT, LLM, TTS (cümle cümle, ilk cümle hazır olunca çalmaya başlar),
+söz kesme (barge-in) ve tur başına gecikme ölçümü bulunur. Anket akışı (flow motoru) core-002'de buraya bağlanır;
+core-001 için LLM serbest sohbet eden kısa bir persona ile konuşur.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import re
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+
+import numpy as np
+
+from .. import stt_runs, trnorm
+from ..providers import record_call
+from ..providers.audio import resample
+from .vad import FRAME, SAMPLE_RATE, Endpointer
+
+OUT_RATE = 48000
+GREETING = "Merhaba, ben Ayşe. sahibinden.com adına arıyorum. Size kısa bir anket yapabilir miyim?"
+PERSONA = (
+    "Sen sahibinden.com adına müşterilerle telefonda konuşan Ayşe adlı sıcak, doğal konuşan bir anket görevlisisin. "
+    "Türkçe konuş, kısa yanıt ver (en fazla iki kısa cümle), liste, madde işareti ve emoji kullanma. "
+    "Sayıları ve fiyatları rakamla yazabilirsin. Müşteri bir şey sorarsa kısaca yanıtla, sonra nazikçe konuya dön. "
+    "Yapay zeka olup olmadığın sorulursa dürüstçe sahibinden.com'un dijital asistanı olduğunu söyle."
+)
+_THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+_SENTENCE = re.compile(r"(?<=[.!?…])\s+")
+BARGE_FRAMES = 10   # 200 ms kesintisiz yüksek ses: söz kesme
+BARGE_MARGIN_DB = 6.0
+
+
+def split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in _SENTENCE.split(text.strip()) if s.strip()]
+
+
+def clean_reply(text: str) -> str:
+    return _THINK.sub("", text or "").replace("*", "").strip()
+
+
+def to_int16(audio: np.ndarray) -> np.ndarray:
+    return (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)
+
+
+class VoiceSession:
+    def __init__(self, sid: str, profile_id: str, stt, llm, tts, out, send_event: Callable[[dict], None],
+                 endpointer: Endpointer | None = None, persona: str = PERSONA, greeting: str = GREETING):
+        self.sid, self.profile_id = sid, profile_id
+        self.stt, self.llm, self.tts, self.out = stt, llm, tts, out
+        self.emit = send_event
+        self.vad = endpointer or Endpointer()
+        self.greeting = greeting
+        self.history: list[dict] = [{"role": "system", "content": persona}]
+        self.state = "idle"
+        self.started_at = datetime.now(timezone.utc)
+        self.turns: list[dict] = []
+        self.transcript: list[dict] = []
+        self.stats = {"frames_in": 0, "seconds_in": 0.0, "utterances": 0, "dropped": 0, "barge_ins": 0,
+                      "agent_seconds_out": 0.0, "peak_in_db": -120.0}
+        self._buf = np.zeros(0, np.float32)
+        self._turn_id = 0
+        self._barge = 0
+        self._synth_done = True
+        self._tasks: set[asyncio.Task] = set()
+        self._closed = False
+        out.set_on_drained(self._on_drained)
+
+    # ---- durum ----------------------------------------------------------------------------------
+    def _set_state(self, state: str) -> None:
+        if state != self.state:
+            self.state = state
+            self.emit({"type": "state", "state": state})
+
+    def _spawn(self, coro) -> None:
+        task = asyncio.get_running_loop().create_task(coro)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    # ---- giriş ----------------------------------------------------------------------------------
+    async def start(self) -> None:
+        self._set_state("listening")
+        self._spawn(self._speak_turn(self.greeting, turn=self._next_turn(), t_end=time.perf_counter(), role_text=True))
+
+    def feed(self, samples: np.ndarray) -> None:
+        """16 kHz mono float32 örnekler (rastgele uzunlukta parçalar)."""
+        if self._closed or self.state == "idle":
+            return
+        self._buf = np.concatenate([self._buf, samples.astype(np.float32, copy=False)])
+        while len(self._buf) >= FRAME:
+            frame, self._buf = self._buf[:FRAME], self._buf[FRAME:]
+            self._on_frame(frame)
+
+    def _on_frame(self, frame: np.ndarray) -> None:
+        self.stats["frames_in"] += 1
+        self.stats["seconds_in"] = round(self.stats["frames_in"] * FRAME / SAMPLE_RATE, 2)
+        events = self.vad.feed(frame)
+        self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
+        if self.state in ("thinking", "speaking"):
+            loud = self.vad.level > max(self.vad.threshold_db, -45.0) + BARGE_MARGIN_DB
+            self._barge = self._barge + 1 if loud else 0
+            if self._barge >= BARGE_FRAMES:
+                self._barge_in()
+        else:
+            self._barge = 0
+        for kind, payload in events:
+            if kind == "end":
+                if self.state in ("thinking", "speaking"):
+                    self.stats["dropped"] += 1  # ajan konuşurken kısa gürültü/yankı: söz kesme değil
+                    continue
+                self.stats["utterances"] += 1
+                self._spawn(self._respond(payload, t_end=time.perf_counter()))
+            elif kind == "drop":
+                self.stats["dropped"] += 1
+
+    def _barge_in(self) -> None:
+        self._barge = 0
+        self._turn_id += 1          # süren tur sonuçları artık atılır
+        self.out.flush()
+        self._synth_done = True
+        self.stats["barge_ins"] += 1
+        self.emit({"type": "barge_in"})
+        self._set_state("listening")
+
+    def _next_turn(self) -> int:
+        self._turn_id += 1
+        return self._turn_id
+
+    def _on_drained(self) -> None:
+        if self.state == "speaking" and self._synth_done:
+            self._set_state("listening")
+
+    # ---- tur ------------------------------------------------------------------------------------
+    async def _respond(self, audio: np.ndarray, t_end: float) -> None:
+        turn = self._next_turn()
+        self._set_state("thinking")
+        rec: dict[str, Any] = {"turn": turn, "user_seconds": round(len(audio) / SAMPLE_RATE, 2),
+                               "endpoint_wait_ms": self.vad.end_frames * 20}
+        try:
+            t0 = time.perf_counter()
+            stt_res = await asyncio.to_thread(self.stt.transcribe, audio, SAMPLE_RATE, "tr")
+            rec["stt_s"] = round(time.perf_counter() - t0, 3)
+            record_call(self.profile_id, "stt", self.stt, rec["stt_s"], ok=True, warm=True,
+                        audio_seconds=rec["user_seconds"], chars=len(stt_res.text), source="voice")
+            if turn != self._turn_id:
+                return
+            text = stt_res.text.strip()
+            if not text:
+                self._set_state("listening")
+                return
+            self._say("user", text)
+            self.history.append({"role": "user", "content": text})
+            t1 = time.perf_counter()
+            llm_res = await asyncio.to_thread(self.llm.complete, self.history[:1] + self.history[1:][-12:], 120, 0.3)
+            rec["llm_s"] = round(time.perf_counter() - t1, 3)
+            record_call(self.profile_id, "llm", self.llm, rec["llm_s"], ok=True, warm=True,
+                        chars=len(llm_res.text), source="voice")
+            if turn != self._turn_id:
+                return
+            reply = clean_reply(llm_res.text)
+            if not reply:
+                self._set_state("listening")
+                return
+            self.history.append({"role": "assistant", "content": reply})
+            await self._speak_turn(reply, turn, t_end, rec=rec)
+        except Exception as exc:  # noqa: BLE001 — sağlayıcı hatası oturumu düşürmemeli, kullanıcıya gösterilir
+            self.emit({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
+            if turn == self._turn_id:
+                self._set_state("listening")
+
+    async def _speak_turn(self, text: str, turn: int, t_end: float, rec: dict | None = None, role_text: bool = False) -> None:
+        rec = rec if rec is not None else {"turn": turn, "greeting": True}
+        if role_text:
+            self.history.append({"role": "assistant", "content": text})
+        self._say("agent", text)
+        self._synth_done = False
+        first_audio: float | None = None
+        tts_total = 0.0
+        try:
+            for sentence in split_sentences(text) or [text]:
+                spoken = trnorm.normalize(sentence)
+                t0 = time.perf_counter()
+                res = await asyncio.to_thread(self.tts.synthesize, spoken, "tr")
+                dt = time.perf_counter() - t0
+                tts_total += dt
+                record_call(self.profile_id, "tts", self.tts, dt, ok=True, warm=True, chars=len(spoken), source="voice")
+                if turn != self._turn_id:
+                    return
+                pcm = to_int16(resample(res.audio, res.sample_rate, OUT_RATE))
+                if first_audio is None:
+                    first_audio = time.perf_counter() - t_end
+                    rec["tts_first_s"] = round(dt, 3)
+                    rec["first_audio_after_end_s"] = round(first_audio, 3)
+                    self._set_state("speaking")
+                self.stats["agent_seconds_out"] = round(self.stats["agent_seconds_out"] + len(pcm) / OUT_RATE, 2)
+                self.out.push(pcm)
+        finally:
+            if turn == self._turn_id:
+                self._synth_done = True
+                self.out.mark_end()
+                if first_audio is None:
+                    self._set_state("listening")
+        rec["tts_total_s"] = round(tts_total, 3)
+        self.turns.append(rec)
+        self.emit({"type": "turn", **rec})
+
+    def _say(self, role: str, text: str) -> None:
+        item = {"role": role, "text": text, "t": round((datetime.now(timezone.utc) - self.started_at).total_seconds(), 2)}
+        self.transcript.append(item)
+        self.emit({"type": "transcript", **item})
+
+    # ---- kapanış --------------------------------------------------------------------------------
+    async def close(self) -> Path | None:
+        if self._closed:
+            return None
+        self._closed = True
+        self._turn_id += 1
+        self.out.flush()
+        for task in list(self._tasks):
+            task.cancel()
+        self._set_state("closed")
+        folder = stt_runs.data_dir() / "voice-sessions"
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{self.sid}.json"
+        path.write_text(json.dumps({
+            "id": self.sid, "profile": self.profile_id, "started_at": self.started_at.isoformat(timespec="seconds"),
+            "stats": self.stats, "turns": self.turns, "transcript": self.transcript}, ensure_ascii=False, indent=2),
+            encoding="utf-8")
+        return path

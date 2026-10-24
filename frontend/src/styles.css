@@ -77,3 +77,8 @@ textarea { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--lin
 .eval-table th, .eval-table td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; vertical-align: top; }
 .eval-detail { margin: 8px 0; font-size: 13px; }
 .eval-detail summary { cursor: pointer; }
+
+.voice-controls { display: flex; align-items: center; gap: 12px; }
+.voice-meters { display: flex; gap: 24px; font-size: 13px; color: var(--muted); }
+.voice-lines { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.voice-agent { color: var(--accent); }

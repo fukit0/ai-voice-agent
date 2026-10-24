@@ -1,0 +1,7 @@
+profiles:
+  V1:
+    name: Sahte (e2e)
+    purpose: Modelsiz uçtan uca WebRTC testi
+    stt: {provider: fake_stt, model: fake}
+    llm: {provider: fake_llm, model: fake}
+    tts: {provider: fake_tts, model: fake}
