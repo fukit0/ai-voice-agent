@@ -190,8 +190,10 @@
         "30 örnek cevaplık test seti çalıştırılır.",
         "Her LLM için doğru normalize ve doğru dal oranı raporlanır."
       ],
-      "evidence": [],
-      "notes": "2026-10-24 uygulandı, GERÇEK MODEL KOŞUSU BEKLİYOR (passing değil). Hazır: config/eval/llm-samples.json (30 örnek: 6 puan, 6 evet/hayır, 6 seçenek, 6 fiyat, 6 özel durum), backend/app/llm_eval.py (JSON sözleşmesi, kesin doğrulama, deterministik dal türetme, puanlama), POST /api/eval/llm/run + /models /samples /runs, 'LLM testi' ekranı, scripts/eval_llm.py (kanıt dosyası yazar). Bulutta pytest 189 (44 eval-llm), vitest 28, build, Playwright 4; sahte LLM'lerle puanlama doğrulandı (mükemmel model %100, özensiz model düşer, bozuk model izole). Mac'te Ollama/Claude'a bulut oturumundan ulaşılamadı; kullanıcı çalıştıracak: ./.venv/bin/python scripts/eval_llm.py L2 A1 (L4/L1 için önce ollama pull). Karar: native tool-calling değil JSON sözleşmesi (tüm sağlayıcılarda aynı arayüz, adil kıyas); native tool-calling ayrı ölçüm. Faz 1 kapısı: tam doğru >= %90."
+      "evidence": [
+        "evidence/eval-llm-20261024-130722.json"
+      ],
+      "notes": "2026-10-24 uygulandı, GERÇEK MODEL KOŞUSU BEKLİYOR (passing değil). Hazır: config/eval/llm-samples.json (30 örnek: 6 puan, 6 evet/hayır, 6 seçenek, 6 fiyat, 6 özel durum), backend/app/llm_eval.py (JSON sözleşmesi, kesin doğrulama, deterministik dal türetme, puanlama), POST /api/eval/llm/run + /models /samples /runs, 'LLM testi' ekranı, scripts/eval_llm.py (kanıt dosyası yazar). Bulutta pytest 189 (44 eval-llm), vitest 28, build, Playwright 4; sahte LLM'lerle puanlama doğrulandı (mükemmel model %100, özensiz model düşer, bozuk model izole). Mac'te Ollama/Claude'a bulut oturumundan ulaşılamadı; kullanıcı çalıştıracak: ./.venv/bin/python scripts/eval_llm.py L2 A1 (L4/L1 için önce ollama pull). Karar: native tool-calling değil JSON sözleşmesi (tüm sağlayıcılarda aynı arayüz, adil kıyas); native tool-calling ayrı ölçüm. Faz 1 kapısı: tam doğru >= %90. | 2026-10-24 Mac gerçek koşu: L2 qwen3:30b-a3b-instruct-2507-q4_K_M 30 örnek: JSON %100, normalize %96, dal %97, tam doğru %97 (29/30), p50 0.45 sn, p95 0.61 sn; tek hata s12 'hı hı' (beklenen evet, model unclear dedi; veri setinde belirsiz örnek, beklenen değer değiştirilmedi). A1 (claude-haiku-5-5) 'temperature is deprecated' HTTP 400 ile ısınmada düştü; AnthropicLLM temperature'ı model reddederse parametresiz yeniden deneyecek şekilde düzeltildi (04d9340, test var). A1 yeniden koşulacak; sonra passing."
     },
     {
       "id": "core-001",
