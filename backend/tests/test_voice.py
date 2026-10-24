@@ -1,3 +1,4 @@
+import sys
 """core-001: sesli konuşma hattı — VAD, oturum döngüsü (dinle/anla/düşün/konuş, söz kesme), WebRTC uçtan uca.
 
 WebRTC testi gerçek aiortc istemcisiyle yerel döngüde çalışır (Opus, DTLS, veri kanalı); modeller sahte sağlayıcılardır.
@@ -372,3 +373,19 @@ def test_webrtc_end_to_end_user_voice_reaches_agent_and_agent_voice_returns(env)
     assert closed.status_code == 200
     saved = list((env / "data" / "voice-sessions").glob("*.json"))
     assert len(saved) == 1 and json.loads(saved[0].read_text(encoding="utf-8"))["transcript"]
+
+
+def test_offer_without_aiortc_returns_503_and_backend_still_imports(env, monkeypatch):
+    import builtins
+    real = builtins.__import__
+
+    def fake_import(name, *a, **k):
+        if name.endswith("voice.rtc") or name == "av":
+            raise ModuleNotFoundError("No module named 'av'", name="av")
+        return real(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    monkeypatch.delitem(sys.modules, "backend.app.voice.rtc", raising=False)
+    r = client.post("/api/voice/offer", json={"sdp": "v=0", "type": "offer", "profile": "V1"})
+    assert r.status_code == 503 and r.json()["detail"]["error"] == "voice_deps_missing"
+    assert "pip install aiortc" in r.json()["detail"]["message"]

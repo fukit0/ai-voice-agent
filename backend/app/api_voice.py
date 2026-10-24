@@ -12,10 +12,9 @@ from pydantic import BaseModel
 
 from .api_profiles import _provider
 from .profiles import load_profiles
-from .voice.rtc import RtcVoiceConnection
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
-CONNECTIONS: dict[str, RtcVoiceConnection] = {}
+CONNECTIONS: dict[str, "RtcVoiceConnection"] = {}  # noqa: F821 (aiortc yoksa import edilmez)
 MAX_SESSIONS = 3  # tek Mac'te modeller paylaşılır; çok sayıda eşzamanlı oturum ölçümleri bozar
 
 
@@ -37,6 +36,12 @@ async def offer(req: OfferRequest) -> dict:
         raise HTTPException(400, {"error": "component_unavailable", "profile": req.profile,
                                   "message": f"{req.profile} profilinde STT yok (ses doğrudan LLM'e gider, core-010); "
                                              "sesli konuşma için STT'li bir profil seçin."})
+    try:  # aiortc opsiyonel: yoksa yalnızca sesli konuşma kapanır, diğer ekranlar çalışır
+        from .voice.rtc import RtcVoiceConnection
+    except ImportError as exc:
+        raise HTTPException(503, {"error": "voice_deps_missing",
+                                  "message": f"Sesli konuşma için aiortc kurulu değil ({exc.name}). "
+                                             "`pip install aiortc` çalıştırıp backend'i yeniden başlatın."}) from exc
     stt, llm, tts = (_provider(profile, c) for c in ("stt", "llm", "tts"))  # soğuksa 409
     for sid in [k for k, v in CONNECTIONS.items() if v.closed]:
         CONNECTIONS.pop(sid, None)
