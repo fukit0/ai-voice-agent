@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-24",
+  "last_updated": "2026-10-25",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -427,7 +427,7 @@
     {
       "id": "core-009",
       "plan_ref": "F1.9",
-      "priority": 21,
+      "priority": 22,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -443,7 +443,7 @@
     {
       "id": "core-010",
       "plan_ref": "F1.10",
-      "priority": 22,
+      "priority": 23,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "could",
@@ -457,9 +457,29 @@
       "notes": ""
     },
     {
+      "id": "core-011",
+      "plan_ref": "F7.3 (A2/A3 notu)",
+      "priority": 21,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Realtime profiller (A2 OpenAI, A3 Gemini) Playground'da",
+      "user_visible_behavior": "Kullanıcı Playground'da A2 veya A3 profilini seçip senaryoyla konuşur; ses doğrudan realtime modele gider, cevaplar fonksiyon çağrısıyla yapılandırılır ve akışı yine bizim motor yürütür.",
+      "status": "not_started",
+      "verification": [
+        "A2 profiliyle senaryo seçilip Başlat ile konuşma başlar; ajanın sesi tarayıcıda duyulur.",
+        "Model her cevabı fonksiyon çağrısıyla bildirir; FlowDriver sonraki soruyu seçer ve çıkarılan cevaplar listelenir.",
+        "Uçtan uca gecikme (konuşma bitişinden ilk sese) tur başına gösterilir; STT/LLM/TTS ayrımı yoktur ve arayüzde böyle belirtilir.",
+        "A3 için Türkçe konuşma kalitesi ve fonksiyon çağrısı güvenilirliği ayrıca doğrulanır; desteklenmiyorsa gerekçesiyle belgelenir.",
+        "A2/A3 için aynı 5 test aramasının gecikmesi L2 ile karşılaştırılır (kıyas matrisine girdi)."
+      ],
+      "evidence": [],
+      "notes": "Hibrit yöntem önerisi: model sesi yönetir, her cevabı fonksiyon çağrısıyla bildirir; flow motoru (voice/flow.py) deterministik kalır. Basit yöntem (tüm senaryoyu talimat olarak vermek) akışın deterministikliğini ve kıyasın adilliğini bozduğu için önerilmez. Gerekenler: tarayıcı sesini sağlayıcının realtime bağlantısına aktaran adaptör, API anahtarları (OPENAI_API_KEY, GEMINI_API_KEY), telefon filtresinin realtime ses yoluna uygulanması. Şu an /api/voice/offer realtime profilde 400 'realtime_unsupported' döner. Telefon filtresi, ayrı STT/LLM/TTS gecikmesi ve cevap-çıkarma ölçümü (eval-llm) bu profillerde aynı biçimde geçerli değildir. Bağımlılık: core-001, lab-003 (passing)."
+    },
+    {
       "id": "scn-001",
       "plan_ref": "F2.1",
-      "priority": 23,
+      "priority": 24,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -477,7 +497,7 @@
     {
       "id": "scn-002",
       "plan_ref": "F2.2",
-      "priority": 24,
+      "priority": 25,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -494,7 +514,7 @@
     {
       "id": "scn-003",
       "plan_ref": "F2.3",
-      "priority": 25,
+      "priority": 26,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -511,7 +531,7 @@
     {
       "id": "scn-004",
       "plan_ref": "F2.4",
-      "priority": 26,
+      "priority": 27,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -528,7 +548,7 @@
     {
       "id": "scn-007",
       "plan_ref": "F2.7",
-      "priority": 27,
+      "priority": 28,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -546,7 +566,7 @@
     {
       "id": "scn-009",
       "plan_ref": "F2.9",
-      "priority": 28,
+      "priority": 29,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -562,7 +582,7 @@
     {
       "id": "sim-001",
       "plan_ref": "F3.1",
-      "priority": 29,
+      "priority": 30,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -578,7 +598,7 @@
     {
       "id": "sim-002",
       "plan_ref": "F3.2",
-      "priority": 30,
+      "priority": 31,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -594,7 +614,7 @@
     {
       "id": "sim-003",
       "plan_ref": "F3.3",
-      "priority": 31,
+      "priority": 32,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -610,7 +630,7 @@
     {
       "id": "res-001",
       "plan_ref": "F4.1",
-      "priority": 32,
+      "priority": 33,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -626,7 +646,7 @@
     {
       "id": "res-002",
       "plan_ref": "F4.2",
-      "priority": 33,
+      "priority": 34,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -642,7 +662,7 @@
     {
       "id": "res-003",
       "plan_ref": "F4.3",
-      "priority": 34,
+      "priority": 35,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -658,7 +678,7 @@
     {
       "id": "eval-004",
       "plan_ref": "F6.4",
-      "priority": 35,
+      "priority": 36,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -675,7 +695,7 @@
     {
       "id": "eval-005",
       "plan_ref": "F6.5",
-      "priority": 36,
+      "priority": 37,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -692,7 +712,7 @@
     {
       "id": "scn-005",
       "plan_ref": "F2.5",
-      "priority": 37,
+      "priority": 38,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -708,7 +728,7 @@
     {
       "id": "scn-006",
       "plan_ref": "F2.6",
-      "priority": 38,
+      "priority": 39,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -724,7 +744,7 @@
     {
       "id": "scn-008",
       "plan_ref": "F2.8",
-      "priority": 39,
+      "priority": 40,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -740,7 +760,7 @@
     {
       "id": "scn-010",
       "plan_ref": "F2.10",
-      "priority": 40,
+      "priority": 41,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -756,7 +776,7 @@
     {
       "id": "sim-004",
       "plan_ref": "F3.4",
-      "priority": 41,
+      "priority": 42,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "should",
@@ -772,7 +792,7 @@
     {
       "id": "res-004",
       "plan_ref": "F4.4",
-      "priority": 42,
+      "priority": 43,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -788,7 +808,7 @@
     {
       "id": "res-005",
       "plan_ref": "F4.5",
-      "priority": 43,
+      "priority": 44,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -804,7 +824,7 @@
     {
       "id": "res-006",
       "plan_ref": "F4.6",
-      "priority": 44,
+      "priority": 45,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -820,7 +840,7 @@
     {
       "id": "plat-001",
       "plan_ref": "F5.1",
-      "priority": 45,
+      "priority": 46,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -836,7 +856,7 @@
     {
       "id": "plat-002",
       "plan_ref": "F5.2",
-      "priority": 46,
+      "priority": 47,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -853,7 +873,7 @@
     {
       "id": "scn-011",
       "plan_ref": "F2.11",
-      "priority": 47,
+      "priority": 48,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "could",
@@ -869,7 +889,7 @@
     {
       "id": "res-007",
       "plan_ref": "F4.7",
-      "priority": 48,
+      "priority": 49,
       "area": "results",
       "phase": "faz-2",
       "moscow": "could",
@@ -885,7 +905,7 @@
     {
       "id": "sim-005",
       "plan_ref": "F3.5",
-      "priority": 49,
+      "priority": 50,
       "area": "simulator",
       "phase": "later",
       "moscow": "could",
@@ -901,7 +921,7 @@
     {
       "id": "plat-003",
       "plan_ref": "F5.3",
-      "priority": 50,
+      "priority": 51,
       "area": "platform",
       "phase": "later",
       "moscow": "could",

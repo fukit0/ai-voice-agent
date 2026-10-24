@@ -18,7 +18,7 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003 (10 / 50)
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003 (10 / 51)
 - Current highest-priority unfinished feature: core-002 (söz sırası tespiti ve söz kesme; barge-in kısmen var) / core-004 (anket yürütme; FlowDriver ile büyük ölçüde var, gerçek model ölçümü eksik)
 - Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
 
@@ -135,3 +135,6 @@ agents do not update it automatically.
 - Doğrulama (bulut): pytest 232, vitest 37, build, Playwright 7; kanıt evidence/lab-003-scenarios.png, lab-003-playground.png.
 - Doğrulanmamış: gerçek mikrofon + gerçek modellerle anket tamamlama, STT gürültüsünde cevap çıkarma, sessiz hat, realtime profiller (A2/A3), Welcome Call senaryosu.
 - Kullanıcı eylemi (Mac): backend yeniden başlat, Hazırla L2, /playground'da senaryo seçili Başlat; kulaklık kullan. Tamamlanan anketin cevapları data/voice-sessions/*.json içinde (flow.answers, flow.path).
+
+### Session 008 eki (feature list)
+- Yeni özellik core-011 (should, öncelik 21): Realtime profiller A2/A3'ün Playground'da desteği (hibrit: model sesi yönetir, fonksiyon çağrısıyla cevap bildirir, flow motoru akışı yürütür). Nedeni: kademeli Playground STT/LLM/TTS aşamalarına bağlı; realtime modeller speech-to-speech olduğu için ayrı adaptör gerekir. Sonraki öncelikler 1 kaydırıldı (toplam 51 özellik). Henüz başlanmadı.
