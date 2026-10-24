@@ -1,0 +1,159 @@
+{
+  "created_at": "2026-10-24T13:06:31+00:00",
+  "n_samples": 5,
+  "results": [
+    {
+      "profile": "L2",
+      "provider": "ollama",
+      "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
+      "status": "ok",
+      "warmup_seconds": 11.62,
+      "rows": [
+        {
+          "id": "s01",
+          "node": "memnuniyet",
+          "utterance": "dokuz veririm",
+          "expected": {
+            "intent": "answer",
+            "value": 9,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 9}",
+          "parsed": {
+            "intent": "answer",
+            "value": 9
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.127,
+          "output_tokens": 13
+        },
+        {
+          "id": "s02",
+          "node": "memnuniyet",
+          "utterance": "on üzerinden yedi veririm",
+          "expected": {
+            "intent": "answer",
+            "value": 7,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 7}",
+          "parsed": {
+            "intent": "answer",
+            "value": 7
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.524,
+          "output_tokens": 13
+        },
+        {
+          "id": "s03",
+          "node": "memnuniyet",
+          "utterance": "ee bence altı",
+          "expected": {
+            "intent": "answer",
+            "value": 6,
+            "branch": "dusuk_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 6}",
+          "parsed": {
+            "intent": "answer",
+            "value": 6
+          },
+          "got_branch": "dusuk_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.362,
+          "output_tokens": 13
+        },
+        {
+          "id": "s04",
+          "node": "memnuniyet",
+          "utterance": "yarı yarıya yani beş",
+          "expected": {
+            "intent": "answer",
+            "value": 5,
+            "branch": "dusuk_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 5}",
+          "parsed": {
+            "intent": "answer",
+            "value": 5
+          },
+          "got_branch": "dusuk_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.355,
+          "output_tokens": 13
+        },
+        {
+          "id": "s05",
+          "node": "memnuniyet",
+          "utterance": "tam puan veriyorum on",
+          "expected": {
+            "intent": "answer",
+            "value": 10,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 10}",
+          "parsed": {
+            "intent": "answer",
+            "value": 10
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.381,
+          "output_tokens": 14
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "n_answers": 5,
+        "json_valid_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "intent_rate": 1.0,
+        "normalize_rate": 1.0,
+        "branch_rate": 1.0,
+        "full_rate": 1.0,
+        "latency_p50": 0.381,
+        "latency_p95": 1.127,
+        "by_type": {
+          "rating": {
+            "n": 5,
+            "full_rate": 1.0,
+            "branch_rate": 1.0
+          }
+        }
+      }
+    }
+  ]
+}

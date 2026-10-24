@@ -50,7 +50,9 @@ class AnthropicLLM(LLMProvider):
     def complete(self, messages, max_tokens=256, temperature=0.3):
         system = "\n".join(m["content"] for m in messages if m["role"] == "system")
         chat = [m for m in messages if m["role"] != "system"]
-        payload = {"model": self.model, "max_tokens": max_tokens, "temperature": temperature, "messages": chat}
+        payload = {"model": self.model, "max_tokens": max_tokens, "messages": chat}
+        if not getattr(self, "_no_temperature", False):
+            payload["temperature"] = temperature  # yeni modeller reddeder ("temperature is deprecated"): aşağıda yeniden denenir
         if system:
             payload["system"] = system
         t0 = time.perf_counter()
@@ -58,7 +60,14 @@ class AnthropicLLM(LLMProvider):
         if os.environ.get("ANTHROPIC_WORKSPACE_ID"):  # çalışma alanına bağlı olmayan anahtarlar bu başlığı ister
             headers["anthropic-workspace-id"] = os.environ["ANTHROPIC_WORKSPACE_ID"]
         try:
-            res = _post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
+            try:
+                res = _post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
+            except ProviderError as exc:
+                if "temperature" not in str(exc).lower() or "temperature" not in payload:
+                    raise
+                payload.pop("temperature")  # bu model sıcaklık parametresini kabul etmiyor: bir daha gönderme
+                self._no_temperature = True
+                res = _post("https://api.anthropic.com/v1/messages", json=payload, headers=headers)
         except ProviderError as exc:
             if "workspace" in str(exc).lower() and not os.environ.get("ANTHROPIC_WORKSPACE_ID"):
                 raise ProviderError(
