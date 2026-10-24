@@ -1,0 +1,799 @@
+{
+  "created_at": "2026-10-24T13:35:04+00:00",
+  "n_samples": 30,
+  "results": [
+    {
+      "profile": "L5",
+      "provider": "ollama",
+      "model": "gemma4:12b",
+      "status": "ok",
+      "warmup_seconds": 3.66,
+      "rows": [
+        {
+          "id": "s01",
+          "node": "memnuniyet",
+          "utterance": "dokuz veririm",
+          "expected": {
+            "intent": "answer",
+            "value": 9,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 9}",
+          "parsed": {
+            "intent": "answer",
+            "value": 9
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 2.492,
+          "output_tokens": 12
+        },
+        {
+          "id": "s02",
+          "node": "memnuniyet",
+          "utterance": "on üzerinden yedi veririm",
+          "expected": {
+            "intent": "answer",
+            "value": 7,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 7}",
+          "parsed": {
+            "intent": "answer",
+            "value": 7
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.886,
+          "output_tokens": 12
+        },
+        {
+          "id": "s03",
+          "node": "memnuniyet",
+          "utterance": "ee bence altı",
+          "expected": {
+            "intent": "answer",
+            "value": 6,
+            "branch": "dusuk_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 6}",
+          "parsed": {
+            "intent": "answer",
+            "value": 6
+          },
+          "got_branch": "dusuk_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.8,
+          "output_tokens": 12
+        },
+        {
+          "id": "s04",
+          "node": "memnuniyet",
+          "utterance": "yarı yarıya yani beş",
+          "expected": {
+            "intent": "answer",
+            "value": 5,
+            "branch": "dusuk_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 5}",
+          "parsed": {
+            "intent": "answer",
+            "value": 5
+          },
+          "got_branch": "dusuk_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.737,
+          "output_tokens": 12
+        },
+        {
+          "id": "s05",
+          "node": "memnuniyet",
+          "utterance": "tam puan veriyorum on",
+          "expected": {
+            "intent": "answer",
+            "value": 10,
+            "branch": "yuksek_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 10}",
+          "parsed": {
+            "intent": "answer",
+            "value": 10
+          },
+          "got_branch": "yuksek_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.847,
+          "output_tokens": 13
+        },
+        {
+          "id": "s06",
+          "node": "memnuniyet",
+          "utterance": "bir verirdim açıkçası çok kötü",
+          "expected": {
+            "intent": "answer",
+            "value": 1,
+            "branch": "dusuk_puan"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 1}",
+          "parsed": {
+            "intent": "answer",
+            "value": 1
+          },
+          "got_branch": "dusuk_puan",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.683,
+          "output_tokens": 12
+        },
+        {
+          "id": "s07",
+          "node": "ilan_verdi_mi",
+          "utterance": "evet verdim iki ay önce",
+          "expected": {
+            "intent": "answer",
+            "value": true,
+            "branch": "ilan_verdi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": true}",
+          "parsed": {
+            "intent": "answer",
+            "value": true
+          },
+          "got_branch": "ilan_verdi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.152,
+          "output_tokens": 11
+        },
+        {
+          "id": "s08",
+          "node": "ilan_verdi_mi",
+          "utterance": "hayır hiç vermedim",
+          "expected": {
+            "intent": "answer",
+            "value": false,
+            "branch": "ilan_vermedi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": false}",
+          "parsed": {
+            "intent": "answer",
+            "value": false
+          },
+          "got_branch": "ilan_vermedi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.722,
+          "output_tokens": 11
+        },
+        {
+          "id": "s09",
+          "node": "ilan_verdi_mi",
+          "utterance": "yok vermedim ben sadece bakıyorum",
+          "expected": {
+            "intent": "answer",
+            "value": false,
+            "branch": "ilan_vermedi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": false}",
+          "parsed": {
+            "intent": "answer",
+            "value": false
+          },
+          "got_branch": "ilan_vermedi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.72,
+          "output_tokens": 11
+        },
+        {
+          "id": "s10",
+          "node": "ilan_verdi_mi",
+          "utterance": "tabii ki verdim arabamı satmıştım",
+          "expected": {
+            "intent": "answer",
+            "value": true,
+            "branch": "ilan_verdi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": true}",
+          "parsed": {
+            "intent": "answer",
+            "value": true
+          },
+          "got_branch": "ilan_verdi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.724,
+          "output_tokens": 11
+        },
+        {
+          "id": "s11",
+          "node": "ilan_verdi_mi",
+          "utterance": "daha önce vermiştim ama son üç ayda vermedim",
+          "expected": {
+            "intent": "answer",
+            "value": false,
+            "branch": "ilan_vermedi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": false}",
+          "parsed": {
+            "intent": "answer",
+            "value": false
+          },
+          "got_branch": "ilan_vermedi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.723,
+          "output_tokens": 11
+        },
+        {
+          "id": "s12",
+          "node": "ilan_verdi_mi",
+          "utterance": "hı hı",
+          "expected": {
+            "intent": "answer",
+            "value": true,
+            "branch": "ilan_verdi"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": true}",
+          "parsed": {
+            "intent": "answer",
+            "value": true
+          },
+          "got_branch": "ilan_verdi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.708,
+          "output_tokens": 11
+        },
+        {
+          "id": "s13",
+          "node": "kanal",
+          "utterance": "genelde telefondan uygulamayı kullanıyorum",
+          "expected": {
+            "intent": "answer",
+            "value": "app",
+            "branch": "kanal_uygulama"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"app\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "app"
+          },
+          "got_branch": "kanal_uygulama",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.322,
+          "output_tokens": 12
+        },
+        {
+          "id": "s14",
+          "node": "kanal",
+          "utterance": "bilgisayardan giriyorum işte",
+          "expected": {
+            "intent": "answer",
+            "value": "desktop",
+            "branch": "kanal_masaustu"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"desktop\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "desktop"
+          },
+          "got_branch": "kanal_masaustu",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.754,
+          "output_tokens": 12
+        },
+        {
+          "id": "s15",
+          "node": "kanal",
+          "utterance": "telefondan ama uygulamayı indirmedim tarayıcıdan bakıyorum",
+          "expected": {
+            "intent": "answer",
+            "value": "mobile_web",
+            "branch": "kanal_mobil_web"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"mobile_web\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "mobile_web"
+          },
+          "got_branch": "kanal_mobil_web",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.738,
+          "output_tokens": 14
+        },
+        {
+          "id": "s16",
+          "node": "kanal",
+          "utterance": "ikisi de var hem bilgisayar hem uygulama ama çoğunlukla uygulama",
+          "expected": {
+            "intent": "answer",
+            "value": "app",
+            "branch": "kanal_uygulama"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"app\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "app"
+          },
+          "got_branch": "kanal_uygulama",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.761,
+          "output_tokens": 12
+        },
+        {
+          "id": "s17",
+          "node": "kanal",
+          "utterance": "masaüstü",
+          "expected": {
+            "intent": "answer",
+            "value": "desktop",
+            "branch": "kanal_masaustu"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"desktop\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "desktop"
+          },
+          "got_branch": "kanal_masaustu",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.682,
+          "output_tokens": 12
+        },
+        {
+          "id": "s18",
+          "node": "kanal",
+          "utterance": "cepten bakıyorum uygulamadan",
+          "expected": {
+            "intent": "answer",
+            "value": "app",
+            "branch": "kanal_uygulama"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": \"app\"}",
+          "parsed": {
+            "intent": "answer",
+            "value": "app"
+          },
+          "got_branch": "kanal_uygulama",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.743,
+          "output_tokens": 12
+        },
+        {
+          "id": "s19",
+          "node": "satis_fiyati",
+          "utterance": "yüz elli bin liraya sattım",
+          "expected": {
+            "intent": "answer",
+            "value": 150000,
+            "branch": "normal_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 150000}",
+          "parsed": {
+            "intent": "answer",
+            "value": 150000
+          },
+          "got_branch": "normal_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.322,
+          "output_tokens": 17
+        },
+        {
+          "id": "s20",
+          "node": "satis_fiyati",
+          "utterance": "iki buçuk milyon",
+          "expected": {
+            "intent": "answer",
+            "value": 2500000,
+            "branch": "yuksek_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 2500000}",
+          "parsed": {
+            "intent": "answer",
+            "value": 2500000
+          },
+          "got_branch": "yuksek_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.841,
+          "output_tokens": 18
+        },
+        {
+          "id": "s21",
+          "node": "satis_fiyati",
+          "utterance": "bir milyon iki yüz bin",
+          "expected": {
+            "intent": "answer",
+            "value": 1200000,
+            "branch": "yuksek_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 1200000}",
+          "parsed": {
+            "intent": "answer",
+            "value": 1200000
+          },
+          "got_branch": "yuksek_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.84,
+          "output_tokens": 18
+        },
+        {
+          "id": "s22",
+          "node": "satis_fiyati",
+          "utterance": "sekiz yüz bin",
+          "expected": {
+            "intent": "answer",
+            "value": 800000,
+            "branch": "normal_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 800000}",
+          "parsed": {
+            "intent": "answer",
+            "value": 800000
+          },
+          "got_branch": "normal_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.804,
+          "output_tokens": 17
+        },
+        {
+          "id": "s23",
+          "node": "satis_fiyati",
+          "utterance": "yirmi beş bin beş yüz lira",
+          "expected": {
+            "intent": "answer",
+            "value": 25500,
+            "branch": "normal_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 25500}",
+          "parsed": {
+            "intent": "answer",
+            "value": 25500
+          },
+          "got_branch": "normal_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.844,
+          "output_tokens": 16
+        },
+        {
+          "id": "s24",
+          "node": "satis_fiyati",
+          "utterance": "üç yüz elli bin civarı",
+          "expected": {
+            "intent": "answer",
+            "value": 350000,
+            "branch": "normal_fiyat"
+          },
+          "raw": "{\"intent\": \"answer\", \"value\": 350000}",
+          "parsed": {
+            "intent": "answer",
+            "value": 350000
+          },
+          "got_branch": "normal_fiyat",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.848,
+          "output_tokens": 17
+        },
+        {
+          "id": "s25",
+          "node": "memnuniyet",
+          "utterance": "pardon tekrar eder misiniz soruyu",
+          "expected": {
+            "intent": "repeat",
+            "value": null,
+            "branch": "tekrar"
+          },
+          "raw": "{\"intent\": \"repeat\", \"value\": null}",
+          "parsed": {
+            "intent": "repeat",
+            "value": null
+          },
+          "got_branch": "tekrar",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.211,
+          "output_tokens": 11
+        },
+        {
+          "id": "s26",
+          "node": "ilan_verdi_mi",
+          "utterance": "bu konuda cevap vermek istemiyorum",
+          "expected": {
+            "intent": "refuse",
+            "value": null,
+            "branch": "ret"
+          },
+          "raw": "{\"intent\": \"refuse\", \"value\": null}",
+          "parsed": {
+            "intent": "refuse",
+            "value": null
+          },
+          "got_branch": "ret",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.207,
+          "output_tokens": 12
+        },
+        {
+          "id": "s27",
+          "node": "kanal",
+          "utterance": "şey bilmiyorum ki ben pek bakmıyorum",
+          "expected": {
+            "intent": "unclear",
+            "value": null,
+            "branch": "belirsiz"
+          },
+          "raw": "{\"intent\": \"unclear\", \"value\": null}",
+          "parsed": {
+            "intent": "unclear",
+            "value": null
+          },
+          "got_branch": "belirsiz",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.411,
+          "output_tokens": 12
+        },
+        {
+          "id": "s28",
+          "node": "satis_fiyati",
+          "utterance": "bu bilgiyi neden soruyorsunuz siz kimsiniz",
+          "expected": {
+            "intent": "off_topic",
+            "value": null,
+            "branch": "konu_disi"
+          },
+          "raw": "{\"intent\": \"off_topic\", \"value\": null}",
+          "parsed": {
+            "intent": "off_topic",
+            "value": null
+          },
+          "got_branch": "konu_disi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 1.196,
+          "output_tokens": 13
+        },
+        {
+          "id": "s29",
+          "node": "memnuniyet",
+          "utterance": "şu an müsait değilim sonra arayın",
+          "expected": {
+            "intent": "callback",
+            "value": null,
+            "branch": "geri_ara"
+          },
+          "raw": "{\"intent\": \"callback\", \"value\": null}",
+          "parsed": {
+            "intent": "callback",
+            "value": null
+          },
+          "got_branch": "geri_ara",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.721,
+          "output_tokens": 11
+        },
+        {
+          "id": "s30",
+          "node": "kanal",
+          "utterance": "benim ilanım neden kaldırıldı onu söyler misiniz",
+          "expected": {
+            "intent": "off_topic",
+            "value": null,
+            "branch": "konu_disi"
+          },
+          "raw": "{\"intent\": \"off_topic\", \"value\": null}",
+          "parsed": {
+            "intent": "off_topic",
+            "value": null
+          },
+          "got_branch": "konu_disi",
+          "json_valid": true,
+          "schema_valid": true,
+          "intent_ok": true,
+          "value_ok": true,
+          "branch_ok": true,
+          "full_ok": true,
+          "problem": null,
+          "seconds": 0.737,
+          "output_tokens": 13
+        }
+      ],
+      "summary": {
+        "n": 30,
+        "n_answers": 24,
+        "json_valid_rate": 1.0,
+        "schema_valid_rate": 1.0,
+        "intent_rate": 1.0,
+        "normalize_rate": 1.0,
+        "branch_rate": 1.0,
+        "full_rate": 1.0,
+        "latency_p50": 0.802,
+        "latency_p95": 1.411,
+        "by_type": {
+          "rating": {
+            "n": 8,
+            "full_rate": 1.0,
+            "branch_rate": 1.0
+          },
+          "yes_no": {
+            "n": 7,
+            "full_rate": 1.0,
+            "branch_rate": 1.0
+          },
+          "choice": {
+            "n": 8,
+            "full_rate": 1.0,
+            "branch_rate": 1.0
+          },
+          "number": {
+            "n": 7,
+            "full_rate": 1.0,
+            "branch_rate": 1.0
+          }
+        }
+      }
+    }
+  ]
+}
