@@ -474,7 +474,7 @@
         "A2/A3 için aynı 5 test aramasının gecikmesi L2 ile karşılaştırılır (kıyas matrisine girdi)."
       ],
       "evidence": [],
-      "notes": "Hibrit yöntem önerisi: model sesi yönetir, her cevabı fonksiyon çağrısıyla bildirir; flow motoru (voice/flow.py) deterministik kalır. Basit yöntem (tüm senaryoyu talimat olarak vermek) akışın deterministikliğini ve kıyasın adilliğini bozduğu için önerilmez. Gerekenler: tarayıcı sesini sağlayıcının realtime bağlantısına aktaran adaptör, API anahtarları (OPENAI_API_KEY, GEMINI_API_KEY), telefon filtresinin realtime ses yoluna uygulanması. Şu an /api/voice/offer realtime profilde 400 'realtime_unsupported' döner. Telefon filtresi, ayrı STT/LLM/TTS gecikmesi ve cevap-çıkarma ölçümü (eval-llm) bu profillerde aynı biçimde geçerli değildir. Bağımlılık: core-001, lab-003 (passing)."
+      "notes": "Hibrit yöntem önerisi: model sesi yönetir, her cevabı fonksiyon çağrısıyla bildirir; flow motoru (voice/flow.py) deterministik kalır. Basit yöntem (tüm senaryoyu talimat olarak vermek) akışın deterministikliğini ve kıyasın adilliğini bozduğu için önerilmez. Gerekenler: tarayıcı sesini sağlayıcının realtime bağlantısına aktaran adaptör, API anahtarları (OPENAI_API_KEY, GEMINI_API_KEY: Mac .env'de dolu, 2026-10-25 teyit edildi; yalnızca varlığı kontrol edildi, anahtarların geçerliliği ve realtime model erişimi doğrulanmadı), telefon filtresinin realtime ses yoluna uygulanması. Şu an /api/voice/offer realtime profilde 400 'realtime_unsupported' döner. Telefon filtresi, ayrı STT/LLM/TTS gecikmesi ve cevap-çıkarma ölçümü (eval-llm) bu profillerde aynı biçimde geçerli değildir. Bağımlılık: core-001, lab-003 (passing)."
     },
     {
       "id": "scn-001",
