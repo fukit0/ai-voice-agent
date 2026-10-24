@@ -4,6 +4,7 @@ import { ProfileProvider } from "./ProfileContext";
 import { ProfileSelector } from "./ProfileSelector";
 import { WarmupButton } from "./WarmupButton";
 import { ScreenPlaceholder } from "./pages/ScreenPlaceholder";
+import { ScenariosPage } from "./pages/ScenariosPage";
 import { PlaygroundPage } from "./pages/PlaygroundPage";
 import { LlmEvalPage } from "./pages/LlmEvalPage";
 import { SttPage } from "./pages/SttPage";
@@ -37,7 +38,7 @@ export function App() {
           <Route path="/" element={<Navigate to={SCREENS[0].path} replace />} />
           {SCREENS.map((s) => (
             <Route key={s.path} path={s.path}
-              element={s.path === "/stt" ? <SttPage /> : s.path === "/llm" ? <LlmEvalPage /> : s.path === "/playground" ? <PlaygroundPage /> : s.path === "/tts" ? <TtsPage /> : <ScreenPlaceholder screen={s} />} />
+              element={s.path === "/stt" ? <SttPage /> : s.path === "/llm" ? <LlmEvalPage /> : s.path === "/scenarios" ? <ScenariosPage /> : s.path === "/playground" ? <PlaygroundPage /> : s.path === "/tts" ? <TtsPage /> : <ScreenPlaceholder screen={s} />} />
           ))}
           <Route path="*" element={<p>Sayfa bulunamadı.</p>} />
         </Routes>

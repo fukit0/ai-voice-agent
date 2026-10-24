@@ -61,7 +61,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `cd .. && ${py} -m uvicorn backend.app.main:app --port ${port}`,
+      command: `cd .. && rm -rf /tmp/sva-lab-e2e && SVA_DATA_DIR=/tmp/sva-lab-e2e ${py} -m uvicorn backend.app.main:app --port ${port}`,
       url: `http://127.0.0.1:${port}/api/health`,
       reuseExistingServer: false,
       timeout: 30_000,

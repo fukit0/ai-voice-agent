@@ -229,15 +229,20 @@
       "moscow": "must",
       "title": "Konuşma playground'u",
       "user_visible_behavior": "Kullanıcı profil ve JSON senaryo seçip konuşur; canlı transkripti, aktif düğümü, tur başına STT/LLM/TTS gecikmesini ve çıkarılan cevapları görür.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Profil ve senaryo seçilir, konuşma başlatılır.",
         "Her turda gecikme dökümü görünür.",
         "Çıkarılan cevaplar konuşma sırasında listelenir.",
         "Telefon filtresi açılıp kapatılabilir."
       ],
-      "evidence": [],
-      "notes": "Realtime profiller A2 (OpenAI gpt-realtime-2.1-mini) ve A3 (Gemini 3.8 Live) burada desteklenecek."
+      "evidence": [
+        "evidence/lab-003-scenarios.png",
+        "frontend/e2e/scenarios.spec.ts",
+        "backend/tests/test_scenario.py",
+        "config/scenarios/anket.json"
+      ],
+      "notes": "KISMEN: (1) Senaryolar ekrani (/scenarios) tamam: demo firmasinin ornek 'Cagri Merkezi Memnuniyet Anketi' senaryosu (33 adim, 11 sonuc, 16 yer tutucu) birebir config/scenarios/anket.json'a alindi; gruplu adim listesi, metin duzenleme + yer tutucu ekleme + 'Asistan boyle okuyacak' (trnorm ile), 'Orijinal metne don', 'Cevaba gore akis' tablosu; akis sabit (yalniz metin duzenlenir). Deterministik akis motoru backend/app/scenario.py (validate, next_step, genel cikislar ret/dnc/sessiz). Kanit: pytest 220, vitest 35, Playwright 6. KALAN (lab-003 dogrulama maddeleri): Playground'da senaryo secimi + konusmayi akis motoruyla yurutme (aktif dugum, cikarilan cevaplar canli liste, tekrar sorma - core-004 ile ortak), telefon filtresi acma/kapama, A2/A3 realtime profiller. NOT: Welcome Call senaryosu referans sitede var ama API yaniti 50.000 karakterde kesildigi icin henuz alinmadi; icerigi icin sayfa adim adim okunmali."
     },
     {
       "id": "core-002",
