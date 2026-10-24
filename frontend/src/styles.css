@@ -72,3 +72,8 @@ textarea { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--lin
 .norm-preview { margin: 8px 0 16px; padding: 8px 12px; border-left: 3px solid var(--accent, #b9741a); font-size: 14px; }
 .norm-preview ul { margin: 4px 0 0; padding-left: 18px; }
 .norm-preview li { margin: 6px 0; }
+
+.eval-table { border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+.eval-table th, .eval-table td { border: 1px solid var(--line); padding: 5px 10px; text-align: left; vertical-align: top; }
+.eval-detail { margin: 8px 0; font-size: 13px; }
+.eval-detail summary { cursor: pointer; }

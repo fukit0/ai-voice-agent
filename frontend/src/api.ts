@@ -165,3 +165,36 @@ export const rateClip = (sid: string, listener: string, token: string, r: BlindR
   post(`/api/tts/sessions/${sid}/ratings`, { listener, token, ...r }).then((res) => json<{ ok: boolean }>(res));
 export const ttsRatingsCsvUrl = (sid: string) => `/api/tts/sessions/${sid}/ratings.csv`;
 export const fetchTtsSummary = (sid: string) => fetch(`/api/tts/sessions/${sid}/summary`).then((r) => json<TtsSummaryRow[]>(r));
+
+// ---- LLM fonksiyon çağrısı testi (eval-llm) ----
+export type EvalModel = {
+  profile: string; profiles: string[]; provider: string; model: string; ready: boolean; warm: boolean;
+  missing_env: string[];
+};
+export type EvalRow = {
+  id: string; node: string; utterance: string; raw: string; seconds: number | null;
+  expected: { intent: string; value: unknown; branch: string };
+  parsed: { intent?: string; value?: unknown } | null; got_branch: string | null; problem: string | null;
+  json_valid: boolean; schema_valid: boolean; intent_ok: boolean; value_ok: boolean; branch_ok: boolean; full_ok: boolean;
+};
+export type EvalSummary = {
+  n: number; n_answers: number; json_valid_rate: number | null; schema_valid_rate: number | null;
+  intent_rate: number | null; normalize_rate: number | null; branch_rate: number | null; full_rate: number | null;
+  latency_p50: number | null; latency_p95: number | null;
+  by_type: Record<string, { n: number; full_rate: number | null; branch_rate: number | null }>;
+};
+export type EvalResult = {
+  profile: string; provider: string; model: string; status: "ok" | "cold" | "not_ready" | "failed";
+  error?: string; summary?: EvalSummary; rows?: EvalRow[];
+};
+export type EvalRun = { id: string; created_at: string; n_samples: number; results: EvalResult[] };
+export type EvalRunSummary = { id: string; created_at: string; n_samples: number; models: string[]; best_full_rate: number | null };
+
+export const fetchEvalModels = () => fetch("/api/eval/llm/models").then((r) => json<EvalModel[]>(r));
+export const fetchEvalRuns = () => fetch("/api/eval/llm/runs").then((r) => json<EvalRunSummary[]>(r));
+export const fetchEvalRun = (id: string) => fetch(`/api/eval/llm/runs/${id}`).then((r) => json<EvalRun>(r));
+export const runLlmEval = (profiles: string[], limit?: number) =>
+  fetch("/api/eval/llm/run", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ profiles, ...(limit ? { limit } : {}) }),
+  }).then((r) => json<EvalRun>(r));

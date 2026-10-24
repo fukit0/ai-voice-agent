@@ -185,13 +185,13 @@
       "moscow": "must",
       "title": "LLM fonksiyon çağrısı testi",
       "user_visible_behavior": "Kullanıcı 30 örnek cevabı seçili LLM'lere verir ve doğru JSON ile doğru dal oranını görür.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "30 örnek cevaplık test seti çalıştırılır.",
         "Her LLM için doğru normalize ve doğru dal oranı raporlanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "2026-10-24 uygulandı, GERÇEK MODEL KOŞUSU BEKLİYOR (passing değil). Hazır: config/eval/llm-samples.json (30 örnek: 6 puan, 6 evet/hayır, 6 seçenek, 6 fiyat, 6 özel durum), backend/app/llm_eval.py (JSON sözleşmesi, kesin doğrulama, deterministik dal türetme, puanlama), POST /api/eval/llm/run + /models /samples /runs, 'LLM testi' ekranı, scripts/eval_llm.py (kanıt dosyası yazar). Bulutta pytest 189 (44 eval-llm), vitest 28, build, Playwright 4; sahte LLM'lerle puanlama doğrulandı (mükemmel model %100, özensiz model düşer, bozuk model izole). Mac'te Ollama/Claude'a bulut oturumundan ulaşılamadı; kullanıcı çalıştıracak: ./.venv/bin/python scripts/eval_llm.py L2 A1 (L4/L1 için önce ollama pull). Karar: native tool-calling değil JSON sözleşmesi (tüm sağlayıcılarda aynı arayüz, adil kıyas); native tool-calling ayrı ölçüm. Faz 1 kapısı: tam doğru >= %90."
     },
     {
       "id": "core-001",

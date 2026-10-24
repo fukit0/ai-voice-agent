@@ -75,7 +75,7 @@ function mockApi({ healthStatus = 200 } = {}) {
       warmed = true;
       return new Response(JSON.stringify(READY_JOB));
     }
-    if (url.startsWith("/api/tts") || url.startsWith("/api/stt")) return new Response("[]");
+    if (url.startsWith("/api/tts") || url.startsWith("/api/stt") || url.startsWith("/api/eval")) return new Response("[]");
     if (url.startsWith("/api/profiles"))
       return new Response(
         JSON.stringify(PROFILES.map((p) => (warmed && p.id === "L1" ? { ...p, warm: true, warmup: READY_JOB } : p))),
@@ -104,12 +104,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Lab iskeleti", () => {
-  it("menüde beş ekranı gösterir", () => {
+  it("menüde altı ekranı gösterir", () => {
     mockApi();
     renderAt("/");
     const nav = screen.getByRole("navigation", { name: "Lab ekranları" });
     for (const s of SCREENS) expect(within(nav).getByRole("link", { name: s.label })).toBeInTheDocument();
-    expect(SCREENS).toHaveLength(5);
+    expect(SCREENS).toHaveLength(6);
   });
 
   it("kök yolu ilk ekrana yönlendirir", () => {

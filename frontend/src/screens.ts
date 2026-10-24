@@ -26,6 +26,14 @@ export const SCREENS: Screen[] = [
       "Ses yüklenir veya kaydedilir; STT modellerinin çıktısı yan yana, referans metne göre WER ve süreyle görünür.",
   },
   {
+    path: "/llm",
+    label: "LLM testi",
+    featureId: "eval-llm",
+    planRef: "Faz 0 adım 4",
+    summary:
+      "30 örnek müşteri cevabı seçili LLM'lerden geçer; doğru normalize (değer) ve doğru dal oranı, JSON geçerliliği ve gecikme yan yana görünür.",
+  },
+  {
     path: "/playground",
     label: "Playground",
     featureId: "lab-003",

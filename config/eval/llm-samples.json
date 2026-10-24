@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "description": "eval-llm: sesli anket düğümü için LLM'in müşteri cevabını yapılandırması. Cümleler STT çıktısı gibi (küçük harf, dolgu sözcük, noktalama az) yazıldı. 'branch' deterministik flow motorunun (llm_eval.route) LLM çıktısından türettiği dal adıdır.",
+  "intents": {
+    "answer": "Soruya cevap verdi (value dolu).",
+    "repeat": "Soruyu duymadı / tekrar istiyor.",
+    "refuse": "Cevap vermek istemiyor.",
+    "unclear": "Bilmiyor / belirsiz; cevap çıkarılamıyor.",
+    "off_topic": "Soruyla ilgisiz soru ya da şikayet soruyor.",
+    "callback": "Şu an müsait değil, sonra aranmak istiyor."
+  },
+  "special_branches": {
+    "repeat": "tekrar",
+    "refuse": "ret",
+    "unclear": "belirsiz",
+    "off_topic": "konu_disi",
+    "callback": "geri_ara"
+  },
+  "nodes": {
+    "memnuniyet": {
+      "type": "rating",
+      "question": "sahibinden.com'dan 1 ile 10 arasında bir puanla ne kadar memnunsunuz?",
+      "value_rule": "1-10 arası tam sayı",
+      "branches": {"low_max": 6, "low": "dusuk_puan", "high": "yuksek_puan"}
+    },
+    "ilan_verdi_mi": {
+      "type": "yes_no",
+      "question": "Son üç ayda sahibinden.com'a ilan verdiniz mi?",
+      "value_rule": "true (evet) veya false (hayır)",
+      "branches": {"true": "ilan_verdi", "false": "ilan_vermedi"}
+    },
+    "kanal": {
+      "type": "choice",
+      "question": "sahibinden.com'a en çok hangi yolla giriyorsunuz: mobil uygulama, telefondan tarayıcı yani mobil site, ya da bilgisayar?",
+      "options": {"app": "mobil uygulama", "mobile_web": "telefondan tarayıcı (mobil site)", "desktop": "bilgisayar"},
+      "value_rule": "seçenek anahtarlarından biri: app, mobile_web, desktop",
+      "branches": {"app": "kanal_uygulama", "mobile_web": "kanal_mobil_web", "desktop": "kanal_masaustu"}
+    },
+    "satis_fiyati": {
+      "type": "number",
+      "question": "Son satışınızı kaç liraya yaptınız?",
+      "value_rule": "Türk lirası cinsinden tam sayı (örn. 150000)",
+      "branches": {"high_min": 1000000, "high": "yuksek_fiyat", "normal": "normal_fiyat"}
+    }
+  },
+  "samples": [
+    {"id": "s01", "node": "memnuniyet", "utterance": "dokuz veririm", "expected": {"intent": "answer", "value": 9, "branch": "yuksek_puan"}},
+    {"id": "s02", "node": "memnuniyet", "utterance": "on üzerinden yedi veririm", "expected": {"intent": "answer", "value": 7, "branch": "yuksek_puan"}},
+    {"id": "s03", "node": "memnuniyet", "utterance": "ee bence altı", "expected": {"intent": "answer", "value": 6, "branch": "dusuk_puan"}},
+    {"id": "s04", "node": "memnuniyet", "utterance": "yarı yarıya yani beş", "expected": {"intent": "answer", "value": 5, "branch": "dusuk_puan"}},
+    {"id": "s05", "node": "memnuniyet", "utterance": "tam puan veriyorum on", "expected": {"intent": "answer", "value": 10, "branch": "yuksek_puan"}},
+    {"id": "s06", "node": "memnuniyet", "utterance": "bir verirdim açıkçası çok kötü", "expected": {"intent": "answer", "value": 1, "branch": "dusuk_puan"}},
+
+    {"id": "s07", "node": "ilan_verdi_mi", "utterance": "evet verdim iki ay önce", "expected": {"intent": "answer", "value": true, "branch": "ilan_verdi"}},
+    {"id": "s08", "node": "ilan_verdi_mi", "utterance": "hayır hiç vermedim", "expected": {"intent": "answer", "value": false, "branch": "ilan_vermedi"}},
+    {"id": "s09", "node": "ilan_verdi_mi", "utterance": "yok vermedim ben sadece bakıyorum", "expected": {"intent": "answer", "value": false, "branch": "ilan_vermedi"}},
+    {"id": "s10", "node": "ilan_verdi_mi", "utterance": "tabii ki verdim arabamı satmıştım", "expected": {"intent": "answer", "value": true, "branch": "ilan_verdi"}},
+    {"id": "s11", "node": "ilan_verdi_mi", "utterance": "daha önce vermiştim ama son üç ayda vermedim", "expected": {"intent": "answer", "value": false, "branch": "ilan_vermedi"}},
+    {"id": "s12", "node": "ilan_verdi_mi", "utterance": "hı hı", "expected": {"intent": "answer", "value": true, "branch": "ilan_verdi"}},
+
+    {"id": "s13", "node": "kanal", "utterance": "genelde telefondan uygulamayı kullanıyorum", "expected": {"intent": "answer", "value": "app", "branch": "kanal_uygulama"}},
+    {"id": "s14", "node": "kanal", "utterance": "bilgisayardan giriyorum işte", "expected": {"intent": "answer", "value": "desktop", "branch": "kanal_masaustu"}},
+    {"id": "s15", "node": "kanal", "utterance": "telefondan ama uygulamayı indirmedim tarayıcıdan bakıyorum", "expected": {"intent": "answer", "value": "mobile_web", "branch": "kanal_mobil_web"}},
+    {"id": "s16", "node": "kanal", "utterance": "ikisi de var hem bilgisayar hem uygulama ama çoğunlukla uygulama", "expected": {"intent": "answer", "value": "app", "branch": "kanal_uygulama"}},
+    {"id": "s17", "node": "kanal", "utterance": "masaüstü", "expected": {"intent": "answer", "value": "desktop", "branch": "kanal_masaustu"}},
+    {"id": "s18", "node": "kanal", "utterance": "cepten bakıyorum uygulamadan", "expected": {"intent": "answer", "value": "app", "branch": "kanal_uygulama"}},
+
+    {"id": "s19", "node": "satis_fiyati", "utterance": "yüz elli bin liraya sattım", "expected": {"intent": "answer", "value": 150000, "branch": "normal_fiyat"}},
+    {"id": "s20", "node": "satis_fiyati", "utterance": "iki buçuk milyon", "expected": {"intent": "answer", "value": 2500000, "branch": "yuksek_fiyat"}},
+    {"id": "s21", "node": "satis_fiyati", "utterance": "bir milyon iki yüz bin", "expected": {"intent": "answer", "value": 1200000, "branch": "yuksek_fiyat"}},
+    {"id": "s22", "node": "satis_fiyati", "utterance": "sekiz yüz bin", "expected": {"intent": "answer", "value": 800000, "branch": "normal_fiyat"}},
+    {"id": "s23", "node": "satis_fiyati", "utterance": "yirmi beş bin beş yüz lira", "expected": {"intent": "answer", "value": 25500, "branch": "normal_fiyat"}},
+    {"id": "s24", "node": "satis_fiyati", "utterance": "üç yüz elli bin civarı", "expected": {"intent": "answer", "value": 350000, "branch": "normal_fiyat"}},
+
+    {"id": "s25", "node": "memnuniyet", "utterance": "pardon tekrar eder misiniz soruyu", "expected": {"intent": "repeat", "value": null, "branch": "tekrar"}},
+    {"id": "s26", "node": "ilan_verdi_mi", "utterance": "bu konuda cevap vermek istemiyorum", "expected": {"intent": "refuse", "value": null, "branch": "ret"}},
+    {"id": "s27", "node": "kanal", "utterance": "şey bilmiyorum ki ben pek bakmıyorum", "expected": {"intent": "unclear", "value": null, "branch": "belirsiz"}},
+    {"id": "s28", "node": "satis_fiyati", "utterance": "bu bilgiyi neden soruyorsunuz siz kimsiniz", "expected": {"intent": "off_topic", "value": null, "branch": "konu_disi"}},
+    {"id": "s29", "node": "memnuniyet", "utterance": "şu an müsait değilim sonra arayın", "expected": {"intent": "callback", "value": null, "branch": "geri_ara"}},
+    {"id": "s30", "node": "kanal", "utterance": "benim ilanım neden kaldırıldı onu söyler misiniz", "expected": {"intent": "off_topic", "value": null, "branch": "konu_disi"}}
+  ]
+}

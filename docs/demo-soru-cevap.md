@@ -24,3 +24,13 @@ Demoda gelebilecek sorular ve dürüst, kısa cevaplar. Her cevapta "bugün çal
 - Persona insanı taklit etmek demek değil: "bot musun?" sorusuna dürüst cevap verilir (core-006). Dijital asistan beyanı hukuk kararına bağlı, açık soru.
 - Ses değiştirince gecikme ve maliyet değişebilir (ilk ses süresi, karakter başı ücret); kör dinlemeyle birlikte ölçülür.
 - Canlıda gösterilemez: bugün ses değişikliği `.env` düzenleyip backend'i yeniden başlatmayı gerektirir. "İlk yükleme bahanesi" değil, henüz yapılmamış bir özellik olarak anlat.
+
+## S2. "LLM müşterinin cevabını doğru anlıyor mu? Hangi model yeterince güvenilir?"
+
+**Kısa cevap:** 30 örnek müşteri cevabıyla ölçüyoruz; sonuç iki sayı: **doğru normalize** (ör. "iki buçuk milyon" → 2.500.000) ve **doğru dal** (flow motorunun seçeceği yol). Kapı: tam doğru oran ≥ %90 (Faz 1). Ekran: "LLM testi".
+
+- **Nasıl ölçüyoruz:** LLM yalnızca `{"intent","value"}` JSON'u üretir; dalı LLM değil deterministik flow motoru seçer. Böylece LLM yanlış anlasa bile akış kırılmaz, yeniden sorulur.
+- **Veri seti:** 4 soru tipi (puan, evet/hayır, seçenek, fiyat) + özel durumlar (tekrar iste, ret, belirsiz, konu dışı, sonra ara). Cümleler konuşma tanıma çıktısı gibi: küçük harf, dolgu sözcük, tuzaklı ("on üzerinden yedi", "daha önce verdim ama son üç ayda vermedim").
+- **Kesin doğrulama:** "9" yazısı sayı sayılmaz, 1 ile true karışmaz. Production flow motoru da tip bekler; gevşek ölçüm göz boyar.
+- **Sınırlama (açıkça söyle):** Native tool-calling ölçülmedi; tüm modellere aynı JSON sözleşmesi verildi (adil kıyas için). 30 örnek eğilim gösterir, istatistiksel garanti değildir. Gürültülü gerçek STT çıktısıyla ve gerçek müşteri cümleleriyle genişletilecek (Faz 1).
+- **Bugün durum:** Ekran ve ölçüm hattı sahte modellerle test edildi; gerçek model sonuçları Mac'te koşturulunca eklenecek. Bunu "henüz koşulmamış bir ölçüm" olarak anlat, bahane gibi değil.
