@@ -1,0 +1,20 @@
+{
+  "feature": "core-002",
+  "date": "2026-10-25",
+  "setup": "Bulut, sahte STT/LLM/TTS; kullanıcı sesi sentetik gürültü (insan konuşması değil); ajan sesi 440 Hz sahte TTS; BARGE_FRAMES=8 (160 ms).",
+  "barge_in_ms": {
+    "limit": 500,
+    "aiortc_client_cut_ms_after_user_onset": [327, 342],
+    "server_detection_ms": [140, 139],
+    "chromium_remote_stream_cut_ms": [340, 340, 340],
+    "before_tuning_BARGE_FRAMES_10": {"aiortc_client_cut_ms": [381, 383, 381], "server_detection_ms": [179, 182, 179]}
+  },
+  "pause_handling": {
+    "pause_400ms_inside_speech": "tek tur (test_short_pause_inside_speech_does_not_end_turn_but_long_pause_does)",
+    "pause_900ms": "iki tur (kısa duraksama sınırı 600 ms)",
+    "open_text_node_end_silence_ms": 1200,
+    "incomplete_sentence_hold_s": 1.5,
+    "tests": ["test_incomplete_sentence_is_held_then_merged_with_continuation", "test_held_sentence_is_answered_after_timeout_if_user_stays_silent"]
+  },
+  "not_measured": ["gerçek insan sesi", "gerçek STT çıktısı", "gerçek hoparlör/yankı", "gürültülü ortam", "gerçek tarayıcıda Opus jitter tamponu farklı cihazlarda"]
+}

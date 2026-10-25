@@ -108,6 +108,21 @@ describe("Playground senaryo modu (lab-003)", () => {
     expect(screen.getByTestId("voice-outcome")).toHaveTextContent("Anket tamamlandı");
   });
 
+  it("söz kesme süresini gösterir; yarım cümlede 'devamını bekliyor' göstergesi açılıp kapanır", async () => {
+    renderPage();
+    const start = await screen.findByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalled());
+    act(() => hooks.onEvent({ type: "state", state: "listening" }));
+    act(() => hooks.onEvent({ type: "barge_in", cut_ms: 142 }));
+    expect(screen.getByText(/söz kesme: 1 · son: 142 ms/)).toBeInTheDocument();
+    act(() => hooks.onEvent({ type: "hold", on: true, text: "evet ama" }));
+    expect(screen.getByTestId("voice-hold")).toHaveTextContent("devamını bekliyor");
+    act(() => hooks.onEvent({ type: "hold", on: false }));
+    expect(screen.queryByTestId("voice-hold")).not.toBeInTheDocument();
+  });
+
   it("senaryosuz serbest sohbet seçilirse senaryo gönderilmez", async () => {
     renderPage();
     const select = await screen.findByLabelText("Senaryo");

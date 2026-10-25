@@ -38,6 +38,10 @@ class Endpointer:
         self._frames: list[np.ndarray] = []
         self._speech_frames = 0
 
+    def set_end_ms(self, end_ms: int) -> None:
+        """Bitiş sessizliği süresi (söz sırası): düğüm türüne göre değişir (açık uçlu cevaplarda uzun)."""
+        self.end_frames = max(1, end_ms // 20)
+
     @property
     def threshold_db(self) -> float:
         return max(self.floor_db, self.noise_db + self.margin_db)

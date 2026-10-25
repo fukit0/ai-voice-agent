@@ -33,8 +33,32 @@ PERSONA = (
 )
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _SENTENCE = re.compile(r"(?<=[.!?…])\s+")
-BARGE_FRAMES = 10   # 200 ms kesintisiz yüksek ses: söz kesme
+BARGE_FRAMES = 8    # 160 ms kesintisiz yüksek ses: söz kesme (200 ms iken istemci ölçümü ≈380 ms; tarayıcı jitter payı için kısaltıldı)
 BARGE_MARGIN_DB = 6.0
+# Söz sırası (Smart Turn, PoC sürümü): öğrenilmiş model yok; üç basit katman —
+# 1) bitiş sessizliği düğüme göre (kısa cevaplarda 600 ms, açık uçlu cevaplarda 1200 ms),
+# 2) transkript tamamlanmamış görünüyorsa ("evet ama", "çünkü", "şey") HOLD_S kadar devam beklenir,
+# 3) devam gelirse iki konuşma birleştirilip yeniden çözülür (tek tur).
+END_MS_DEFAULT = 600
+END_MS_OPEN = 1200
+HOLD_S = 1.5
+MAX_HOLD_AUDIO_S = 12.0
+_TRAILING = re.compile(r"[\s.,;:!?…\-–—\"'’”)]+$")
+INCOMPLETE_WORDS = {"ve", "ama", "fakat", "ancak", "çünkü", "yani", "şey", "ki", "ile", "veya", "hem", "ya",
+                    "ee", "eee", "ıı", "ııı", "hmm", "mm", "mmm", "hani", "ya da", "bir de"}
+
+
+def looks_incomplete(text: str) -> bool:
+    """Transkript cümle ortasında kesilmiş gibi mi? Muhafazakâr: yalnızca bağlaç/dolgu ile ya da virgül/üç nokta ile biter."""
+    t = (text or "").strip().lower()
+    if not t:
+        return False
+    if t.endswith((",", "…", "...", "-")):
+        return True
+    words = _TRAILING.sub("", t).split()
+    if not words:
+        return False
+    return words[-1] in INCOMPLETE_WORDS or " ".join(words[-2:]) in INCOMPLETE_WORDS
 
 
 def split_sentences(text: str) -> list[str]:
@@ -67,10 +91,14 @@ class VoiceSession:
         self.turns: list[dict] = []
         self.transcript: list[dict] = []
         self.stats = {"frames_in": 0, "seconds_in": 0.0, "utterances": 0, "dropped": 0, "barge_ins": 0,
-                      "agent_seconds_out": 0.0, "peak_in_db": -120.0}
+                      "agent_seconds_out": 0.0, "peak_in_db": -120.0, "holds": 0, "merged": 0,
+                      "barge_cut_ms": []}
         self._buf = np.zeros(0, np.float32)
         self._turn_id = 0
         self._barge = 0
+        self._barge_t0 = 0.0
+        self._held: tuple[np.ndarray, str, dict, float] | None = None
+        self._hold_task: asyncio.Task | None = None
         self._synth_done = True
         self._tasks: set[asyncio.Task] = set()
         self._closed = False
@@ -93,6 +121,7 @@ class VoiceSession:
         if self.flow is not None:
             reply = self.flow.start()
             self._emit_reply(reply)
+            self._apply_endpointing()
             self._spawn(self._speak_turn(" ".join(reply.utterances), turn=self._next_turn(), t_end=time.perf_counter(),
                                          reply=reply))
             return
@@ -107,6 +136,13 @@ class VoiceSession:
     def _emit_reply(self, reply) -> None:
         for event in reply.events:
             self.emit(event)
+
+    def _apply_endpointing(self) -> None:
+        """Bitiş sessizliği, beklenen cevabın türüne göre: açık uçlu cevaplar düşünerek, duraksayarak verilir."""
+        kind = None
+        if self.flow is not None and self.flow.current is not None:
+            kind = self.flow.steps[self.flow.current]["kind"]
+        self.vad.set_end_ms(END_MS_OPEN if kind == "OpenText" else END_MS_DEFAULT)
 
     def feed(self, samples: np.ndarray) -> None:
         """16 kHz mono float32 örnekler (rastgele uzunlukta parçalar)."""
@@ -127,6 +163,8 @@ class VoiceSession:
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
             loud = self.vad.level > max(self.vad.threshold_db, -45.0) + BARGE_MARGIN_DB
+            if loud and self._barge == 0:
+                self._barge_t0 = time.perf_counter()
             self._barge = self._barge + 1 if loud else 0
             if self._barge >= BARGE_FRAMES:
                 self._barge_in()
@@ -138,17 +176,24 @@ class VoiceSession:
                     self.stats["dropped"] += 1  # ajan konuşurken kısa gürültü/yankı: söz kesme değil
                     continue
                 self.stats["utterances"] += 1
-                self._spawn(self._respond(payload, t_end=time.perf_counter()))
+                audio = payload
+                if self._held is not None:   # önceki cümle yarımdı: devam geldi, iki konuşmayı birleştir
+                    audio = np.concatenate([self._held[0], payload])
+                    self._clear_hold()
+                    self.stats["merged"] += 1
+                self._spawn(self._respond(audio, t_end=time.perf_counter()))
             elif kind == "drop":
                 self.stats["dropped"] += 1
 
     def _barge_in(self) -> None:
+        cut_ms = round((time.perf_counter() - self._barge_t0) * 1000)   # ilk yüksek sesten ajan çıkışının boşaltılmasına
         self._barge = 0
         self._turn_id += 1          # süren tur sonuçları artık atılır
         self.out.flush()
         self._synth_done = True
         self.stats["barge_ins"] += 1
-        self.emit({"type": "barge_in"})
+        self.stats["barge_cut_ms"].append(cut_ms)
+        self.emit({"type": "barge_in", "cut_ms": cut_ms})
         self._set_state("listening")
 
     def _next_turn(self) -> int:
@@ -177,25 +222,62 @@ class VoiceSession:
             if not text:
                 self._set_state("listening")
                 return
-            self._say("user", text)
-            if self.flow is not None:
-                await self._flow_turn(text, turn, t_end, rec)
+            if looks_incomplete(text) and len(audio) / SAMPLE_RATE < MAX_HOLD_AUDIO_S:
+                self._hold(audio, text, rec, t_end)       # yarım cümle: devam etmesini bekle
                 return
-            self.history.append({"role": "user", "content": text})
-            t1 = time.perf_counter()
-            llm_res = await asyncio.to_thread(self.llm.complete, self.history[:1] + self.history[1:][-12:], 120, 0.3)
-            rec["llm_s"] = round(time.perf_counter() - t1, 3)
-            record_call(self.profile_id, "llm", self.llm, rec["llm_s"], ok=True, warm=True,
-                        chars=len(llm_res.text), source="voice")
-            if turn != self._turn_id:
-                return
-            reply = clean_reply(llm_res.text)
-            if not reply:
-                self._set_state("listening")
-                return
-            self.history.append({"role": "assistant", "content": reply})
-            await self._speak_turn(reply, turn, t_end, rec=rec)
+            await self._commit(text, turn, t_end, rec)
         except Exception as exc:  # noqa: BLE001 — sağlayıcı hatası oturumu düşürmemeli, kullanıcıya gösterilir
+            self.emit({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
+            if turn == self._turn_id:
+                self._set_state("listening")
+
+    async def _commit(self, text: str, turn: int, t_end: float, rec: dict) -> None:
+        """Müşterinin tamamlanmış cümlesi: transkripte yaz, cevabı üret, konuş."""
+        self._say("user", text)
+        if self.flow is not None:
+            await self._flow_turn(text, turn, t_end, rec)
+            return
+        self.history.append({"role": "user", "content": text})
+        t1 = time.perf_counter()
+        llm_res = await asyncio.to_thread(self.llm.complete, self.history[:1] + self.history[1:][-12:], 120, 0.3)
+        rec["llm_s"] = round(time.perf_counter() - t1, 3)
+        record_call(self.profile_id, "llm", self.llm, rec["llm_s"], ok=True, warm=True, chars=len(llm_res.text), source="voice")
+        if turn != self._turn_id:
+            return
+        reply = clean_reply(llm_res.text)
+        if not reply:
+            self._set_state("listening")
+            return
+        self.history.append({"role": "assistant", "content": reply})
+        await self._speak_turn(reply, turn, t_end, rec=rec)
+
+    def _hold(self, audio: np.ndarray, text: str, rec: dict, t_end: float) -> None:
+        self._held = (audio, text, rec, t_end)
+        self.stats["holds"] += 1
+        self._set_state("listening")
+        self.emit({"type": "hold", "on": True, "text": text})
+        self._hold_task = asyncio.get_running_loop().create_task(self._hold_timeout(self._held))
+
+    def _clear_hold(self) -> None:
+        self._held = None
+        if self._hold_task is not None:
+            self._hold_task.cancel()
+            self._hold_task = None
+        self.emit({"type": "hold", "on": False})
+
+    async def _hold_timeout(self, held) -> None:
+        await asyncio.sleep(HOLD_S)
+        if self._held is not held or self._closed:
+            return
+        _, text, rec, t_end = held
+        self._held, self._hold_task = None, None
+        self.emit({"type": "hold", "on": False})
+        turn = self._next_turn()
+        self._set_state("thinking")
+        rec["held_s"] = HOLD_S
+        try:
+            await self._commit(text, turn, t_end, rec)
+        except Exception as exc:  # noqa: BLE001
             self.emit({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
             if turn == self._turn_id:
                 self._set_state("listening")
@@ -208,6 +290,7 @@ class VoiceSession:
         if turn != self._turn_id:
             return
         self._emit_reply(reply)
+        self._apply_endpointing()
         if not reply.utterances:
             self._set_state("listening")
             return
@@ -263,6 +346,8 @@ class VoiceSession:
         if self._closed:
             return None
         self._closed = True
+        if self._hold_task is not None:
+            self._hold_task.cancel()
         self._turn_id += 1
         self.out.flush()
         for task in list(self._tasks):

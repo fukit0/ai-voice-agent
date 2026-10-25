@@ -34,6 +34,8 @@ export function PlaygroundPage() {
   const [outcome, setOutcome] = useState<{ label: string } | null>(null);
   const [levels, setLevels] = useState<[number, number]>([0, 0]);
   const [barges, setBarges] = useState(0);
+  const [bargeMs, setBargeMs] = useState<number | null>(null);
+  const [held, setHeld] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const handle = useRef<VoiceHandle | null>(null);
   const running = state !== "idle" && state !== "closed";
@@ -51,7 +53,8 @@ export function PlaygroundPage() {
     if (e.type === "state") setState(e.state);
     else if (e.type === "transcript") setLines((l) => [...l, { role: e.role, text: e.text }]);
     else if (e.type === "turn") setTurns((t) => [...t, e]);
-    else if (e.type === "barge_in") setBarges((n) => n + 1);
+    else if (e.type === "barge_in") { setBarges((n) => n + 1); if (e.cut_ms !== undefined) setBargeMs(e.cut_ms); }
+    else if (e.type === "hold") setHeld(e.on ? (e.text ?? "") : null);
     else if (e.type === "node") { setNode(e); setVisited((v) => [...v, e.key]); }
     else if (e.type === "answer") setAnswers((a) => [...a, e]);
     else if (e.type === "outcome") setOutcome({ label: e.label });
@@ -60,7 +63,7 @@ export function PlaygroundPage() {
 
   async function start() {
     if (!active) return;
-    setError(null); setLines([]); setTurns([]); setBarges(0); setNode(null); setVisited([]); setAnswers([]); setOutcome(null);
+    setError(null); setLines([]); setTurns([]); setBarges(0); setBargeMs(null); setHeld(null); setNode(null); setVisited([]); setAnswers([]); setOutcome(null);
     setState("connecting");
     try {
       handle.current = await startVoice(active.id, { onEvent, onLevels: (m, a) => setLevels([m, a]) },
@@ -112,7 +115,8 @@ export function PlaygroundPage() {
         <span className={`chip ${state === "speaking" ? "chip-busy" : state === "listening" ? "chip-ok" : ""}`} data-testid="voice-state">
           {STATE_LABEL[state] ?? state}
         </span>
-        {barges > 0 && <span className="meta">söz kesme: {barges}</span>}
+        {barges > 0 && <span className="meta">söz kesme: {barges}{bargeMs !== null ? ` · son: ${bargeMs} ms` : ""}</span>}
+        {held !== null && <span className="chip chip-busy" data-testid="voice-hold" title={held}>Cümle bitmemiş gibi, devamını bekliyor…</span>}
       </p>
       {running && (
         <div className="voice-meters" aria-hidden="true">

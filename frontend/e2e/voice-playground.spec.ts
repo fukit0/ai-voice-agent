@@ -63,3 +63,21 @@ test("Senaryo modu: aktif düğüm ilerler, çıkarılan cevap listelenir, telef
   await page.getByRole("button", { name: "Durdur" }).click();
   await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
 });
+
+// core-002: söz kesme gerçek tarayıcıda. Sahte mikrofon dosyası 1. sn'de konuşmaya başlar; ajan o sırada selamlıyor.
+// Ölçüm tarayıcıdadır (uzak ses akışının enerjisi): kullanıcı sesinin başladığı andan ajan sesinin kesildiği ana kadar.
+test("Söz kesme: ajan konuşurken kullanıcı konuşmaya başlar, ajan sesi tarayıcıda 500 ms içinde kesilir", async ({ page, request }) => {
+  await request.post("/api/profiles/V1/warmup?keep_others=true");
+  await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
+  await page.goto("/playground");
+  await page.getByLabel("Senaryo").selectOption("");
+  await page.getByRole("button", { name: "Başlat" }).click();
+  await expect(page.getByText(/söz kesme: 1/)).toBeVisible({ timeout: 20_000 });
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __voiceStats: { micOnset: number | null } }).__voiceStats.micOnset),
+    { timeout: 10_000 }).not.toBeNull();
+  await page.waitForTimeout(1600);   // ölçüm penceresi (1,5 sn) dolsun
+  const stats = await page.evaluate(() => (window as unknown as { __voiceStats: { bargeCutMs: number | null } }).__voiceStats);
+  console.log(`BROWSER_BARGE_CUT_MS=${stats.bargeCutMs}`);
+  expect(stats.bargeCutMs ?? 0).toBeLessThanOrEqual(500);
+  await page.getByRole("button", { name: "Durdur" }).click();
+});

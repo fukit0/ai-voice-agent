@@ -6,7 +6,8 @@ export type VoiceEvent =
   | { type: "transcript"; role: "user" | "agent"; text: string; t: number }
   | { type: "turn"; turn: number; stt_s?: number; llm_s?: number; tts_first_s?: number; first_audio_after_end_s?: number;
       endpoint_wait_ms?: number; user_seconds?: number; greeting?: boolean }
-  | { type: "barge_in" }
+  | { type: "barge_in"; cut_ms?: number }
+  | { type: "hold"; on: boolean; text?: string }
   | { type: "node"; key: string; code: string | null; title: string; kind: string; group: string; spoken: string; terminal: boolean }
   | { type: "understood"; step: string; intent: string; value: unknown; llm_s: number | null; valid: boolean }
   | { type: "answer"; step: string; code: string | null; title: string; kind: string; value: unknown; utterance: string; unanswered: boolean }
@@ -74,8 +75,19 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
   };
 
   const bufM = new Float32Array(micAn.fftSize);
-  const stats = { remotePeak: 0, remoteSamples: 0 };
-  (window as unknown as { __voiceStats?: typeof stats }).__voiceStats = stats; // e2e doğrulaması: ajan sesi gerçekten alındı mı
+  const bufA = new Float32Array(2048);
+  // e2e ölçümü: ajan konuşurken kullanıcı konuşmaya başlayınca ajan sesinin tarayıcıda ne kadar sürede kesildiği
+  const stats = { remotePeak: 0, remoteSamples: 0, micOnset: null as number | null, agentLastLoud: 0, bargeCutMs: null as number | null };
+  (window as unknown as { __voiceStats?: typeof stats }).__voiceStats = stats;
+  const LOUD = 0.02;
+  const probe = setInterval(() => {   // 20 ms: konuşma sırası ölçümü
+    const now = performance.now();
+    const a = agentAn ? rms(agentAn, bufA.length === agentAn.fftSize ? bufA : new Float32Array(agentAn.fftSize)) : 0;
+    const m = rms(micAn, bufM);
+    if (a > LOUD) stats.agentLastLoud = now;
+    if (stats.micOnset === null && m > 0.03 && now - stats.agentLastLoud < 100) stats.micOnset = now;
+    if (stats.micOnset !== null && now - stats.micOnset < 1500 && a > LOUD) stats.bargeCutMs = Math.round(now - stats.micOnset);
+  }, 20);
   const meter = setInterval(() => {
     const a = agentAn ? rms(agentAn, new Float32Array(agentAn.fftSize)) : 0;
     stats.remotePeak = Math.max(stats.remotePeak, a);
@@ -85,6 +97,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
 
   const cleanup = async () => {
     clearInterval(meter);
+    clearInterval(probe);
     stream.getTracks().forEach((t) => t.stop());
     audio.srcObject = null;
     pc.close();

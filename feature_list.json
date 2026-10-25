@@ -258,13 +258,18 @@
       "moscow": "must",
       "title": "Söz sırası tespiti ve söz kesme (barge-in)",
       "user_visible_behavior": "Kullanıcı ajan konuşurken araya girdiğinde ajan susar ve dinler; kullanıcı sustuğunda ajan doğal sürede cevap verir.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Ajan konuşurken kullanıcı konuşmaya başlar; ajan sesi 500 ms içinde kesilir.",
         "Kısa duraksamalarda ajan söz almaz (Smart Turn)."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "evidence/core-002-measurements.json",
+        "backend/tests/test_turntaking.py",
+        "frontend/e2e/voice-playground.spec.ts",
+        "docs/adr/0004-turn-taking.md"
+      ],
+      "notes": "Bulut kaniti (sahte ses/saglayicilar): (1) Ajan konusurken kullanici konusmaya baslayinca ajan sesi 500 ms icinde kesilir: aiortc istemcisinde 327-342 ms, gercek Chromium uzak ses akisinda 340 ms (3 kosu), sunucu algilama ~140 ms (BARGE_FRAMES 10->8, once ~380 ms). (2) Kisa duraksamalarda ajan soz almaz: 400 ms duraksama tek tur, 900 ms iki tur; acik uclu dugumlerde bitis sessizligi 1200 ms; STT metni baglac/dolgu ile bitiyorsa ('evet ama') 1,5 sn devam beklenir, devam gelirse sesler birlestirilip yeniden cozulur, gelmezse sure dolunca cevap verilir. Arayuz: 'soz kesme: n · son: X ms' ve 'devamini bekliyor' gostergesi. pytest 252, vitest 38, Playwright 8. ADR 0004. DOGRULANMAMIS: gercek insan sesi + gercek STT + gercek hoparlorle (yanki kaynakli yanlis soz kesme), gurultulu ortam, ogrenilmis Smart Turn modeli yok (kural tabanli; Turkce dolgu/baglac listesi muhafazakar), yarim cumlede ek gecikme (~bitis sessizligi + 1,5 sn) p50<1,2 sn hedefine dahil degil. Mac'te kulaklikla elle denenmeli."
     },
     {
       "id": "core-004",

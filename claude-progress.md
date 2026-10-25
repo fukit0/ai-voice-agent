@@ -18,8 +18,8 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003 (10 / 51)
-- Current highest-priority unfinished feature: core-002 (söz sırası tespiti ve söz kesme; barge-in kısmen var) / core-004 (anket yürütme; FlowDriver ile büyük ölçüde var, gerçek model ölçümü eksik)
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003, core-002 (11 / 51)
+- Current highest-priority unfinished feature: core-004 (anket yürütme, FlowDriver ile büyük ölçüde var; gerçek model ölçümü eksik) ve core-005/lab-004
 - Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
 
 ## Session Log
@@ -138,3 +138,10 @@ agents do not update it automatically.
 
 ### Session 008 eki (feature list)
 - Yeni özellik core-011 (should, öncelik 21): Realtime profiller A2/A3'ün Playground'da desteği (hibrit: model sesi yönetir, fonksiyon çağrısıyla cevap bildirir, flow motoru akışı yürütür). Nedeni: kademeli Playground STT/LLM/TTS aşamalarına bağlı; realtime modeller speech-to-speech olduğu için ayrı adaptör gerekir. Sonraki öncelikler 1 kaydırıldı (toplam 51 özellik). Henüz başlanmadı.
+
+### Session 009 (core-002 passing)
+- Söz kesme: ajan konuşurken 160 ms (BARGE_FRAMES=8) kesintisiz yüksek ses -> çıkış kuyruğu boşaltılır; olayda cut_ms. Ölçüm: aiortc istemcisi 327-342 ms, gerçek Chromium 340 ms (sınır 500 ms); BARGE_FRAMES 10 iken ~380 ms'ydi, tarayıcı payı için 8'e indirildi. Kanıt: evidence/core-002-measurements.json.
+- Söz sırası (Smart Turn, PoC): düğüme göre bitiş sessizliği (600 / açık uçlu 1200 ms); yarım cümlede (bağlaç/dolgu/virgül) 1,5 sn bekle + devam gelirse sesleri birleştirip yeniden çöz; süre dolarsa cevapla. Arayüz göstergeleri eklendi. Karar ve sınırlar: docs/adr/0004-turn-taking.md.
+- Doğrulama: pytest 252 (yeni test_turntaking.py 20), vitest 38, Playwright 8 (yeni: tarayıcıda söz kesme).
+- Doğrulanmamış: gerçek insan sesi/STT/hoparlör (yanki), gürültü, öğrenilmiş turn modeli yok; yarım cümlede ek gecikme p50 hedefinin dışında.
+- Kullanıcı eylemi (Mac): kulaklıkla Playground'da ajan konuşurken araya girin ("söz kesme: n · son: X ms" görünür); "evet ama" deyip 1 sn susup devam edin ("devamını bekliyor" çıkmalı).
