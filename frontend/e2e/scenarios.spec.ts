@@ -27,3 +27,15 @@ test("Senaryolar: örnek anket yüklenir, metin düzenlenir ve geri alınır, ak
   await expect(page.getByText("Orijinal metne dönüldü")).toBeVisible();
   await expect(box).toHaveValue("Görüşme yapmak için müsait misiniz?");
 });
+
+// lab-003 / Welcome Call: ikinci senaryo sekmesi, 24 adım, yeni "Bilgilendirme + soru" adım türü ve yer tutucu okunuşları.
+test("Senaryolar: Welcome Call sekmesi açılır, 24 adım ve CheckIn adım türü görünür", async ({ page }) => {
+  await page.goto("/scenarios");
+  await page.getByRole("tab", { name: /Welcome Call/ }).click();
+  const nav = page.getByRole("navigation", { name: "Adımlar" });
+  await expect(nav.getByRole("button")).toHaveCount(24);
+  await nav.getByRole("button", { name: /Taahhütlü paket bilgisi|paket/i }).first().click();
+  await expect(page.getByText("Bilgilendirme + soru").first()).toBeVisible();
+  await expect(page.getByTestId("scenario-spoken")).not.toContainText("{");
+  await page.screenshot({ path: "e2e-artifacts/lab-003-welcome-scenarios.png", fullPage: true });
+});

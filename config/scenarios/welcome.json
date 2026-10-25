@@ -1,0 +1,737 @@
+{
+ "version": 1,
+ "source": "sahibinden-demo.intalkive.com/senaryolar (2026-10-25, demo firması Welcome Call senaryosu; birebir kopya)",
+ "placeholders": {
+  "ASISTAN": "Asistanın kendini tanıttığı ad (Ayarlar)",
+  "MUSTERI_ADI": "Aranan kişinin adı soyadı",
+  "HITAP": "Hitap — \"Ahmet Bey\" / \"Ayşe Hanım\"",
+  "MT_HITAP": "Değerlendirilen temsilci — \"Mehmet Bey\"",
+  "GORUSME_TARIHI": "Temsilci görüşmesinin tarihi — \"yirmi iki Eylül\"",
+  "GORUSME_SAATI": "Görüşme saati, -de ekiyle — \"on dört otuzda\"",
+  "Q2": "Q2'de verilen puan — \"sekiz\"",
+  "KVKK_METNI": "KVKK aydınlatma metni (Ayarlar)",
+  "CAGRI_MERKEZI": "Çağrı merkezi numarasının okunuşu (Ayarlar)",
+  "RANDEVU": "Müşterinin verdiği geri arama zamanı — \"yarın saat on beşte\"",
+  "ILAN_ADEDI": "Paketteki ilan adedi — \"yüz\"",
+  "ODEME_GUNU": "Ödeme günü — \"onunda\"",
+  "AYLIK_UCRET": "Aylık mağaza ücreti — \"dokuz bin beş yüz lira\"",
+  "ASIM_UCRETI": "Paket aşımında ilan başı ücret — \"yüz elli lira\"",
+  "TAAHHUT_BITIS": "Taahhüt bitiş tarihi — \"yirmi beş Eylül iki bin yirmi yedi\"",
+  "IKI_FA_ADIMLARI": "2FA açma adımları (Ayarlar)"
+ },
+ "sample_profile": {
+  "key": "senaryo_1",
+  "packageName": "Premium Plus",
+  "committed": true,
+  "listingCount": 100,
+  "monthlyFee": 9500,
+  "overageFee": 150,
+  "paymentDay": 10,
+  "commitmentEnd": "2027-09-27",
+  "posterBannerRight": true,
+  "twoFactorEnabled": false,
+  "usedFreeWebsite": false
+ },
+ "profile_summary": "Taahhütlü · Premium Plus · 2FA kapalı · Afiş-branda var",
+ "scenario": {
+  "key": "welcome",
+  "label": "Welcome Call · Premium Plus Mağaza",
+  "shortLabel": "Welcome Call",
+  "description": "Moderasyon sonrası yeni açılan Premium Plus emlak ofisi mağazasını arar; paket, taahhüt, ilan kuralları, web sitesi, afiş-branda ve güvenlik bilgilendirmelerini yapar.",
+  "outcomes": [
+   {
+    "key": "tamamlandi",
+    "label": "Bilgilendirme tamamlandı",
+    "tone": "success",
+    "description": "Tüm bölümler okundu, görüşme kapanışla bitti."
+   },
+   {
+    "key": "geri_arama",
+    "label": "Randevu verildi",
+    "tone": "info",
+    "description": "Müşteri müsait değildi; tekrar aranacağı zaman alındı."
+   },
+   {
+    "key": "kisi_ulasilamadi",
+    "label": "Aranan kişi değil",
+    "tone": "neutral",
+    "description": "Telefonu açan kişi aranan kişi değildi."
+   },
+   {
+    "key": "gorusmek_istemedi",
+    "label": "Görüşmek istemedi",
+    "tone": "danger",
+    "description": "Bilgilendirmeyi dinlemek istemedi."
+   },
+   {
+    "key": "aranmak_istemiyor",
+    "label": "Aranmak istemiyor",
+    "tone": "danger",
+    "description": "\"Beni aramayın\" talebi."
+   },
+   {
+    "key": "yarim_kaldi",
+    "label": "Yarım kaldı",
+    "tone": "warning",
+    "description": "Müşteri bilgilendirme bitmeden kapattı."
+   },
+   {
+    "key": "sessiz_cagri",
+    "label": "Sessiz çağrı",
+    "tone": "neutral",
+    "description": "Karşı taraftan ses alınamadı."
+   },
+   {
+    "key": "acilista_kapatti",
+    "label": "Açılışta kapattı",
+    "tone": "danger",
+    "description": "Müşteri ilk soruya cevap vermeden kapattı."
+   },
+   {
+    "key": "sistem_sonlandirdi",
+    "label": "Sistem sonlandırdı",
+    "tone": "neutral",
+    "description": "Süre aşımı ya da panelden sonlandırma."
+   }
+  ],
+  "steps": [
+   {
+    "key": "acilis",
+    "title": "Açılış ve kişi teyidi",
+    "code": null,
+    "group": "Açılış",
+    "kind": "YesNo",
+    "text": "İyi günler, sahibinden.com destek ekibinden arıyorum, ismim {ASISTAN}. {MUSTERI_ADI} ile görüşebilir miyim?",
+    "defaultText": "İyi günler, sahibinden.com destek ekibinden arıyorum, ismim {ASISTAN}. {MUSTERI_ADI} ile görüşebilir miyim?",
+    "preview": "İyi günler, sahibinden.com destek ekibinden arıyorum, ismim Elif. Ahmet Yılmaz ile görüşebilir miyim?",
+    "custom": false,
+    "condition": "Hayır → teşekkür edilip görüşme sonlandırılır.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "ASISTAN",
+     "MUSTERI_ADI"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "guvenlik_scripti"
+     },
+     {
+      "on": "Hayır",
+      "to": "kapanis_kisi_yok"
+     }
+    ]
+   },
+   {
+    "key": "guvenlik_scripti",
+    "title": "Güvenlik scripti",
+    "code": null,
+    "group": "Açılış",
+    "kind": "Statement",
+    "text": "Yapacağımız görüşmeler, hizmet kalitesinin ölçümü ve işlem güvenliğiniz için kayıt altına alınmaktadır.",
+    "defaultText": "Yapacağımız görüşmeler, hizmet kalitesinin ölçümü ve işlem güvenliğiniz için kayıt altına alınmaktadır.",
+    "preview": "Yapacağımız görüşmeler, hizmet kalitesinin ölçümü ve işlem güvenliğiniz için kayıt altına alınmaktadır.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "hosgeldin"
+     }
+    ]
+   },
+   {
+    "key": "hosgeldin",
+    "title": "Hoş geldiniz",
+    "code": null,
+    "group": "Açılış",
+    "kind": "YesNo",
+    "text": "{HITAP}, öncelikle yeni kurumsal mağazanız hayırlı olsun, aramıza hoş geldiniz! Sizleri de aramızda görmekten çok mutluyuz. Pro ofisinizle ilgili önemli bilgilendirmeleri yapmak ve sitemizi daha verimli kullanabilmeniz için size destek olmak istiyorum. Uygunsanız birkaç dakikanızı alabilir miyim?",
+    "defaultText": "{HITAP}, öncelikle yeni kurumsal mağazanız hayırlı olsun, aramıza hoş geldiniz! Sizleri de aramızda görmekten çok mutluyuz. Pro ofisinizle ilgili önemli bilgilendirmeleri yapmak ve sitemizi daha verimli kullanabilmeniz için size destek olmak istiyorum. Uygunsanız birkaç dakikanızı alabilir miyim?",
+    "preview": "Ahmet Bey, öncelikle yeni kurumsal mağazanız hayırlı olsun, aramıza hoş geldiniz! Sizleri de aramızda görmekten çok mutluyuz. Pro ofisinizle ilgili önemli bilgilendirmeleri yapmak ve sitemizi daha verimli kullanabilmeniz için size destek olmak istiyorum. Uygunsanız birkaç dakikanızı alabilir miyim?",
+    "custom": false,
+    "condition": "Hayır → randevu teklif edilir.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "HITAP"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "paket_taahhutlu"
+     },
+     {
+      "on": "Hayır",
+      "to": "randevu"
+     }
+    ]
+   },
+   {
+    "key": "paket_taahhutlu",
+    "title": "Paket bilgisi (taahhütlü)",
+    "code": null,
+    "group": "Paket ve Ödeme",
+    "kind": "CheckIn",
+    "text": "Mağazanızı taahhütlü olarak {ILAN_ADEDI} adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın {ODEME_GUNU} sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz {AYLIK_UCRET}. {ILAN_ADEDI} adet ilan içeren paketinizi aştığınız zaman ise ilan başına {ASIM_UCRETI} ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "defaultText": "Mağazanızı taahhütlü olarak {ILAN_ADEDI} adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın {ODEME_GUNU} sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz {AYLIK_UCRET}. {ILAN_ADEDI} adet ilan içeren paketinizi aştığınız zaman ise ilan başına {ASIM_UCRETI} ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "preview": "Mağazanızı taahhütlü olarak yüz adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın onunda sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz dokuz bin beş yüz lira. Yüz adet ilan içeren paketinizi aştığınız zaman ise ilan başına yüz elli lira ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Demo profili TAAHHÜTLÜ ise.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "ILAN_ADEDI",
+     "ODEME_GUNU",
+     "AYLIK_UCRET",
+     "ASIM_UCRETI"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "taahhut_bilgisi"
+     }
+    ]
+   },
+   {
+    "key": "taahhut_bilgisi",
+    "title": "Taahhüt ve iptal bedeli",
+    "code": null,
+    "group": "Paket ve Ödeme",
+    "kind": "CheckIn",
+    "text": "Taahhüdünüz {TAAHHUT_BITIS} tarihine kadar geçerli olacaktır. Taahhüt bitiminde iptal talebi iletmediğiniz sürece, taahhüdünüz kullandığınız mağaza ürünü ve ilan paketiyle her yıl otomatik olarak güncel fiyatıyla yenilenecektir. Taahhüt ettiğiniz süreden önce mağazanızı kapatmak isterseniz, talebiniz ilgili fatura dönemi sonunda gerçekleşir ve taahhüt iptal bedeli faturası oluşur. Taahhüt iptal bedeli hesaplanırken, içinde bulunduğunuz taahhüt döneminde taahhütsüz mağaza bedeli üzerinden almış olduğunuz indirimlerin toplamı ile, taahhüt bitiş tarihine kadar devam etmeniz durumunda kalan aylarda ödeyeceğiniz aylık tutarların toplamı kıyaslanır. Sizin açınızdan daha düşük olan tutar, taahhüt iptal bedeli olarak faturalandırılır. Bu konuda sormak istediğiniz bir şey var mı?",
+    "defaultText": "Taahhüdünüz {TAAHHUT_BITIS} tarihine kadar geçerli olacaktır. Taahhüt bitiminde iptal talebi iletmediğiniz sürece, taahhüdünüz kullandığınız mağaza ürünü ve ilan paketiyle her yıl otomatik olarak güncel fiyatıyla yenilenecektir. Taahhüt ettiğiniz süreden önce mağazanızı kapatmak isterseniz, talebiniz ilgili fatura dönemi sonunda gerçekleşir ve taahhüt iptal bedeli faturası oluşur. Taahhüt iptal bedeli hesaplanırken, içinde bulunduğunuz taahhüt döneminde taahhütsüz mağaza bedeli üzerinden almış olduğunuz indirimlerin toplamı ile, taahhüt bitiş tarihine kadar devam etmeniz durumunda kalan aylarda ödeyeceğiniz aylık tutarların toplamı kıyaslanır. Sizin açınızdan daha düşük olan tutar, taahhüt iptal bedeli olarak faturalandırılır. Bu konuda sormak istediğiniz bir şey var mı?",
+    "preview": "Taahhüdünüz yirmi yedi Eylül iki bin yirmi yedi tarihine kadar geçerli olacaktır. Taahhüt bitiminde iptal talebi iletmediğiniz sürece, taahhüdünüz kullandığınız mağaza ürünü ve ilan paketiyle her yıl otomatik olarak güncel fiyatıyla yenilenecektir. Taahhüt ettiğiniz süreden önce mağazanızı kapatmak isterseniz, talebiniz ilgili fatura dönemi sonunda gerçekleşir ve taahhüt iptal bedeli faturası oluşur. Taahhüt iptal bedeli hesaplanırken, içinde bulunduğunuz taahhüt döneminde taahhütsüz mağaza bedeli üzerinden almış olduğunuz indirimlerin toplamı ile, taahhüt bitiş tarihine kadar devam etmeniz durumunda kalan aylarda ödeyeceğiniz aylık tutarların toplamı kıyaslanır. Sizin açınızdan daha düşük olan tutar, taahhüt iptal bedeli olarak faturalandırılır. Bu konuda sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Demo profili TAAHHÜTLÜ ise.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "TAAHHUT_BITIS"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "ilan_kurallari"
+     }
+    ]
+   },
+   {
+    "key": "paket_taahhutsuz",
+    "title": "Paket bilgisi (taahhütsüz)",
+    "code": null,
+    "group": "Paket ve Ödeme",
+    "kind": "CheckIn",
+    "text": "Mağazanızı taahhütsüz olarak {ILAN_ADEDI} adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın {ODEME_GUNU} sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz {AYLIK_UCRET}. {ILAN_ADEDI} adet ilan içeren paketinizi aştığınız zaman ise ilan başına {ASIM_UCRETI} ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "defaultText": "Mağazanızı taahhütsüz olarak {ILAN_ADEDI} adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın {ODEME_GUNU} sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz {AYLIK_UCRET}. {ILAN_ADEDI} adet ilan içeren paketinizi aştığınız zaman ise ilan başına {ASIM_UCRETI} ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "preview": "Mağazanızı taahhütsüz olarak yüz adet ilan içeren paketle birlikte kullandığınızı görüyorum. Aylık ödemeli mağaza ücretiniz, her ayın onunda sistemimize tanımlamış olduğunuz karttan otomatik olarak çekilecektir. Aylık ödemeniz dokuz bin beş yüz lira. Yüz adet ilan içeren paketinizi aştığınız zaman ise ilan başına yüz elli lira ödeme yaparsınız. Buraya kadar sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Demo profili TAAHHÜTSÜZ ise.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": false,
+    "placeholders": [
+     "ILAN_ADEDI",
+     "ODEME_GUNU",
+     "AYLIK_UCRET",
+     "ASIM_UCRETI"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "yenileme_bilgisi"
+     }
+    ]
+   },
+   {
+    "key": "yenileme_bilgisi",
+    "title": "Otomatik yenileme ve iptal",
+    "code": null,
+    "group": "Paket ve Ödeme",
+    "kind": "CheckIn",
+    "text": "Mağazanızı kapatma veya ilan paketinizi değiştirme talebi iletmediğiniz sürece, mağazanız ilgili paket ile her ay güncel fiyatlarla otomatik olarak yenilenecektir. Mağaza iptali veya ürün değişikliği taleplerinizi bir sonraki fatura kesim tarihinden önce iletmeniz durumunda, talebiniz fatura döneminizin sonunda gerçekleştirilecektir. Bu konuda sormak istediğiniz bir şey var mı?",
+    "defaultText": "Mağazanızı kapatma veya ilan paketinizi değiştirme talebi iletmediğiniz sürece, mağazanız ilgili paket ile her ay güncel fiyatlarla otomatik olarak yenilenecektir. Mağaza iptali veya ürün değişikliği taleplerinizi bir sonraki fatura kesim tarihinden önce iletmeniz durumunda, talebiniz fatura döneminizin sonunda gerçekleştirilecektir. Bu konuda sormak istediğiniz bir şey var mı?",
+    "preview": "Mağazanızı kapatma veya ilan paketinizi değiştirme talebi iletmediğiniz sürece, mağazanız ilgili paket ile her ay güncel fiyatlarla otomatik olarak yenilenecektir. Mağaza iptali veya ürün değişikliği taleplerinizi bir sonraki fatura kesim tarihinden önce iletmeniz durumunda, talebiniz fatura döneminizin sonunda gerçekleştirilecektir. Bu konuda sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Demo profili TAAHHÜTSÜZ ise.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": false,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "ilan_kurallari"
+     }
+    ]
+   },
+   {
+    "key": "ilan_kurallari",
+    "title": "İlan verme kuralları",
+    "code": null,
+    "group": "İlan Kuralları",
+    "kind": "CheckIn",
+    "text": "İlan verme konusunda sitemizin ilan kuralları olduğunu da paylaşmak isterim. Yardım Merkezi'nde İlan İşlemleri, İlan Verme ve İlan Verme Kuralları bölümünden detaylara ulaşabilirsiniz. Örneğin yayında olan bir ilanı, yayın süresi bitmeden ikinci kez yayınlarsanız, mükerrer olduğu için ilanınız yayından kaldırılır ve paketinizden düşer. Genel olarak ilanlarınızı yayınlarken ilan verme kurallarına dikkat etmenizi önemle rica ederiz. Sözleşmeye ve ilan verme kurallarına aykırı durumların bilgilendirmelere rağmen tekrarlanması halinde, mağazanızın ilan girişi geçici bir süre durdurulabilir veya mağazanız kapatılabilir. Bu konuda bir sorunuz var mı?",
+    "defaultText": "İlan verme konusunda sitemizin ilan kuralları olduğunu da paylaşmak isterim. Yardım Merkezi'nde İlan İşlemleri, İlan Verme ve İlan Verme Kuralları bölümünden detaylara ulaşabilirsiniz. Örneğin yayında olan bir ilanı, yayın süresi bitmeden ikinci kez yayınlarsanız, mükerrer olduğu için ilanınız yayından kaldırılır ve paketinizden düşer. Genel olarak ilanlarınızı yayınlarken ilan verme kurallarına dikkat etmenizi önemle rica ederiz. Sözleşmeye ve ilan verme kurallarına aykırı durumların bilgilendirmelere rağmen tekrarlanması halinde, mağazanızın ilan girişi geçici bir süre durdurulabilir veya mağazanız kapatılabilir. Bu konuda bir sorunuz var mı?",
+    "preview": "İlan verme konusunda sitemizin ilan kuralları olduğunu da paylaşmak isterim. Yardım Merkezi'nde İlan İşlemleri, İlan Verme ve İlan Verme Kuralları bölümünden detaylara ulaşabilirsiniz. Örneğin yayında olan bir ilanı, yayın süresi bitmeden ikinci kez yayınlarsanız, mükerrer olduğu için ilanınız yayından kaldırılır ve paketinizden düşer. Genel olarak ilanlarınızı yayınlarken ilan verme kurallarına dikkat etmenizi önemle rica ederiz. Sözleşmeye ve ilan verme kurallarına aykırı durumların bilgilendirmelere rağmen tekrarlanması halinde, mağazanızın ilan girişi geçici bir süre durdurulabilir veya mağazanız kapatılabilir. Bu konuda bir sorunuz var mı?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "paket_ozellikleri"
+     }
+    ]
+   },
+   {
+    "key": "paket_ozellikleri",
+    "title": "Premium Plus paket özellikleri",
+    "code": null,
+    "group": "Paket Özellikleri",
+    "kind": "CheckIn",
+    "text": "Premium Plus paketinizin öne çıkan özelliklerinden de kısaca bahsedeyim. İlanlarınızın tarihi her on günde bir güncelleniyor. Toplu dopinglerde sepette yüzde on beş ek indirim, Üst Sıradayım dopinginde yüzde on beş indirim ve her ay iki adet Üst Sıradayım dopingi hakkınız bulunuyor. Tüm ilanlarınız Prime görünümde yayınlanıyor ve her taahhüt döneminde bir fırsat kontör ile yeni portföy kazanabiliyorsunuz. İlanlarınıza altmış fotoğraf ve dört dakikalık HD video ekleyebilir; Fotobot, İlan Klibi, Sanal Tur, SahiDeko ve yapay zeka destekli SahiAI ile ilanlarınızı zenginleştirebilirsiniz. Ayrıca Premium Plus Ofis Vitrini, prestijli mağaza sayfası, reklamsız ilan detay sayfası, Ofisim ile gelişmiş müşteri ve portföy yönetimi, piyasa ve rakip analizi, emlak analiz raporları, mülk sahibi ilan performans raporu, kullanıcı takip paneli, Sahibinden Akademi ve sahibinden Pro uygulaması da paketinize dahil. Herhangi bir özellik hakkında detay ister misiniz?",
+    "defaultText": "Premium Plus paketinizin öne çıkan özelliklerinden de kısaca bahsedeyim. İlanlarınızın tarihi her on günde bir güncelleniyor. Toplu dopinglerde sepette yüzde on beş ek indirim, Üst Sıradayım dopinginde yüzde on beş indirim ve her ay iki adet Üst Sıradayım dopingi hakkınız bulunuyor. Tüm ilanlarınız Prime görünümde yayınlanıyor ve her taahhüt döneminde bir fırsat kontör ile yeni portföy kazanabiliyorsunuz. İlanlarınıza altmış fotoğraf ve dört dakikalık HD video ekleyebilir; Fotobot, İlan Klibi, Sanal Tur, SahiDeko ve yapay zeka destekli SahiAI ile ilanlarınızı zenginleştirebilirsiniz. Ayrıca Premium Plus Ofis Vitrini, prestijli mağaza sayfası, reklamsız ilan detay sayfası, Ofisim ile gelişmiş müşteri ve portföy yönetimi, piyasa ve rakip analizi, emlak analiz raporları, mülk sahibi ilan performans raporu, kullanıcı takip paneli, Sahibinden Akademi ve sahibinden Pro uygulaması da paketinize dahil. Herhangi bir özellik hakkında detay ister misiniz?",
+    "preview": "Premium Plus paketinizin öne çıkan özelliklerinden de kısaca bahsedeyim. İlanlarınızın tarihi her on günde bir güncelleniyor. Toplu dopinglerde sepette yüzde on beş ek indirim, Üst Sıradayım dopinginde yüzde on beş indirim ve her ay iki adet Üst Sıradayım dopingi hakkınız bulunuyor. Tüm ilanlarınız Prime görünümde yayınlanıyor ve her taahhüt döneminde bir fırsat kontör ile yeni portföy kazanabiliyorsunuz. İlanlarınıza altmış fotoğraf ve dört dakikalık HD video ekleyebilir; Fotobot, İlan Klibi, Sanal Tur, SahiDeko ve yapay zeka destekli SahiAI ile ilanlarınızı zenginleştirebilirsiniz. Ayrıca Premium Plus Ofis Vitrini, prestijli mağaza sayfası, reklamsız ilan detay sayfası, Ofisim ile gelişmiş müşteri ve portföy yönetimi, piyasa ve rakip analizi, emlak analiz raporları, mülk sahibi ilan performans raporu, kullanıcı takip paneli, Sahibinden Akademi ve sahibinden Pro uygulaması da paketinize dahil. Herhangi bir özellik hakkında detay ister misiniz?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "web_bilgi"
+     }
+    ]
+   },
+   {
+    "key": "web_bilgi",
+    "title": "Web sitesi bilgisi var mı",
+    "code": null,
+    "group": "Web Sitesi",
+    "kind": "YesNo",
+    "text": "Web sitesi hizmetimiz hakkında daha önce size bilgi verilmiş miydi, bu hizmetimizden haberdar mısınız?",
+    "defaultText": "Web sitesi hizmetimiz hakkında daha önce size bilgi verilmiş miydi, bu hizmetimizden haberdar mısınız?",
+    "preview": "Web sitesi hizmetimiz hakkında daha önce size bilgi verilmiş miydi, bu hizmetimizden haberdar mısınız?",
+    "custom": false,
+    "condition": "Daha önce ücretsiz web sitesi kullanmamışsa sorulur. Evet → soru var mı; Hayır → bilgilendirme.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "web_soru"
+     },
+     {
+      "on": "Hayır",
+      "to": "web_bilgilendirme"
+     }
+    ]
+   },
+   {
+    "key": "web_soru",
+    "title": "Web sitesi — ek soru",
+    "code": null,
+    "group": "Web Sitesi",
+    "kind": "CheckIn",
+    "text": "Harika. Web sitesi hizmetimizle ilgili sormak istediğiniz ekstra bir şey var mı?",
+    "defaultText": "Harika. Web sitesi hizmetimizle ilgili sormak istediğiniz ekstra bir şey var mı?",
+    "preview": "Harika. Web sitesi hizmetimizle ilgili sormak istediğiniz ekstra bir şey var mı?",
+    "custom": false,
+    "condition": "Müşteri web sitesi hizmetini biliyorsa (Senaryo 2).",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "afis_branda"
+     }
+    ]
+   },
+   {
+    "key": "web_bilgilendirme",
+    "title": "Web sitesi bilgilendirmesi",
+    "code": null,
+    "group": "Web Sitesi",
+    "kind": "CheckIn",
+    "text": "Emlak Ofisim ile sunduğumuz web sitesi hizmeti sizin için tamamen ücretsiz. İsterseniz web sitesi hizmetimizden yararlanarak, firmanıza özel belirleyeceğiniz uygun bir alan adıyla, tüm mobil cihazlarla uyumlu internet sitenizi kolayca açabilir ve sahibinden.com'daki ilanlarınızın anında sitenizde de y yayınlanmasını sağlayabilirsiniz. Sitenizin tasarımını sahibinden.com mağazanız üzerinden, kullanıcı dostu panellerle istediğiniz gibi kişiselleştirebilir, sitenize yeni haberler ve yeni sayfalar ekleyerek zenginleştirebilirsiniz. Bu konuda sormak istediğiniz bir şey var mı?",
+    "defaultText": "Emlak Ofisim ile sunduğumuz web sitesi hizmeti sizin için tamamen ücretsiz. İsterseniz web sitesi hizmetimizden yararlanarak, firmanıza özel belirleyeceğiniz uygun bir alan adıyla, tüm mobil cihazlarla uyumlu internet sitenizi kolayca açabilir ve sahibinden.com'daki ilanlarınızın anında sitenizde de yayınlanmasını sağlayabilirsiniz. Sitenizin tasarımını sahibinden.com mağazanız üzerinden, kullanıcı dostu panellerle istediğiniz gibi kişiselleştirebilir, sitenize yeni haberler ve yeni sayfalar ekleyerek zenginleştirebilirsiniz. Bu konuda sormak istediğiniz bir şey var mı?",
+    "preview": "Emlak Ofisim ile sunduğumuz web sitesi hizmeti sizin için tamamen ücretsiz. İsterseniz web sitesi hizmetimizden yararlanarak, firmanıza özel belirleyeceğiniz uygun bir alan adıyla, tüm mobil cihazlarla uyumlu internet sitenizi kolayca açabilir ve sahibinden.com'daki ilanlarınızın anında sitenizde de yayınlanmasını sağlayabilirsiniz. Sitenizin tasarımını sahibinden.com mağazanız üzerinden, kullanıcı dostu panellerle istediğiniz gibi kişiselleştirebilir, sitenize yeni haberler ve yeni sayfalar ekleyerek zenginleştirebilirsiniz. Bu konuda sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Müşteri web sitesi hizmetini bilmiyorsa (Senaryo 1). Ücretsiz olduğu vurgulanır.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "afis_branda"
+     }
+    ]
+   },
+   {
+    "key": "afis_branda",
+    "title": "Ücretsiz afiş ve branda",
+    "code": null,
+    "group": "Afiş & Branda",
+    "kind": "CheckIn",
+    "text": "{HITAP}, sistemde tanımlı ücretsiz afiş ve branda hakkınız olduğunu görüyorum. Ofisim sayfanıza giriş yaparak Afiş ve Branda Sipariş alanından talepte bulunabilirsiniz. Hatırlatmak isterim ki afiş ve branda hakkınızı kullanmamanız durumunda, bu hak bir sonraki taahhüt yenilemenize devretmez. Bu konuda sormak istediğiniz bir şey var mı?",
+    "defaultText": "{HITAP}, sistemde tanımlı ücretsiz afiş ve branda hakkınız olduğunu görüyorum. Ofisim sayfanıza giriş yaparak Afiş ve Branda Sipariş alanından talepte bulunabilirsiniz. Hatırlatmak isterim ki afiş ve branda hakkınızı kullanmamanız durumunda, bu hak bir sonraki taahhüt yenilemenize devretmez. Bu konuda sormak istediğiniz bir şey var mı?",
+    "preview": "Ahmet Bey, sistemde tanımlı ücretsiz afiş ve branda hakkınız olduğunu görüyorum. Ofisim sayfanıza giriş yaparak Afiş ve Branda Sipariş alanından talepte bulunabilirsiniz. Hatırlatmak isterim ki afiş ve branda hakkınızı kullanmamanız durumunda, bu hak bir sonraki taahhüt yenilemenize devretmez. Bu konuda sormak istediğiniz bir şey var mı?",
+    "custom": false,
+    "condition": "Taahhütlü mağazada ve profilde afiş-branda hakkı VAR ise.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "HITAP"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "iki_fa"
+     }
+    ]
+   },
+   {
+    "key": "iki_fa",
+    "title": "2FA teklifi",
+    "code": null,
+    "group": "Güvenlik",
+    "kind": "YesNo",
+    "text": "Güvenliğinizle ilgili de bir bilgilendirme yapmak istiyorum. Hesabınızda iki aşamalı doğrulama kapalı görünüyor. Bu özellik, farklı bir cihazdan giriş yapılırken size tek kullanımlık bir kod göndererek güvenliğinizi artırır. Açmak ister misiniz? Birlikte yapabiliriz.",
+    "defaultText": "Güvenliğinizle ilgili de bir bilgilendirme yapmak istiyorum. Hesabınızda iki aşamalı doğrulama kapalı görünüyor. Bu özellik, farklı bir cihazdan giriş yapılırken size tek kullanımlık bir kod göndererek güvenliğinizi artırır. Açmak ister misiniz? Birlikte yapabiliriz.",
+    "preview": "Güvenliğinizle ilgili de bir bilgilendirme yapmak istiyorum. Hesabınızda iki aşamalı doğrulama kapalı görünüyor. Bu özellik, farklı bir cihazdan giriş yapılırken size tek kullanımlık bir kod göndererek güvenliğinizi artırır. Açmak ister misiniz? Birlikte yapabiliriz.",
+    "custom": false,
+    "condition": "Profilde 2FA KAPALI ise (Senaryo 1).",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Evet",
+      "to": "iki_fa_adimlar"
+     },
+     {
+      "on": "Hayır",
+      "to": "guvenlik_uyarilari"
+     }
+    ]
+   },
+   {
+    "key": "iki_fa_adimlar",
+    "title": "2FA açma adımları",
+    "code": null,
+    "group": "Güvenlik",
+    "kind": "CheckIn",
+    "text": "{IKI_FA_ADIMLARI} Devam edebilir miyiz, ya da bu adımda takıldığınız bir yer var mı?",
+    "defaultText": "{IKI_FA_ADIMLARI} Devam edebilir miyiz, ya da bu adımda takıldığınız bir yer var mı?",
+    "preview": "Harika. Sahibinden.com hesabınıza giriş yaptıktan sonra hesap ayarlarınızdaki güvenlik bölümünden iki aşamalı doğrulamayı açabilirsiniz. Açtığınız andan itibaren farklı bir cihazdan yapılan girişlerde telefonunuza tek kullanımlık bir kod gönderilir. Bu adımda takıldığınız bir nokta olursa 0 850 222 44 44 numaralı çağrı merkezimizden de destek alabilirsiniz. Devam edebilir miyiz, ya da bu adımda takıldığınız bir yer var mı?",
+    "custom": false,
+    "condition": "Müşteri 2FA'yı açmak isterse. Adımlar Ayarlar'dan gelir.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [
+     "IKI_FA_ADIMLARI"
+    ],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "guvenlik_uyarilari"
+     }
+    ]
+   },
+   {
+    "key": "guvenlik_uyarilari",
+    "title": "Genel güvenlik uyarıları",
+    "code": null,
+    "group": "Güvenlik",
+    "kind": "Statement",
+    "text": "Güvenliğiniz için birkaç önemli hatırlatma yapmak istiyorum. Mail ve sahibinden.com şifrelerinizin farklı olması güvenliğiniz için önemlidir. Hiçbir sahibinden.com çalışanı şifrenizi veya onay kodlarınızı istemez; şifre ve onay kodlarınızı kimseyle paylaşmayın. Sahibinden.com, şüpheli hareketler veya hediye doping gibi mesajlarla şifre güncelleme linki göndermez. Böyle bir mesaj alırsanız lütfen giriş yapmayın ve bize iletin. Ayrıca hiçbir sahibinden.com çalışanı size hediye doping yüklemez.",
+    "defaultText": "Güvenliğiniz için birkaç önemli hatırlatma yapmak istiyorum. Mail ve sahibinden.com şifrelerinizin farklı olması güvenliğiniz için önemlidir. Hiçbir sahibinden.com çalışanı şifrenizi veya onay kodlarınızı istemez; şifre ve onay kodlarınızı kimseyle paylaşmayın. Sahibinden.com, şüpheli hareketler veya hediye doping gibi mesajlarla şifre güncelleme linki göndermez. Böyle bir mesaj alırsanız lütfen giriş yapmayın ve bize iletin. Ayrıca hiçbir sahibinden.com çalışanı size hediye doping yüklemez.",
+    "preview": "Güvenliğiniz için birkaç önemli hatırlatma yapmak istiyorum. Mail ve sahibinden.com şifrelerinizin farklı olması güvenliğiniz için önemlidir. Hiçbir sahibinden.com çalışanı şifrenizi veya onay kodlarınızı istemez; şifre ve onay kodlarınızı kimseyle paylaşmayın. Sahibinden.com, şüpheli hareketler veya hediye doping gibi mesajlarla şifre güncelleme linki göndermez. Böyle bir mesaj alırsanız lütfen giriş yapmayın ve bize iletin. Ayrıca hiçbir sahibinden.com çalışanı size hediye doping yüklemez.",
+    "custom": false,
+    "condition": "Herkese okunur.",
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "arama_dogrulama"
+     }
+    ]
+   },
+   {
+    "key": "arama_dogrulama",
+    "title": "Arama doğrulama özelliği",
+    "code": null,
+    "group": "Güvenlik",
+    "kind": "CheckIn",
+    "text": "Son olarak, sahibinden.com uygulamasında müşteri hizmetleri veya satış temsilcilerimiz tarafından arandığınızda, aramanın sahibinden.com'a ait olduğunu gösteren bir doğrulama özelliğimiz bulunuyor. Uygulama içinden Bana Özel, Uygulama Ayarları, Sahibinden.com Arama Bilgilendirme menüsüne girerek gerekli izinleri verdiğinizde, sizi aradığımızda ekranda sahibinden.com tarafından doğrulandı bildirimini görürsünüz. Bu bildirim uygulama açıkken ya da kapalıyken gelen aramalarda da çıkar, giriş yapmış olmanız yeterlidir. Böylece aramanın güvenle sahibinden.com'dan geldiğini kolayca ayırt edebilirsiniz. Size yardımcı olabileceğim başka bir konu var mı?",
+    "defaultText": "Son olarak, sahibinden.com uygulamasında müşteri hizmetleri veya satış temsilcilerimiz tarafından arandığınızda, aramanın sahibinden.com'a ait olduğunu gösteren bir doğrulama özelliğimiz bulunuyor. Uygulama içinden Bana Özel, Uygulama Ayarları, Sahibinden.com Arama Bilgilendirme menüsüne girerek gerekli izinleri verdiğinizde, sizi aradığımızda ekranda sahibinden.com tarafından doğrulandı bildirimini görürsünüz. Bu bildirim uygulama açıkken ya da kapalıyken gelen aramalarda da çıkar, giriş yapmış olmanız yeterlidir. Böylece aramanın güvenle sahibinden.com'dan geldiğini kolayca ayırt edebilirsiniz. Size yardımcı olabileceğim başka bir konu var mı?",
+    "preview": "Son olarak, sahibinden.com uygulamasında müşteri hizmetleri veya satış temsilcilerimiz tarafından arandığınızda, aramanın sahibinden.com'a ait olduğunu gösteren bir doğrulama özelliğimiz bulunuyor. Uygulama içinden Bana Özel, Uygulama Ayarları, Sahibinden.com Arama Bilgilendirme menüsüne girerek gerekli izinleri verdiğinizde, sizi aradığımızda ekranda sahibinden.com tarafından doğrulandı bildirimini görürsünüz. Bu bildirim uygulama açıkken ya da kapalıyken gelen aramalarda da çıkar, giriş yapmış olmanız yeterlidir. Böylece aramanın güvenle sahibinden.com'dan geldiğini kolayca ayırt edebilirsiniz. Size yardımcı olabileceğim başka bir konu var mı?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "",
+      "to": "kapanis"
+     }
+    ]
+   },
+   {
+    "key": "kapanis",
+    "title": "Kapanış",
+    "code": null,
+    "group": "Kapanış",
+    "kind": "Terminal",
+    "text": "Zaman ayırdığınız için çok teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler!",
+    "defaultText": "Zaman ayırdığınız için çok teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler!",
+    "preview": "Zaman ayırdığınız için çok teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler!",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "tamamlandi",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "randevu",
+    "title": "Randevu",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "CallbackTime",
+    "text": "Tabii, anlıyorum. Sizi daha uygun bir zamanda arayabilmem için hangi gün ve saat uygun olur?",
+    "defaultText": "Tabii, anlıyorum. Sizi daha uygun bir zamanda arayabilmem için hangi gün ve saat uygun olur?",
+    "preview": "Tabii, anlıyorum. Sizi daha uygun bir zamanda arayabilmem için hangi gün ve saat uygun olur?",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": null,
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": [
+     {
+      "on": "Zaman verdi",
+      "to": "kapanis_randevu"
+     },
+     {
+      "on": "Zaman vermedi",
+      "to": "kapanis_ret"
+     }
+    ]
+   },
+   {
+    "key": "kapanis_randevu",
+    "title": "Randevu kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Teşekkür ederim, sizi {RANDEVU} tekrar arayacağım. İyi günler dilerim.",
+    "defaultText": "Teşekkür ederim, sizi {RANDEVU} tekrar arayacağım. İyi günler dilerim.",
+    "preview": "Teşekkür ederim, sizi yarın saat on beşte tekrar arayacağım. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "geri_arama",
+    "applicable": true,
+    "placeholders": [
+     "RANDEVU"
+    ],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_kisi_yok",
+    "title": "Aranan kişi değil",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Anladım, teşekkür ederim. İyi günler dilerim.",
+    "defaultText": "Anladım, teşekkür ederim. İyi günler dilerim.",
+    "preview": "Anladım, teşekkür ederim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "kisi_ulasilamadi",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_ret",
+    "title": "Ret kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler.",
+    "defaultText": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler.",
+    "preview": "Anlıyorum, vakit ayırdığınız için teşekkür ederim. Yeni mağazanızla bol kazançlar dileriz, iyi günler.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "gorusmek_istemedi",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_dnc",
+    "title": "Aranmak istemiyor kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Talebinizi not aldım, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "defaultText": "Talebinizi not aldım, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "preview": "Talebinizi not aldım, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "aranmak_istemiyor",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   },
+   {
+    "key": "kapanis_sessiz",
+    "title": "Sessiz hat kapanışı",
+    "code": null,
+    "group": "Erken Kapanış",
+    "kind": "Terminal",
+    "text": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "defaultText": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "preview": "Sesinizi alamadığım için görüşmeyi sonlandırıyorum. İyi günler dilerim.",
+    "custom": false,
+    "condition": null,
+    "dtmf": false,
+    "min": 1,
+    "max": 10,
+    "longAnswer": false,
+    "outcome": "sessiz_cagri",
+    "applicable": true,
+    "placeholders": [],
+    "choices": [],
+    "branches": []
+   }
+  ]
+ }
+}

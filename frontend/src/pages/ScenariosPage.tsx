@@ -6,7 +6,7 @@ import {
 
 const KIND_LABEL: Record<string, string> = {
   Choice: "Seçenekli", YesNo: "Evet / Hayır", Score: "Puan", Duration: "Süre", OpenText: "Açık uçlu",
-  Statement: "Anons", CallbackTime: "Randevu zamanı", Terminal: "Kapanış",
+  Statement: "Anons", CheckIn: "Bilgilendirme + soru", CallbackTime: "Randevu zamanı", Terminal: "Kapanış",
 };
 const SECONDS_PER_CHAR = 38 / 543; // referans ekranda 543 karakter ≈ 38 sn (≈14 karakter/sn)
 

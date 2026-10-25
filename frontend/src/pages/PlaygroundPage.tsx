@@ -13,7 +13,7 @@ const STATE_LABEL: Record<string, string> = {
 };
 const KIND_LABEL: Record<string, string> = {
   Choice: "Seçenekli", YesNo: "Evet / Hayır", Score: "Puan", Duration: "Süre", OpenText: "Açık uçlu",
-  Statement: "Anons", CallbackTime: "Randevu zamanı", Terminal: "Kapanış",
+  Statement: "Anons", CheckIn: "Bilgilendirme + soru", CallbackTime: "Randevu zamanı", Terminal: "Kapanış",
 };
 const sec = (v?: number | null) => (v === undefined || v === null ? "—" : `${v.toFixed(2)} sn`);
 const show = (v: unknown) => (v === null || v === undefined ? "cevap yok" : typeof v === "boolean" ? (v ? "Evet" : "Hayır") : String(v));

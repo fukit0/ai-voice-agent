@@ -64,6 +64,21 @@ test("Senaryo modu: aktif düğüm ilerler, çıkarılan cevap listelenir, telef
   await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
 });
 
+// lab-003 / Welcome Call: Playground'da senaryo seçilir, ajan teyit sorusuyla başlar (aranan kişi mi?), dal ilerler.
+test("Senaryo modu: Welcome Call seçilir, ajan açılışta aranan kişiyi teyit eder ve cevap sonrası ilerler", async ({ page, request }) => {
+  await request.post("/api/profiles/V1/warmup?keep_others=true");
+  await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
+  await page.goto("/playground");
+  await page.getByLabel("Senaryo").selectOption("welcome");
+  await page.getByRole("button", { name: "Başlat" }).click();
+  await expect(page.getByRole("button", { name: "Durdur" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("voice-lines")).toContainText("Ahmet Yılmaz", { timeout: 15_000 });
+  await expect(page.getByTestId("voice-answers")).toContainText("Evet", { timeout: 30_000 });
+  await page.screenshot({ path: "e2e-artifacts/lab-003-welcome-playground.png", fullPage: true });
+  await page.getByRole("button", { name: "Durdur" }).click();
+  await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
+});
+
 // core-002: söz kesme gerçek tarayıcıda. Sahte mikrofon dosyası 1. sn'de konuşmaya başlar; ajan o sırada selamlıyor.
 // Ölçüm tarayıcıdadır (uzak ses akışının enerjisi): kullanıcı sesinin başladığı andan ajan sesinin kesildiği ana kadar.
 test("Söz kesme: ajan konuşurken kullanıcı konuşmaya başlar, ajan sesi tarayıcıda 500 ms içinde kesilir", async ({ page, request }) => {

@@ -32,7 +32,9 @@ HINTS = {
     "YesNo": "Evet ya da hayır diyebilirsiniz.",
     "Duration": "Örneğin otuz saniye ya da iki dakika diyebilirsiniz.",
     "CallbackTime": "Örneğin yarın saat on beşte diyebilirsiniz.",
+    "CheckIn": "Sorunuz varsa söyleyebilirsiniz, yoksa devam diyebilirsiniz.",
 }
+QUESTION_NOTED = "Sorunuzu not aldım, bilgilendirmeye devam edelim."
 
 
 @dataclass
@@ -56,6 +58,9 @@ def _rule(step: dict) -> str:
         return "toplam saniye cinsinden tam sayı (örn. 'iki dakika' -> 120, 'otuz saniye' -> 30)"
     if kind == "CallbackTime":
         return "müşterinin söylediği gün/saat ifadesi, metin olarak (örn. 'yarın saat on beşte'); söylemediyse intent=unclear"
+    if kind == "CheckIn":
+        return ("true: müşterinin sormak/öğrenmek istediği bir şey var (soru sordu); "
+                "false: sorusu yok, onayladı ya da devam etmek istiyor (tamam, anladım, yok, devam)")
     return "metin"
 
 
@@ -94,7 +99,7 @@ def check_value(step: dict, obj: dict) -> tuple[bool, Any]:
         lo = 0 if step["code"] == "Q12" else step["min"]
         ok = _is_int(value) and lo <= value <= step["max"]
         return ok, int(value) if ok else None
-    if kind == "YesNo":
+    if kind in ("YesNo", "CheckIn"):
         return isinstance(value, bool), value
     if kind == "Choice":
         ok = isinstance(value, str) and value in {c["value"] for c in step["choices"]}
@@ -214,7 +219,7 @@ class FlowDriver:
                                  if step["kind"] == "Choice" else "kısaca cevaplayın."))
                 reply.utterances.append(f"Kusura bakmayın, tekrar soruyorum. {q} {hint}")
             return reply
-        if step["kind"] in ("Score", "Duration", "OpenText"):
+        if step["kind"] in ("Score", "Duration", "OpenText", "CheckIn"):
             return self._accept(step, "", None, reply, unanswered=True)
         reply.utterances.append(FALLBACK_CLOSE)
         reply.events.append({"type": "node", "key": "sistem_sonlandirdi", "code": None, "title": "Sistem sonlandırdı",
@@ -235,5 +240,8 @@ class FlowDriver:
             self.values["Q2"] = number_to_words(int(value))
         if step["kind"] == "CallbackTime" and value:
             self.values["RANDEVU"] = value
+        if step["kind"] == "CheckIn" and value is True:
+            # PoC'de serbest soruları yanıtlayan bilgi bankası yok (Faz 2): soru kaydedilir, bilgilendirme sürer.
+            reply.utterances.append(QUESTION_NOTED)
         self._advance(S.next_step(step, value if not unanswered else None), reply)
         return reply

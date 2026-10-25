@@ -150,3 +150,11 @@ agents do not update it automatically.
 - Eksik olan, FlowDriver birim testlerinin ses oturumu seviyesinde kanitiydi: backend/tests/test_survey_e2e.py (2 test) konusma sesi -> VAD -> STT -> akis -> kaydedilen oturum JSON'u zincirini iki dalda kosar (A: 18 turda tamamlandi; B: iki tekrar sorma sonra gorusmeyi_hatirlamiyor). Cevap tipleri (bool/int/saniye/metin) kayitta dogrulanir.
 - Dogrulama: pytest 254 gecti (bulut ortami sifirlanmisti, bagimliliklar pip ile yeniden kuruldu; backend/requirements.txt bulutta yok, Mac'te var).
 - Dogrulanmamis: gercek LLM ile cikarim (betikli), gercek mikrofon, Welcome Call senaryosu, sessiz hat.
+
+### Session 011 (Welcome Call senaryosu)
+- Referans panel oturumu kapaliydi; kullanici yeniden giris yapinca /api/scenarios tam (63 KB) cekildi. Onceki ham veri 50.000 karakterde kesikti; eksik kuyruk eklenip JSON dogrulandi (birlestirme sonrasi json.loads basarili).
+- config/scenarios/welcome.json: 'Welcome Call · Premium Plus Magaza', 24 adim, 9 sonuc, ornek profil (taahhutlu, 2FA kapali, afis-branda var). S.validate() hatasiz.
+- Yeni adim turu CheckIn (flow.py): bool cevap; soru varsa not alinir (QUESTION_NOTED), cevap uretilmez; belirsizse 2 tekrar sonra atlanir. Etiket 'Bilgilendirme + soru' (Senaryolar + Playground).
+- Dogrulama: pytest 265 (yeni test_welcome.py 11), vitest 38, tsc temiz, Playwright 10 (yeni: Welcome sekmesi, Playground welcome).
+- Not: bulut ortami sifirlanmisti; e2e icin LAB_PYTHON=python3 ve 'npm run build' gerekti (webServer dist'ten sunar).
+- Dogrulanmamis: gercek LLM ile CheckIn ayrimi, gercek mikrofonla tam Welcome Call, profil-bagimli dallar (taahhutsuz profil adimlari 'applicable:false', profil secimi UI'si yok), sessiz hat.
