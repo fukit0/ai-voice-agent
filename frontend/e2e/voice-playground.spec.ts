@@ -3,6 +3,11 @@ import { expect, test } from "@playwright/test";
 // core-001 kabul: Playground açılır, 'Başlat' ile bağlantı kurulur; kullanıcının sesi ajana ulaşır,
 // ajanın sesi tarayıcıda duyulur. Gerçek Chromium + gerçek WebRTC (Opus/DTLS) + sahte mikrofon dosyası;
 // STT/LLM/TTS sahtedir (model gerektirmez). Gerçek mikrofon + gerçek modeller Mac'te elle doğrulanır.
+// Fixture'da realtime profil (RT) da hazır sayıldığı için varsayılan profil açıkça V1'e sabitlenir; RT testi kendisi seçer.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("sva.profile", "V1"));
+});
+
 test("Başlat → bağlanır, ajan selamlar, sahte mikrofon konuşması ajana ulaşır, ajan sesi duyulur, Durdur kapatır", async ({ page, request }) => {
   await page.goto("/playground");
   await expect(page.getByRole("heading", { level: 2, name: "Playground" })).toBeVisible();
@@ -75,6 +80,29 @@ test("Senaryo modu: Welcome Call seçilir, ajan açılışta aranan kişiyi teyi
   await expect(page.getByTestId("voice-lines")).toContainText("Ahmet Yılmaz", { timeout: 15_000 });
   await expect(page.getByTestId("voice-answers")).toContainText("Evet", { timeout: 30_000 });
   await page.screenshot({ path: "e2e-artifacts/lab-003-welcome-playground.png", fullPage: true });
+  await page.getByRole("button", { name: "Durdur" }).click();
+  await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
+});
+
+// core-011: realtime profil (sahte sağlayıcı, ağ yok) gerçek Chromium + WebRTC ile. Hibrit yöntem: ajan açılış metnini seslendirir,
+// sahte mikrofon konuşması fonksiyon çağrısı olarak bildirilir, akış motoru sonraki adıma geçer, ajan sesi tarayıcıda duyulur.
+test("Realtime profil (hibrit): senaryo başlar, cevap fonksiyon çağrısıyla bildirilir, akış ilerler, ajan sesi duyulur, gecikme uçtan uca", async ({ page, request }) => {
+  await page.addInitScript(() => localStorage.setItem("sva.profile", "RT"));
+  await page.goto("/playground");
+  await expect(page.getByLabel("Senaryo")).toHaveValue("anket");
+  await page.getByLabel("Senaryo").selectOption("welcome");
+  await page.getByRole("button", { name: "Başlat" }).click();
+  await expect(page.getByRole("button", { name: "Durdur" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("voice-lines")).toContainText("Ahmet Yılmaz", { timeout: 15_000 });
+  await expect(page.getByTestId("voice-answers")).toContainText("Evet", { timeout: 30_000 });
+  await expect(page.getByTestId("active-node")).not.toContainText("Aranan kişi teyidi", { timeout: 30_000 });
+  await expect(page.getByTestId("realtime-note")).toContainText("ayrı STT / LLM / TTS süresi yoktur", { timeout: 30_000 });
+  const stats = await page.evaluate(() => (window as unknown as { __voiceStats?: { remotePeak: number } }).__voiceStats);
+  expect(stats?.remotePeak ?? 0).toBeGreaterThan(0.02);                       // ajan sesi tarayıcıya ulaştı
+  const sessions = await (await request.get("/api/voice/sessions")).json();
+  expect(sessions[0].stats.realtime).toBe("fake_realtime");
+  expect(sessions[0].stats.tool_calls).toBeGreaterThanOrEqual(1);
+  await page.screenshot({ path: "e2e-artifacts/core-011-realtime-playground.png", fullPage: true });
   await page.getByRole("button", { name: "Durdur" }).click();
   await expect.poll(async () => (await (await request.get("/api/voice/sessions")).json()).length).toBe(0);
 });

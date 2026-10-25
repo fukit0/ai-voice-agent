@@ -13,7 +13,7 @@ from .providers import PROVIDERS, missing_env
 ROOT = Path(__file__).resolve().parents[2]
 COMPONENTS = ("stt", "llm", "tts")
 # Realtime (speech-to-speech) sağlayıcıların gerektirdiği anahtar
-REALTIME_ENV = {"openai_realtime": "OPENAI_API_KEY", "gemini_live": "GEMINI_API_KEY"}
+REALTIME_ENV = {"openai_realtime": "OPENAI_API_KEY", "gemini_live": "GEMINI_API_KEY", "fake_realtime": ""}
 
 
 def profiles_path() -> Path:
@@ -60,20 +60,19 @@ class Profile:
                     entry["warm"] = provider.is_warm()
             comps[name] = entry
         if self.realtime:
-            # Realtime sağlayıcı core-003 kapsamında yok (lab-003); sadece anahtar kontrolü
+            # Realtime sağlayıcı: ayrı STT/LLM/TTS yok; yalnızca anahtar kontrolü. Konuşma core-011'de (voice/realtime.py)
             kind = self.realtime.get("provider")
             key = REALTIME_ENV.get(kind)
             if key is None:
                 issues.append(f"realtime: bilinmeyen sağlayıcı '{kind}'")
-            elif not os.environ.get(key):
+            elif key and not os.environ.get(key):
                 missing.add(key)
-            issues.append("Realtime profil: STT/LLM/TTS ayrı çağrılamaz; Playground'da (lab-003) desteklenecek")
         return {"id": self.id, "name": self.name, "purpose": self.purpose, "mode": self.mode,
                 "notes": self.notes, "components": comps, "realtime": self.realtime,
                 "missing_env": sorted(missing), "issues": issues,
                 # hazır = anahtar eksik değil, bilinen sorun yok, üç bileşen de var (cascade)
-                "ready": (not missing and not issues and self.mode == "cascade"
-                          and not any(c is None for c in comps.values())),
+                "ready": (not missing and not issues and (
+                    self.mode == "realtime" or not any(c is None for c in comps.values()))),
                 # sıcak = bileşenlerin hepsi yüklü ve ısınmış; ölçümler yalnızca sıcak profilde yapılır (ADR 0001)
                 "warm": (self.mode == "cascade" and any(comps.values())
                          and all(c.get("warm") for c in comps.values() if c))}

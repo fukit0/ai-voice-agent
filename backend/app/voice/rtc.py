@@ -90,14 +90,19 @@ class AgentAudioTrack(MediaStreamTrack):
 
 
 class RtcVoiceConnection:
-    def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False):
+    def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False, realtime_backend=None):
         self.sid = uuid.uuid4().hex[:12]
         self.pc = RTCPeerConnection()
         self.track = AgentAudioTrack()
         self.channel = None
         self._pending_events: list[dict] = []
-        self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send, flow=flow,
-                                    phone_filter=phone_filter)
+        if realtime_backend is not None:   # tek modelli realtime profil (core-011): STT/LLM/TTS yok
+            from .realtime import RealtimeVoiceSession
+            self.session = RealtimeVoiceSession(self.sid, profile_id, realtime_backend, self.track, self._send, flow,
+                                                phone_filter=phone_filter)
+        else:
+            self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send, flow=flow,
+                                        phone_filter=phone_filter)
         self._reader: asyncio.Task | None = None
         self.closed = False
         self.pc.addTrack(self.track)

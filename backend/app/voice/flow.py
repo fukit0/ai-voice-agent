@@ -46,7 +46,7 @@ class Reply:
     llm_s: float | None = None
 
 
-def _rule(step: dict) -> str:
+def value_rule(step: dict) -> str:
     kind = step["kind"]
     if kind == "Score":
         return f"{step['min'] if step['code'] != 'Q12' else 0}-10 arası tam sayı"
@@ -73,7 +73,7 @@ def build_messages(step: dict, question: str, utterance: str) -> list[dict]:
         '{"intent": "answer|repeat|refuse|unclear|off_topic|callback|dnc", "value": <değer veya null>}\n'
         f"intent anlamları:\n{intents}\n"
         "value yalnızca intent=answer iken dolu olur; diğer durumlarda null.\n"
-        f"Bu sorunun value kuralı: {_rule(step)}.\n"
+        f"Bu sorunun value kuralı: {value_rule(step)}.\n"
         "Sayıları rakamla yaz (örn. 'dokuz' -> 9). Müşteri birden fazla şey söylerse sorulan soruya verdiği asıl cevabı al."
     )
     user = f"Soru: {question}"
@@ -182,6 +182,16 @@ class FlowDriver:
         key = self.current
         step = self.steps[key]
         obj, reply.llm_s = self._extract(step, utterance)
+        return self.handle_structured(obj, utterance, reply)
+
+    def handle_structured(self, obj: dict | None, utterance: str, reply: Reply | None = None) -> Reply:
+        """Cevap zaten yapılandırılmış geldiyse (realtime modelin fonksiyon çağrısı) LLM çağrılmadan akışı ilerletir.
+        Tip denetimi (check_value) aynıdır: model yanlış tipte değer bildirirse 'anlaşılamadı' sayılır."""
+        reply = reply if reply is not None else Reply()
+        if self.finished or self.current is None:
+            return reply
+        key = self.current
+        step = self.steps[key]
         ok, value = check_value(step, obj) if obj is not None else (False, None)
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,

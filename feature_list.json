@@ -476,7 +476,7 @@
       "moscow": "should",
       "title": "Realtime profiller (A2 OpenAI, A3 Gemini) Playground'da",
       "user_visible_behavior": "Kullanıcı Playground'da A2 veya A3 profilini seçip senaryoyla konuşur; ses doğrudan realtime modele gider, cevaplar fonksiyon çağrısıyla yapılandırılır ve akışı yine bizim motor yürütür.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "A2 profiliyle senaryo seçilip Başlat ile konuşma başlar; ajanın sesi tarayıcıda duyulur.",
         "Model her cevabı fonksiyon çağrısıyla bildirir; FlowDriver sonraki soruyu seçer ve çıkarılan cevaplar listelenir.",
@@ -484,8 +484,15 @@
         "A3 için Türkçe konuşma kalitesi ve fonksiyon çağrısı güvenilirliği ayrıca doğrulanır; desteklenmiyorsa gerekçesiyle belgelenir.",
         "A2/A3 için aynı 5 test aramasının gecikmesi L2 ile karşılaştırılır (kıyas matrisine girdi)."
       ],
-      "evidence": [],
-      "notes": "Hibrit yöntem önerisi: model sesi yönetir, her cevabı fonksiyon çağrısıyla bildirir; flow motoru (voice/flow.py) deterministik kalır. Basit yöntem (tüm senaryoyu talimat olarak vermek) akışın deterministikliğini ve kıyasın adilliğini bozduğu için önerilmez. Gerekenler: tarayıcı sesini sağlayıcının realtime bağlantısına aktaran adaptör, API anahtarları (OPENAI_API_KEY, GEMINI_API_KEY: Mac .env'de dolu, 2026-10-25 teyit edildi; yalnızca varlığı kontrol edildi, anahtarların geçerliliği ve realtime model erişimi doğrulanmadı), telefon filtresinin realtime ses yoluna uygulanması. Şu an /api/voice/offer realtime profilde 400 'realtime_unsupported' döner. Telefon filtresi, ayrı STT/LLM/TTS gecikmesi ve cevap-çıkarma ölçümü (eval-llm) bu profillerde aynı biçimde geçerli değildir. Bağımlılık: core-001, lab-003 (passing)."
+      "evidence": [
+        "backend/app/voice/realtime.py",
+        "backend/app/voice/realtime_smoke.py",
+        "scripts/realtime_smoke.py",
+        "backend/tests/test_realtime.py",
+        "frontend/e2e/voice-playground.spec.ts",
+        "docs/adr/0005-realtime-hybrid.md"
+      ],
+      "notes": "BLOCKER: canli A2/A3 dogrulamasi icin OpenAI/Google erisimi gerekir; bulut ve Mac VM'i erisemiyor (curl 000). Kullanici Mac'te (VM disinda) calistirmali: .venv/bin/python scripts/realtime_smoke.py -> evidence/core-011-live-smoke.json + data/realtime-smoke/*.wav. YAPILAN (bulut, sahte saglayici): hibrit yontem (ADR 0005): FlowDriver.handle_structured, RealtimeVoiceSession, OpenAIRealtime/GeminiLive baglastiricilari (protokol testli), FakeRealtime; /api/voice/offer realtime kabul eder (scenario_required, missing_env); Playground tur tablosu realtime icin uctan uca gecikme gosterir (STT/LLM/TTS yok notuyla); Chromium e2e: ajan sesi duyulur, cevap fonksiyon cagrisiyla bildirilir, akis ilerler. pytest 286, vitest 39, Playwright 11. Dogrulama maddeleri: (1) kismen: A2 ile baslat/ses duyulur sahte saglayicida, canli degil; (2) fonksiyon cagrisi->FlowDriver sahte+protokol seviyesinde; (3) tur gecikmesi gosterimi tamam; (4) A3 Turkce kalite/guvenilirlik: DOGRULANMADI (smoke betigi hazir); (5) A2/A3 vs L2 5 arama karsilastirmasi: YAPILMADI. Model adlari (gpt-realtime-2.1-mini, gemini-3.8-live) plandan, erisilebilirlikleri dogrulanmadi. OpenAI hibrit akis tur basina iki model gidis-donusu yapar (bilincli takas)."
     },
     {
       "id": "scn-001",

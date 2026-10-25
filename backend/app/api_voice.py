@@ -32,10 +32,17 @@ async def offer(req: OfferRequest) -> dict:
     profile = load_profiles().get(req.profile)
     if profile is None:
         raise HTTPException(404, {"error": "unknown_profile", "message": f"Profil bulunamadı: {req.profile}"})
-    if profile.mode == "realtime":
-        raise HTTPException(400, {"error": "realtime_unsupported", "profile": req.profile,
-                                  "message": f"{req.profile} tek modelli realtime profil; Playground desteği lab-003'te."})
-    if not profile.component("stt"):
+    realtime = profile.mode == "realtime"
+    if realtime:
+        if not req.scenario:   # hibrit yöntem akışı flow motoru yürütür; senaryosuz serbest sohbet bu profillerde yok
+            raise HTTPException(400, {"error": "scenario_required", "profile": req.profile,
+                                      "message": f"{req.profile} realtime profil; modelin cevabı fonksiyon çağrısıyla "
+                                                 "bildirmesi için bir senaryo seçin."})
+        missing = profile.status(check_local=False)["missing_env"]
+        if missing:
+            raise HTTPException(400, {"error": "missing_env", "profile": req.profile, "missing_env": missing,
+                                      "message": f"{req.profile} için ortam değişkeni eksik: {', '.join(missing)} (.env)."})
+    elif not profile.component("stt"):
         raise HTTPException(400, {"error": "component_unavailable", "profile": req.profile,
                                   "message": f"{req.profile} profilinde STT yok (ses doğrudan LLM'e gider, core-010); "
                                              "sesli konuşma için STT'li bir profil seçin."})
@@ -45,7 +52,15 @@ async def offer(req: OfferRequest) -> dict:
         raise HTTPException(503, {"error": "voice_deps_missing",
                                   "message": f"Sesli konuşma için aiortc kurulu değil ({exc.name}). "
                                              "`pip install aiortc` çalıştırıp backend'i yeniden başlatın."}) from exc
-    stt, llm, tts = (_provider(profile, c) for c in ("stt", "llm", "tts"))  # soğuksa 409
+    stt = llm = tts = backend = None
+    if realtime:
+        from .voice.realtime import make_backend
+        try:
+            backend = make_backend(profile.realtime or {})
+        except ValueError as exc:
+            raise HTTPException(400, {"error": "unknown_realtime_provider", "message": str(exc)}) from exc
+    else:
+        stt, llm, tts = (_provider(profile, c) for c in ("stt", "llm", "tts"))  # soğuksa 409
     for sid in [k for k, v in CONNECTIONS.items() if v.closed]:
         CONNECTIONS.pop(sid, None)
     if len(CONNECTIONS) >= MAX_SESSIONS:
@@ -58,7 +73,8 @@ async def offer(req: OfferRequest) -> dict:
             flow = FlowDriver(S.get(req.scenario), llm, req.values)
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
-    conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter)
+    conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
+                              realtime_backend=backend)
     CONNECTIONS[conn.sid] = conn
     try:
         answer = await conn.accept(req.sdp, req.type)

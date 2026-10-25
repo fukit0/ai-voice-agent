@@ -158,3 +158,9 @@ agents do not update it automatically.
 - Dogrulama: pytest 265 (yeni test_welcome.py 11), vitest 38, tsc temiz, Playwright 10 (yeni: Welcome sekmesi, Playground welcome).
 - Not: bulut ortami sifirlanmisti; e2e icin LAB_PYTHON=python3 ve 'npm run build' gerekti (webServer dist'ten sunar).
 - Dogrulanmamis: gercek LLM ile CheckIn ayrimi, gercek mikrofonla tam Welcome Call, profil-bagimli dallar (taahhutsuz profil adimlari 'applicable:false', profil secimi UI'si yok), sessiz hat.
+
+### Session 012 (core-011 realtime profiller — BLOCKED: canli dogrulama)
+- Hibrit realtime hatti kuruldu (ADR 0005): voice/realtime.py (OpenAIRealtime, GeminiLive, FakeRealtime, RealtimeVoiceSession), FlowDriver.handle_structured (ayni sik tip denetimi), /api/voice/offer realtime dali, Playground realtime gecikme tablosu, profil durumu (realtime hazir = anahtar var).
+- Dogrulama (bulut): pytest 286 (yeni test_realtime.py 22), vitest 39, Playwright 11 (yeni: realtime profil Chromium e2e).
+- BLOCKER: OpenAI/Google API'lerine bulut ve Mac VM'inden erisim yok. Canli dogrulama icin kullanici eylemi: Mac'te (VM disinda) `.venv/bin/python scripts/realtime_smoke.py` calistirip evidence/core-011-live-smoke.json ve data/realtime-smoke/*.wav ciktisini paylasmak (ses dosyalarini dinleyip Turkce kaliteyi degerlendirmek). Sonra core-011 kalan maddeleri: A3 Turkce guvenilirlik, A2/A3 vs L2 gecikme karsilastirmasi.
+- Yan degisiklik: e2e fixture'a RT profili eklendi; spec varsayilan profili V1'e sabitler.

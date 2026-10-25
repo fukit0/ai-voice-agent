@@ -53,6 +53,25 @@ describe("Playground (core-001)", () => {
     expect(await screen.findByRole("button", { name: "Başlat" })).toBeInTheDocument();
   });
 
+  it("realtime tur gecikmesi uçtan uca gösterilir; STT/LLM/TTS sütunu yoktur ve arayüzde böyle belirtilir (core-011)", async () => {
+    renderPage();
+    const start = await screen.findByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalled());
+    act(() => {
+      hooks.onEvent({ type: "turn", turn: 1, greeting: true, realtime: true, speak_s: 0.5 });
+      hooks.onEvent({ type: "turn", turn: 2, realtime: true, answer_s: 0.7, speak_s: 0.6, first_audio_after_end_s: 1.3 });
+      hooks.onEvent({ type: "turn", turn: 3, realtime: true, no_tool_call: true, speak_s: 0.5, first_audio_after_end_s: 1.1 });
+    });
+    expect(screen.getByTestId("realtime-note")).toHaveTextContent("ayrı STT / LLM / TTS süresi yoktur");
+    const table = screen.getByTestId("voice-latency");
+    expect(within(table).queryByText("STT")).not.toBeInTheDocument();
+    const rows = within(table).getAllByRole("row");
+    for (const cell of ["0.70 sn", "0.60 sn", "1.30 sn"]) expect(rows[2]).toHaveTextContent(cell);
+    expect(rows[3]).toHaveTextContent("fonksiyon çağrılmadı");
+  });
+
   it("mikrofon izni / soğuk profil hatasını gösterir ve Başlat'ı geri açar", async () => {
     startVoice.mockRejectedValueOnce(new Error("L2 profili hazır değil (STT soğuk). Önce 'Hazırla' ile modelleri yükleyin."));
     renderPage();

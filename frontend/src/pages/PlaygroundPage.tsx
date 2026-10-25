@@ -165,7 +165,27 @@ export function PlaygroundPage() {
       </div>
 
       <h3 className="sub">Tur gecikmeleri</h3>
-      {turns.length === 0 ? <p className="meta">Henüz tur yok.</p> : (
+      {turns.length === 0 ? <p className="meta">Henüz tur yok.</p> : turns.some((t) => t.realtime) ? (
+        <>
+          <p className="meta" data-testid="realtime-note">
+            Realtime profil: ses doğrudan modele gider; ayrı STT / LLM / TTS süresi yoktur. Ölçülen tek şey, konuşma bitişinden
+            ajanın ilk sesine geçen uçtan uca süredir (kırılım: cevabı fonksiyon çağrısıyla bildirme + metni seslendirme).
+          </p>
+          <table className="eval-table" data-testid="voice-latency">
+            <thead><tr><th>Tur</th><th>Cevabı bildirme</th><th>Metni seslendirme</th><th>Konuşma bitişinden ilk sese (uçtan uca)</th></tr></thead>
+            <tbody>
+              {turns.map((t, i) => (
+                <tr key={t.turn}>
+                  <td>{t.greeting ? "açılış" : i}</td>
+                  <td>{t.no_tool_call ? "fonksiyon çağrılmadı" : sec(t.answer_s)}</td>
+                  <td>{sec(t.speak_s)}</td>
+                  <td>{t.greeting ? "—" : sec(t.first_audio_after_end_s)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : (
         <table className="eval-table" data-testid="voice-latency">
           <thead><tr><th>Tur</th><th>STT</th><th>LLM</th><th>TTS (ilk cümle)</th><th>Konuşma bitişinden ilk sese</th><th>Bitiş bekleme</th></tr></thead>
           <tbody>

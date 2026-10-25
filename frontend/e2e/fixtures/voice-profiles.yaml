@@ -5,3 +5,12 @@ profiles:
     stt: {provider: fake_stt, model: fake}
     llm: {provider: fake_llm, model: fake}
     tts: {provider: fake_tts, model: fake}
+
+  RT:
+    name: Sahte realtime (e2e)
+    purpose: Modelsiz hibrit realtime hattı (core-011)
+    mode: realtime
+    realtime: {provider: fake_realtime, model: fake}
+    stt: null
+    llm: null
+    tts: null

@@ -5,7 +5,8 @@ export type VoiceEvent =
   | { type: "state"; state: "idle" | "listening" | "thinking" | "speaking" | "closed" }
   | { type: "transcript"; role: "user" | "agent"; text: string; t: number }
   | { type: "turn"; turn: number; stt_s?: number; llm_s?: number; tts_first_s?: number; first_audio_after_end_s?: number;
-      endpoint_wait_ms?: number; user_seconds?: number; greeting?: boolean }
+      endpoint_wait_ms?: number; user_seconds?: number; greeting?: boolean;
+      realtime?: boolean; answer_s?: number; speak_s?: number; no_tool_call?: boolean }
   | { type: "barge_in"; cut_ms?: number }
   | { type: "hold"; on: boolean; text?: string }
   | { type: "node"; key: string; code: string | null; title: string; kind: string; group: string; spoken: string; terminal: boolean }
