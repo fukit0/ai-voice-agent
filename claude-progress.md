@@ -18,7 +18,7 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003, core-002 (11 / 51)
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003, core-002, core-004 (12 / 51)
 - Current highest-priority unfinished feature: core-004 (anket yürütme, FlowDriver ile büyük ölçüde var; gerçek model ölçümü eksik) ve core-005/lab-004
 - Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
 
@@ -145,3 +145,8 @@ agents do not update it automatically.
 - Doğrulama: pytest 252 (yeni test_turntaking.py 20), vitest 38, Playwright 8 (yeni: tarayıcıda söz kesme).
 - Doğrulanmamış: gerçek insan sesi/STT/hoparlör (yanki), gürültü, öğrenilmiş turn modeli yok; yarım cümlede ek gecikme p50 hedefinin dışında.
 - Kullanıcı eylemi (Mac): kulaklıkla Playground'da ajan konuşurken araya girin ("söz kesme: n · son: X ms" görünür); "evet ama" deyip 1 sn susup devam edin ("devamını bekliyor" çıkmalı).
+
+### Session 010 (core-004 passing)
+- Eksik olan, FlowDriver birim testlerinin ses oturumu seviyesinde kanitiydi: backend/tests/test_survey_e2e.py (2 test) konusma sesi -> VAD -> STT -> akis -> kaydedilen oturum JSON'u zincirini iki dalda kosar (A: 18 turda tamamlandi; B: iki tekrar sorma sonra gorusmeyi_hatirlamiyor). Cevap tipleri (bool/int/saniye/metin) kayitta dogrulanir.
+- Dogrulama: pytest 254 gecti (bulut ortami sifirlanmisti, bagimliliklar pip ile yeniden kuruldu; backend/requirements.txt bulutta yok, Mac'te var).
+- Dogrulanmamis: gercek LLM ile cikarim (betikli), gercek mikrofon, Welcome Call senaryosu, sessiz hat.

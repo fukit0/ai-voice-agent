@@ -280,14 +280,18 @@
       "moscow": "must",
       "title": "JSON senaryodan anket yürütme",
       "user_visible_behavior": "Ajan JSON'daki soruları sırayla sorar, cevabı tipe göre çıkarır, anlaşılmazsa en fazla 2 kez farklı biçimde tekrar sorar ve cevaba göre doğru dala geçer.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Örnek anket iki farklı daldan uçtan uca tamamlanır.",
         "Anlaşılmayan cevapta tekrar sorma gözlenir.",
         "Cevaplar tipe uygun JSON olarak kaydedilir."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "backend/tests/test_survey_e2e.py",
+        "backend/tests/test_flow.py",
+        "docs/adr/0003-flow-driver.md"
+      ],
+      "notes": "Bulut kaniti (sahte STT/TTS, betikli LLM): VoiceSession uzerinden konusma sesi->VAD->STT->FlowDriver->kayitli oturum JSON'u. Dal A: q3=Hayir, q3x=Evet, 18 turda 'tamamlandi' (kapanis). Dal B: q3x'te iki kez anlasilmayan cevap -> 1. tekrar 'Ozur dilerim, tam anlayamadim', 2. tekrar farkli bicimde 'Kusura bakmayin, tekrar soruyorum', sonra 'gorusmeyi_hatirlamiyor' ile erken kapanis (puan sorulari sorulmadi). Kayitli cevaplar tipli: bool (Q3, Q3X), int (Q2, Q3_1..5, Q12), sure saniye int (Q5=45), acik uclu metin (Q4). En fazla 2 tekrar, sonra atla/kapat. pytest 254 gecti. DOGRULANMAMIS: gercek LLM ile cikarim dogrulugu (betikli LLM kullanildi; eval-llm 30 ornekte L2/A1/L5 >=%90), gercek insan sesi/STT, Welcome Call senaryosu, sessiz hat (kapanis_sessiz baglanmadi)."
     },
     {
       "id": "core-005",
