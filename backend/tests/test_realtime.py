@@ -280,3 +280,10 @@ def test_smoke_runner_scores_function_call_reliability(tmp_path):
     bad = {r["step"]: r for r in res["tool_calls"] if not r["correct"]}
     assert set(bad) == {"q2", "q5"} and bad["q2"]["valid_type"] is False and bad["q5"]["called"] is False
     assert not res["errors"]
+
+
+def test_parse_tool_args_accepts_answer_key_alias():
+    """Canlı A2 ölçümü: model {"answer":"answer","value_json":"true"} döndü (anahtar adı sapması)."""
+    from app.voice.realtime import parse_tool_args
+    assert parse_tool_args('{"answer":"answer","value_json":"true"}') == {"intent": "answer", "value": True}
+    assert parse_tool_args('{"answer":"dnc","value_json":null}') == {"intent": "dnc", "value": None}

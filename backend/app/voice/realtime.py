@@ -70,6 +70,9 @@ def parse_tool_args(args: dict | str | None) -> dict | None:
             args = json.loads(args)
         except ValueError:
             return None
+    if isinstance(args, dict) and "intent" not in args and isinstance(args.get("answer"), str):
+        # Canlı ölçüm (core-011, A2): zorunlu çağrıda model anahtar adını "answer" yazdı; değer geçerli intent ise kabul edilir
+        args = {**args, "intent": args["answer"]}
     if not isinstance(args, dict) or "intent" not in args:
         return None
     raw = args.get("value_json", args.get("value"))
