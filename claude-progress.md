@@ -191,3 +191,8 @@ agents do not update it automatically.
 - not_started görünen 40 madde Haiku yardımcı oturumuyla tarandı; ana bulgular kodda elle doğrulandı. Sonuç: core-008 -> passing (gerçek test araması: evidence/core-008-session-3568fd3933eb.json, logs/provider-calls.jsonl; JSONL yerine çağrı JSONL'ı + oturum JSON'u olarak karşılandı, sapma notlandı); core-014 -> blocked (kullanıcı kaydı/Mac gerekir); 13 kısmi madde not_started kaldı ama notes alanına mevcut kapsam ve eksikler yazıldı (scn-001/004/005/006/007, sim-001/002/003/004, eval-003, core-005/006/009). Kalan 25 madde gerçekten başlanmamış.
 - Durum: 14 passing / 2 blocked / 38 not_started (54). Açık karar: core-009 (kayıt 8 kHz filtreli mi, 16 kHz ham mı).
 - Not: yardımcı oturum buluttaki kopyayı taradığı için bazı kanıt dosyalarını (lab-006 ADR, evidence/*.json) bulamadı; Mac'te mevcutlar (docs/adr/0001, evidence/).
+
+## Session 017 - core-011 gecikme karsilastirma araci (2026-10-26)
+- Eklendi: backend/app/voice/latency_report.py, scripts/session_latency.py, test (test_realtime.py). Olcmez, kayitli oturumlari ozetler.
+- Eldeki gercek veri yetersiz (<5 arama): A1 3.55s, A2 2.41s, L2 1.43s, L3 3.14s p50; hepsi 1.2s hedefi disinda. Kanit: evidence/core-011-latency-compare.json.
+- Acik: A3 Playground'da fonksiyon cagrisi 0 (oturum 796d1ea27377); A2 8.8s aykiri tur; Turkce ses kalitesi dinlemesi; 5'er aramalik olcum. core-011 BLOCKED kalir.

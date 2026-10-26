@@ -287,3 +287,30 @@ def test_parse_tool_args_accepts_answer_key_alias():
     from app.voice.realtime import parse_tool_args
     assert parse_tool_args('{"answer":"answer","value_json":"true"}') == {"intent": "answer", "value": True}
     assert parse_tool_args('{"answer":"dnc","value_json":null}') == {"intent": "dnc", "value": None}
+
+
+# ---- core-011 madde 5: gecikme karşılaştırma raporu (kayıtlardan özet; ölçüm gerçek aramalardan gelir) ----------------
+def _session(pid, vals, scenario="anket", realtime=False):
+    turns = [{"turn": 1, "greeting": True, "first_audio_after_end_s": 0.1}] + [
+        {"turn": i + 2, "first_audio_after_end_s": v} for i, v in enumerate(vals)]
+    return {"id": f"{pid}{len(vals)}", "profile": pid, "turns": turns, "stats": {"realtime": realtime},
+            "flow": {"scenario": scenario}}
+
+
+def test_latency_report_excludes_greeting_flags_small_samples_and_target(tmp_path):
+    import json as _json
+    from backend.app.voice.latency_report import load_sessions, render, summarize
+    docs = [_session("L2", [1.0, 1.4, 1.2]), _session("A2", [0.8, 0.9], realtime=True),
+            _session("A3", [1.5, 1.7], scenario="welcome", realtime=True)]
+    for i, d in enumerate(docs):
+        (tmp_path / f"{i}.json").write_text(_json.dumps(d), encoding="utf-8")
+    (tmp_path / "bozuk.json").write_text("{not json", encoding="utf-8")
+    rep = summarize(load_sessions(tmp_path, "anket"))
+    assert set(rep["profiles"]) == {"L2", "A2"}                      # welcome senaryosu süzüldü, bozuk dosya atlandı
+    l2 = rep["profiles"]["L2"]
+    assert l2["turns"] == 3 and l2["p50_s"] == 1.2 and l2["meets_p50_target"] is False    # 1.2 < 1.2 değil: hedef dışı
+    assert l2["enough_sessions"] is False and rep["profiles"]["A2"]["realtime"] is True
+    assert rep["profiles"]["A2"]["meets_p50_target"] is True
+    text = render(rep)
+    assert "örnek yetersiz (1/5 arama)" in text and "realtime: ayrı STT/LLM/TTS yok" in text
+    assert "kayıtlı oturum yok" in render(summarize([]))
