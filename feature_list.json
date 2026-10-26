@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-25",
+  "last_updated": "2026-10-26",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -296,9 +296,30 @@
       "notes": "Bulut kaniti (sahte STT/TTS, betikli LLM): VoiceSession uzerinden konusma sesi->VAD->STT->FlowDriver->kayitli oturum JSON'u. Dal A: q3=Hayir, q3x=Evet, 18 turda 'tamamlandi' (kapanis). Dal B: q3x'te iki kez anlasilmayan cevap -> 1. tekrar 'Ozur dilerim, tam anlayamadim', 2. tekrar farkli bicimde 'Kusura bakmayin, tekrar soruyorum', sonra 'gorusmeyi_hatirlamiyor' ile erken kapanis (puan sorulari sorulmadi). Kayitli cevaplar tipli: bool (Q3, Q3X), int (Q2, Q3_1..5, Q12), sure saniye int (Q5=45), acik uclu metin (Q4). En fazla 2 tekrar, sonra atla/kapat. pytest 254 gecti. DOGRULANMAMIS: gercek LLM ile cikarim dogrulugu (betikli LLM kullanildi; eval-llm 30 ornekte L2/A1/L5 >=%90), gercek insan sesi/STT, Welcome Call senaryosu, sessiz hat (kapanis_sessiz baglanmadi)."
     },
     {
+      "id": "core-012",
+      "plan_ref": "F1.3 / F6.5 (prompt ve model kıyası)",
+      "priority": 13,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Kademeli hat LLM prompt'unun gerçek adım tipleriyle ölçülmesi ve dondurulması",
+      "user_visible_behavior": "'LLM testi' ekranında senaryonun gerçek adımlarıyla prompt varyantları seçilir; tip ve model kırılımlı doğruluk ile gecikme görülür. Dondurulmuş prompt sürümü ajanın kullandığı sürümle aynıdır.",
+      "status": "not_started",
+      "verification": [
+        "eval-llm üretim prompt'unu ölçer: flow.build_messages + check_value kullanılır; birim test, eval ile ajanın aynı mesajı ürettiğini doğrular (bugün llm_eval.build_messages ayrı ve dnc intent'i yok).",
+        "En az 80 örnek; anket ve welcome'daki her adım tipinden (YesNo, Rating, Duration, Choice, CallbackTime, CheckIn) en az 10; dnc, çoklu intent, prompt injection ve gürültülü STT alt kümeleri var; beklenen değerler örnekler görülmeden dondurulur.",
+        "En az 3 prompt varyantı (mevcut, few-shot, JSON şemalı/adım tipine özel) L2 ve A1'de 3 tekrarla koşulur; evidence/eval-prompt-*.json yazılır.",
+        "Seçilen varyant L2 ve A1'de tam doğrulukta >= %95, şema geçerliliğinde %100; injection alt kümesinde yanlış dal 0; L2 p95 <= 0,8 sn.",
+        "Prompt sürümü/hash'i oturum loguna yazılır; prompt config/prompts/ altında versiyonlanır.",
+        "ADR 0006 (seçim, ret edilenler, intent öncelik sırası, injection tutumu) yazılır; ADR 0003'teki 'eval-llm doğrudan geçerli' cümlesi düzeltilir; Demo Q&A'ya not eklenir."
+      ],
+      "evidence": [],
+      "notes": "Kaynak: Opus analizi (2026-10-26). Bilinen zayıf noktalar: true/false tip kuralı açık değil (L1 metin 'true' yazıyor); kesirli puan/aralık/yuvarlama kuralı yok; intent öncelik sırası tanımsız (örn. 'puanım sekiz ama bir daha aramayın'); CheckIn'de soru/onay ayrımı için örnek yok; müşteri sözü ayraçsız prompt'a giriyor (injection; CallbackTime metni TTS'e gidiyor); few-shot ve Ollama JSON format yok; L4 boş çıktı (varsayım: think/num_predict). Varsayım: Whisper rakam ve noktalama üretebilir, prompt'taki 'noktalamasız' tarifi yanlış olabilir (doğrulanmadı). Ön koşul ve sınır: gerçek Mac LLM'leri gerekir, bulutta ölçülemez; gerçek STT çıktısı için lab-002 kayıtları kullanılmalı. Kıyas matrisinden (eval-001) önce dondurulmalı."
+    },
+    {
       "id": "core-005",
       "plan_ref": "F1.5",
-      "priority": 13,
+      "priority": 14,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -315,7 +336,7 @@
     {
       "id": "core-006",
       "plan_ref": "F1.6",
-      "priority": 14,
+      "priority": 15,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -333,7 +354,7 @@
     {
       "id": "core-008",
       "plan_ref": "F1.8",
-      "priority": 15,
+      "priority": 16,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -350,7 +371,7 @@
     {
       "id": "lab-004",
       "plan_ref": "F7.4",
-      "priority": 16,
+      "priority": 17,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -367,7 +388,7 @@
     {
       "id": "eval-001",
       "plan_ref": "F6.1",
-      "priority": 17,
+      "priority": 18,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -385,7 +406,7 @@
     {
       "id": "eval-003",
       "plan_ref": "F6.3",
-      "priority": 18,
+      "priority": 19,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -402,7 +423,7 @@
     {
       "id": "eval-002",
       "plan_ref": "F6.2",
-      "priority": 19,
+      "priority": 20,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -421,7 +442,7 @@
     {
       "id": "lab-005",
       "plan_ref": "F7.5",
-      "priority": 20,
+      "priority": 21,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -436,41 +457,9 @@
       "notes": ""
     },
     {
-      "id": "core-009",
-      "plan_ref": "F1.9",
-      "priority": 22,
-      "area": "voice-runtime",
-      "phase": "faz-1",
-      "moscow": "should",
-      "title": "Telefon ses kalitesi simülasyonu (8 kHz)",
-      "user_visible_behavior": "Kullanıcı telefon filtresini açtığında giriş ve çıkış sesi 8 kHz µ-law kalitesine indirgenir.",
-      "status": "not_started",
-      "verification": [
-        "Filtre açıkken kayıtların 8 kHz olduğu doğrulanır."
-      ],
-      "evidence": [],
-      "notes": ""
-    },
-    {
-      "id": "core-010",
-      "plan_ref": "F1.10",
-      "priority": 23,
-      "area": "voice-runtime",
-      "phase": "faz-1",
-      "moscow": "could",
-      "title": "Gemma 4 ile STT'siz ses girdisi deneyi",
-      "user_visible_behavior": "L5 profili sesi doğrudan LLM'e verir; gecikme kazancı ölçülür.",
-      "status": "not_started",
-      "verification": [
-        "L5 profiliyle 5 test araması yapılır ve gecikme L1 ile karşılaştırılır."
-      ],
-      "evidence": [],
-      "notes": ""
-    },
-    {
       "id": "core-011",
       "plan_ref": "F7.3 (A2/A3 notu)",
-      "priority": 21,
+      "priority": 22,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -496,9 +485,41 @@
       "notes": "BLOCKER (kismen asildi): Canli smoke kullanicinin Mac'inde calisti (2026-10-26, evidence/core-011-live-smoke.json). SONUC: A2 gpt-realtime-2.1-mini ve A3 gemini-3.8-live gercek API'de erisilebilir. Fonksiyon cagrisi 8/8 cagri, 8/8 gecerli tip, 8/8 dogru (iki saglayici de). AYNEN SOYLE sadakati: A2 1.0, A3 0.976 (transkript bosluklu). Ilk ses (tek atis): A2 0.74 sn, A3 0.89 sn; fonksiyon cagrisi turu A2 0.64-0.83 sn, A3 0.41-0.91 sn. ILK CALISMADA A2 anahtar adini 'answer' yazdi (0/8): parse_tool_args alias toleransi eklendi (57d62b9); ikinci calismada model dogru 'intent' kullandi, yani davranis deterministik degil - tolerans gerekli ve gercek akis testinde tekrar izlenmeli. KALAN: (4) Turkce SES KALITESI kullanici dinlemesi bekliyor (data/realtime-smoke/*.wav); fonksiyon guvenilirligi 8 vakada tamam ama kucuk orneklem; (5) A2/A3 vs L2 5 aramalik uctan uca gecikme karsilastirmasi YAPILMADI (L2 gercek modelle Mac'te olculmeli; smoke tek atis, tam tur degil). Maddeler (1)-(3) hala yalniz sahte saglayici + protokol testi. Yani passing icin: WAV dinleme onayi + Playground'da gercek A2/A3 ile tam senaryo + 5 aramalik olcum. OpenAI hibrit akis tur basina iki model gidis-donusu yapar (bilincli takas)."
     },
     {
+      "id": "core-009",
+      "plan_ref": "F1.9",
+      "priority": 23,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Telefon ses kalitesi simülasyonu (8 kHz)",
+      "user_visible_behavior": "Kullanıcı telefon filtresini açtığında giriş ve çıkış sesi 8 kHz µ-law kalitesine indirgenir.",
+      "status": "not_started",
+      "verification": [
+        "Filtre açıkken kayıtların 8 kHz olduğu doğrulanır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "core-010",
+      "plan_ref": "F1.10",
+      "priority": 24,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "could",
+      "title": "Gemma 4 ile STT'siz ses girdisi deneyi",
+      "user_visible_behavior": "L5 profili sesi doğrudan LLM'e verir; gecikme kazancı ölçülür.",
+      "status": "not_started",
+      "verification": [
+        "L5 profiliyle 5 test araması yapılır ve gecikme L1 ile karşılaştırılır."
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
       "id": "scn-001",
       "plan_ref": "F2.1",
-      "priority": 24,
+      "priority": 25,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -516,7 +537,7 @@
     {
       "id": "scn-002",
       "plan_ref": "F2.2",
-      "priority": 25,
+      "priority": 26,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -533,7 +554,7 @@
     {
       "id": "scn-003",
       "plan_ref": "F2.3",
-      "priority": 26,
+      "priority": 27,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -550,7 +571,7 @@
     {
       "id": "scn-004",
       "plan_ref": "F2.4",
-      "priority": 27,
+      "priority": 28,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -567,7 +588,7 @@
     {
       "id": "scn-007",
       "plan_ref": "F2.7",
-      "priority": 28,
+      "priority": 29,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -585,7 +606,7 @@
     {
       "id": "scn-009",
       "plan_ref": "F2.9",
-      "priority": 29,
+      "priority": 30,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -601,7 +622,7 @@
     {
       "id": "sim-001",
       "plan_ref": "F3.1",
-      "priority": 30,
+      "priority": 31,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -617,7 +638,7 @@
     {
       "id": "sim-002",
       "plan_ref": "F3.2",
-      "priority": 31,
+      "priority": 32,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -633,7 +654,7 @@
     {
       "id": "sim-003",
       "plan_ref": "F3.3",
-      "priority": 32,
+      "priority": 33,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -649,7 +670,7 @@
     {
       "id": "res-001",
       "plan_ref": "F4.1",
-      "priority": 33,
+      "priority": 34,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -665,7 +686,7 @@
     {
       "id": "res-002",
       "plan_ref": "F4.2",
-      "priority": 34,
+      "priority": 35,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -681,7 +702,7 @@
     {
       "id": "res-003",
       "plan_ref": "F4.3",
-      "priority": 35,
+      "priority": 36,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -697,7 +718,7 @@
     {
       "id": "eval-004",
       "plan_ref": "F6.4",
-      "priority": 36,
+      "priority": 37,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -714,7 +735,7 @@
     {
       "id": "eval-005",
       "plan_ref": "F6.5",
-      "priority": 37,
+      "priority": 38,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -731,7 +752,7 @@
     {
       "id": "scn-005",
       "plan_ref": "F2.5",
-      "priority": 38,
+      "priority": 39,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -747,7 +768,7 @@
     {
       "id": "scn-006",
       "plan_ref": "F2.6",
-      "priority": 39,
+      "priority": 40,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -763,7 +784,7 @@
     {
       "id": "scn-008",
       "plan_ref": "F2.8",
-      "priority": 40,
+      "priority": 41,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -779,7 +800,7 @@
     {
       "id": "scn-010",
       "plan_ref": "F2.10",
-      "priority": 41,
+      "priority": 42,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -795,7 +816,7 @@
     {
       "id": "sim-004",
       "plan_ref": "F3.4",
-      "priority": 42,
+      "priority": 43,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "should",
@@ -811,7 +832,7 @@
     {
       "id": "res-004",
       "plan_ref": "F4.4",
-      "priority": 43,
+      "priority": 44,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -827,7 +848,7 @@
     {
       "id": "res-005",
       "plan_ref": "F4.5",
-      "priority": 44,
+      "priority": 45,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -843,7 +864,7 @@
     {
       "id": "res-006",
       "plan_ref": "F4.6",
-      "priority": 45,
+      "priority": 46,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -859,7 +880,7 @@
     {
       "id": "plat-001",
       "plan_ref": "F5.1",
-      "priority": 46,
+      "priority": 47,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -875,7 +896,7 @@
     {
       "id": "plat-002",
       "plan_ref": "F5.2",
-      "priority": 47,
+      "priority": 48,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -892,7 +913,7 @@
     {
       "id": "scn-011",
       "plan_ref": "F2.11",
-      "priority": 48,
+      "priority": 49,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "could",
@@ -908,7 +929,7 @@
     {
       "id": "res-007",
       "plan_ref": "F4.7",
-      "priority": 49,
+      "priority": 50,
       "area": "results",
       "phase": "faz-2",
       "moscow": "could",
@@ -924,7 +945,7 @@
     {
       "id": "sim-005",
       "plan_ref": "F3.5",
-      "priority": 50,
+      "priority": 51,
       "area": "simulator",
       "phase": "later",
       "moscow": "could",
@@ -940,7 +961,7 @@
     {
       "id": "plat-003",
       "plan_ref": "F5.3",
-      "priority": 51,
+      "priority": 52,
       "area": "platform",
       "phase": "later",
       "moscow": "could",
