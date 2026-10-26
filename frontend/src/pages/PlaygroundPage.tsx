@@ -25,6 +25,8 @@ export function PlaygroundPage() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [scenario, setScenario] = useState<string>("");
   const [phone, setPhone] = useState(false);
+  const [record, setRecord] = useState(false);                         // core-013: varsayılan kapalı (gizlilik)
+  const [recording, setRecording] = useState<string | null>(null);     // kaydedilen oturumun kimliği (durdurunca)
   const [state, setState] = useState<string>("idle");
   const [lines, setLines] = useState<Line[]>([]);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -63,11 +65,11 @@ export function PlaygroundPage() {
 
   async function start() {
     if (!active) return;
-    setError(null); setLines([]); setTurns([]); setBarges(0); setBargeMs(null); setHeld(null); setNode(null); setVisited([]); setAnswers([]); setOutcome(null);
+    setError(null); setRecording(null); setLines([]); setTurns([]); setBarges(0); setBargeMs(null); setHeld(null); setNode(null); setVisited([]); setAnswers([]); setOutcome(null);
     setState("connecting");
     try {
       handle.current = await startVoice(active.id, { onEvent, onLevels: (m, a) => setLevels([m, a]) },
-        { scenario: scenario || undefined, phoneFilter: phone });
+        { scenario: scenario || undefined, phoneFilter: phone, record });
     } catch (e) {
       setError((e as Error).message);
       setState("idle");
@@ -79,7 +81,14 @@ export function PlaygroundPage() {
     handle.current = null;
     setLevels([0, 0]);
     setState("idle");
-    await h?.close();
+    await h?.close();                       // sunucu WAV'ı kapanışta yazar; close() bitince dosya hazırdır
+    if (h && record) setRecording(h.sessionId);
+  }
+
+  async function deleteRecording() {
+    if (!recording) return;
+    await fetch(`/api/voice/recordings/${recording}`, { method: "DELETE" }).catch(() => {});
+    setRecording(null);
   }
 
   function togglePhone(on: boolean) {
@@ -105,7 +114,19 @@ export function PlaygroundPage() {
         <label className="voice-check">
           <input type="checkbox" checked={phone} onChange={(e) => togglePhone(e.target.checked)} /> Telefon filtresi (dar bant 300–3400 Hz)
         </label>
+        <label className="voice-check" title="Sol kanal müşteri (ham mikrofon), sağ kanal ajan. Dosya bu bilgisayarda data/voice-sessions/ altına yazılır.">
+          <input type="checkbox" checked={record} disabled={running} onChange={(e) => setRecord(e.target.checked)}
+                 data-testid="record-toggle" /> Konuşmayı kaydet (ses)
+        </label>
       </div>
+      {recording && (
+        <p className="voice-recording" data-testid="recording-box">
+          Kayıt hazır: <audio controls src={`/api/voice/recordings/${recording}.wav`} data-testid="recording-audio" />{" "}
+          <a href={`/api/voice/recordings/${recording}.wav`} download>İndir</a>{" "}
+          <button type="button" onClick={deleteRecording}>Kaydı sil</button>
+          <span className="meta"> · sol kanal: siz, sağ kanal: ajan · konum: data/voice-sessions/{recording}.wav</span>
+        </p>
+      )}
       <p className="voice-controls">
         {running ? (
           <button type="button" className="primary" onClick={stop}>Durdur</button>

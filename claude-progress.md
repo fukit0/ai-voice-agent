@@ -170,3 +170,10 @@ agents do not update it automatically.
 - Olcumler (tek atis): ilk ses A2 0.74 sn / A3 0.89 sn; AYNEN SOYLE sadakati A2 1.0 / A3 0.976; fonksiyon cagrisi turu A2 0.64-0.83 sn, A3 0.41-0.91 sn. Kanit: evidence/core-011-live-smoke.json.
 - Gozlem: A2 anahtar adi sapmasi calismalar arasi degisti (non-deterministik); tolerans kalici, gercek akis testinde tekrar izlenmeli.
 - Dogrulanmamis/kalan: Turkce ses kalitesi (WAV dinleme - kullanici), Playground'da gercek A2/A3 ile tam senaryo, A2/A3 vs L2 5 aramalik gecikme, 8 vakalik kucuk orneklem.
+
+### Session 014 (core-013 ses kaydı — passing)
+- Kullanıcı isteği: konuşmaların ses kayıtları saklanabilsin. Kayıt taşıma katmanında (rtc.py): ham mikrofon (sol) + tarayıcıya giden ajan çerçeveleri (sağ) -> stereo 16 kHz WAV, kapanışta oturum JSON'unun yanına yazılır; JSON'a audio meta alanı. Varsayılan kapalı (offer.record). GET/DELETE /api/voice/recordings/<id>; Playground onay kutusu + oynatıcı + sil.
+- Doğrulama (bulut): pytest 292 (yeni 5), vitest 40 (yeni 1; mevcut 3 beklentiye record:false eklendi, davranış değişmedi), tsc temiz, Playwright 12 (yeni: kayıt stereo WAV, iki kanalda enerji, oynatıcı, silme).
+- Ek inceleme (kod değişikliği YOK): kayıtlı L2 oturumu 3568fd3933eb ve diğerleri incelendi. Bulgular: (a) giris adımında 'Dinlemek istemiyorum' / 'Müsaade değilim' LLM'de refuse çıkıp görüşmeyi kapatıyor (kapanis_ret) — doğru yorum: dinleme tercihi = devam; (b) STT hataları ('Katılman', 'Buyurun davetin', 'Ben adım') off_topic sayılınca 'Sorunuzu not aldım' yersiz söyleniyor; (c) 'olabilir' evet/hayır sorusunda anlaşılamıyor. core-012 beklemede; (a)-(c) core-012 ölçüm setine örnek olarak alınacak, STT kelime hataları lab-002/STT kalitesi konusudur.
+- Dikkat: Mac çalışma ağacında kullanıcıdan gelen commit'lenmemiş backend/app/trnorm.py ve backend/tests/test_trnorm.py değişiklikleri var; bu commit'e katılmadı.
+- Doğrulanmamış: gerçek mikrofonla kaydı dinleme; üretim için şifreleme/erişim/saklama süresi.

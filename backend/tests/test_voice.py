@@ -448,3 +448,118 @@ def test_webrtc_scenario_flow_reads_question_extracts_answer_and_toggles_phone_f
     saved = json.loads(next((env / "data" / "voice-sessions").glob("*.json")).read_text(encoding="utf-8"))
     assert saved["flow"]["scenario"] == "anket" and saved["flow"]["answers"][0]["value"] == "dinle"
     assert saved["flow"]["path"][:3] == ["giris", "kvkk_metni", "musaitlik"]
+
+
+# ---- core-013: ses kaydı ----------------------------------------------------------------------------------------
+def test_stereo_recorder_aligns_channels_and_writes_stereo_wav(tmp_path):
+    import wave
+    from backend.app.voice.recording import StereoRecorder
+    rec = StereoRecorder()
+    rec.add_user(np.full(16000, 0.5, np.float32))                       # 1 sn müşteri
+    rec.add_agent(np.full(48000, 16384, np.int16), start_time=rec._t0 + 0.5)   # 1 sn ajan, 0,5 sn sonra başlar
+    meta = rec.save(tmp_path / "x.wav")
+    with wave.open(str(tmp_path / "x.wav"), "rb") as w:
+        assert (w.getnchannels(), w.getsampwidth(), w.getframerate()) == (2, 2, 16000)
+        data = np.frombuffer(w.readframes(w.getnframes()), "<i2").reshape(-1, 2)
+    assert 1.45 <= meta["seconds"] <= 1.55 and meta["channels"] == 2 and meta["truncated"] is False
+    assert data[100, 0] > 10000 and data[100, 1] == 0                  # başta yalnız sol kanal (müşteri)
+    assert data[int(1.2 * 16000), 1] > 5000 and data[int(1.2 * 16000), 0] == 0   # sonda yalnız sağ kanal (ajan)
+
+
+def test_stereo_recorder_empty_writes_nothing_and_cap_truncates(tmp_path, monkeypatch):
+    from backend.app.voice import recording
+    rec = recording.StereoRecorder()
+    assert rec.save(tmp_path / "e.wav") is None and not (tmp_path / "e.wav").exists()
+    monkeypatch.setattr(recording, "MAX_SECONDS", 1)
+    rec.add_user(np.zeros(16000, np.float32))
+    rec.add_user(np.zeros(160, np.float32))     # sınır aşıldı: yazılmaz
+    assert rec.truncated and rec._user_n == 16000
+
+
+def test_recording_is_off_by_default_and_path_traversal_is_rejected(env):
+    assert client.get("/api/voice/recordings/..%2Fsecret.wav").status_code in (404, 405)
+    assert client.get("/api/voice/recordings/abcdef123456.wav").status_code == 404
+    assert client.delete("/api/voice/recordings/NOTHEX").status_code == 404
+
+
+def test_webrtc_recording_saves_stereo_wav_serves_and_deletes_it(env):
+    import wave
+    warm("V1")
+    app_client = TestClient(app).__enter__()
+
+    async def main():
+        pc = RTCPeerConnection()
+        events = []
+        channel = pc.createDataChannel("events")
+        channel.on("message", lambda m: events.append(json.loads(m)))
+        pc.addTrack(MicTrack())
+
+        @pc.on("track")
+        def on_track(track):
+            async def drain():
+                try:
+                    while True:
+                        await track.recv()
+                except Exception:
+                    pass
+            asyncio.ensure_future(drain())
+
+        await pc.setLocalDescription(await pc.createOffer())
+        res = await asyncio.to_thread(app_client.post, "/api/voice/offer", json={
+            "sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "profile": "V1", "record": True})
+        assert res.status_code == 200, res.text
+        body = res.json()
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=body["sdp"], type=body["type"]))
+        for _ in range(300):
+            await asyncio.sleep(0.05)
+            if any(e["type"] == "turn" and "stt_s" in e for e in events):
+                break
+        info = (await asyncio.to_thread(app_client.get, "/api/voice/sessions")).json()[0]
+        await asyncio.to_thread(app_client.delete, f"/api/voice/{body['session_id']}")
+        await pc.close()
+        return body["session_id"], info
+
+    try:
+        sid, info = asyncio.run(main())
+        assert info["recording"] is True
+        folder = env / "data" / "voice-sessions"
+        meta = json.loads((folder / f"{sid}.json").read_text(encoding="utf-8"))["audio"]
+        assert meta["file"] == f"{sid}.wav" and meta["channels"] == 2 and meta["seconds"] > 2
+        with wave.open(str(folder / f"{sid}.wav"), "rb") as w:
+            data = np.frombuffer(w.readframes(w.getnframes()), "<i2").reshape(-1, 2)
+        assert np.abs(data[:, 0]).max() > 1000      # sol: müşteri sesi var
+        assert np.abs(data[:, 1]).max() > 1000      # sağ: ajan sesi var
+        got = app_client.get(f"/api/voice/recordings/{sid}.wav")
+        assert got.status_code == 200 and got.headers["content-type"] == "audio/wav" and got.content[:4] == b"RIFF"
+        assert app_client.delete(f"/api/voice/recordings/{sid}").status_code == 200
+        assert not (folder / f"{sid}.wav").exists()
+        assert json.loads((folder / f"{sid}.json").read_text(encoding="utf-8"))["audio"] == {"deleted": True}
+        assert app_client.get(f"/api/voice/recordings/{sid}.wav").status_code == 404
+    finally:
+        app_client.__exit__(None, None, None)
+
+
+def test_webrtc_without_record_flag_writes_no_wav(env):
+    warm("V1")
+    app_client = TestClient(app).__enter__()
+
+    async def main():
+        pc = RTCPeerConnection()
+        pc.createDataChannel("events")
+        pc.addTrack(MicTrack())
+        await pc.setLocalDescription(await pc.createOffer())
+        res = await asyncio.to_thread(app_client.post, "/api/voice/offer", json={
+            "sdp": pc.localDescription.sdp, "type": pc.localDescription.type, "profile": "V1"})
+        body = res.json()
+        await pc.setRemoteDescription(RTCSessionDescription(sdp=body["sdp"], type=body["type"]))
+        await asyncio.sleep(1.0)
+        await asyncio.to_thread(app_client.delete, f"/api/voice/{body['session_id']}")
+        await pc.close()
+
+    try:
+        asyncio.run(main())
+    finally:
+        app_client.__exit__(None, None, None)
+    folder = env / "data" / "voice-sessions"
+    assert list(folder.glob("*.json")) and not list(folder.glob("*.wav"))
+    assert "audio" not in json.loads(next(folder.glob("*.json")).read_text(encoding="utf-8"))

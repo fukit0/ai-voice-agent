@@ -17,6 +17,7 @@ import numpy as np
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.mediastreams import MediaStreamError
 
+from .recording import StereoRecorder
 from .session import OUT_RATE, VoiceSession
 from .vad import SAMPLE_RATE
 
@@ -38,6 +39,7 @@ class AgentAudioTrack(MediaStreamTrack):
         self._had_audio = False
         self._ended = False
         self._on_drained = lambda: None
+        self.tap = None   # core-013: kayıt açıksa tarayıcıya giden her çerçeve (sessizlik dahil) buraya da verilir
         self._loop = asyncio.get_event_loop()
 
     def set_on_drained(self, cb) -> None:
@@ -82,6 +84,8 @@ class AgentAudioTrack(MediaStreamTrack):
         if self._had_audio and not self._queue and len(self._pending) == 0 and self._ended:
             self._had_audio = False
             self._loop.call_soon(self._on_drained)
+        if self.tap is not None:
+            self.tap(samples, self._start + self._timestamp / OUT_RATE)
         frame = av.AudioFrame.from_ndarray(samples.reshape(1, -1), format="s16", layout="mono")
         frame.sample_rate = OUT_RATE
         frame.pts = self._timestamp
@@ -90,8 +94,10 @@ class AgentAudioTrack(MediaStreamTrack):
 
 
 class RtcVoiceConnection:
-    def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False, realtime_backend=None):
+    def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False, realtime_backend=None,
+                 record: bool = False):
         self.sid = uuid.uuid4().hex[:12]
+        self.recorder = StereoRecorder() if record else None   # core-013: varsayılan kapalı (gizlilik)
         self.pc = RTCPeerConnection()
         self.track = AgentAudioTrack()
         self.channel = None
@@ -106,6 +112,9 @@ class RtcVoiceConnection:
         self._reader: asyncio.Task | None = None
         self.closed = False
         self.pc.addTrack(self.track)
+        if self.recorder is not None:
+            rec = self.recorder
+            self.track.tap = lambda samples, t: rec.add_agent(samples, t)
 
         @self.pc.on("datachannel")
         def on_channel(channel):
@@ -151,6 +160,8 @@ class RtcVoiceConnection:
                     await self.session.start()
                 for out in resampler.resample(frame):
                     pcm = out.to_ndarray().reshape(-1).astype(np.float32) / 32768.0
+                    if self.recorder is not None:
+                        self.recorder.add_user(pcm)   # ham mikrofon: filtre/VAD öncesi
                     self.session.feed(pcm)
         except MediaStreamError:
             pass
@@ -166,13 +177,26 @@ class RtcVoiceConnection:
         if self.closed:
             return
         self.closed = True
-        await self.session.close()
+        json_path = await self.session.close()
+        self._save_recording(json_path)
         if self._reader:
             self._reader.cancel()
         self.track.stop()
         await self.pc.close()
 
+    def _save_recording(self, json_path) -> None:
+        """Kapanışta WAV'ı oturum JSON'unun yanına yazar ve JSON'a `audio` alanını ekler. Hata oturumu bozmaz."""
+        if self.recorder is None or json_path is None:
+            return
+        try:
+            meta = self.recorder.save(json_path.with_suffix(".wav"))
+            doc = json.loads(json_path.read_text(encoding="utf-8"))
+            doc["audio"] = meta        # kayıt istenmişti ama ses gelmediyse None
+            json_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:  # noqa: BLE001  (kayıt yardımcı özelliktir; oturum kapanışını engellemez)
+            pass
+
     def info(self) -> dict:
-        return {"id": self.sid, "profile": self.session.profile_id, "state": self.session.state,
+        return {"id": self.sid, "recording": self.recorder is not None, "profile": self.session.profile_id, "state": self.session.state,
                 "connection": self.pc.connectionState, "stats": self.session.stats,
                 "queued_agent_seconds": round(self.track.queued_seconds, 2), "turns": len(self.session.turns)}

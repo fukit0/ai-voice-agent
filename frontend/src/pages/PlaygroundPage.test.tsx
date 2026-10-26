@@ -35,7 +35,7 @@ describe("Playground (core-001)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: false }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "transcript", role: "agent", text: "Merhaba, ben Ayşe.", t: 0.5 });
@@ -107,7 +107,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: true }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: true, record: false }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "node", key: "q2", code: "Q2", title: "Temsilciden genel memnuniyet", kind: "Score", group: "Temsilci Değerlendirmesi", spoken: "…", terminal: false });
@@ -150,7 +150,25 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, phoneFilter: false }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, phoneFilter: false, record: false }));
     expect(screen.queryByTestId("active-node")).not.toBeInTheDocument();
+  });
+  it("ses kaydı varsayılan kapalıdır; açılırsa record:true gönderilir, durdurunca kayıt oynatıcısı ve silme çıkar (core-013)", async () => {
+    renderPage();
+    const toggle = await screen.findByTestId("record-toggle");
+    expect(toggle).not.toBeChecked();
+    expect(screen.queryByTestId("recording-box")).toBeNull();
+    fireEvent.click(toggle);
+    const start = await screen.findByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: true }));
+    expect(screen.getByTestId("record-toggle")).toBeDisabled();            // konuşma sürerken değiştirilemez
+    fireEvent.click(screen.getByRole("button", { name: "Durdur" }));
+    const box = await screen.findByTestId("recording-box");
+    expect(within(box).getByTestId("recording-audio")).toHaveAttribute("src", "/api/voice/recordings/s1.wav");
+    fireEvent.click(within(box).getByRole("button", { name: "Kaydı sil" }));
+    await waitFor(() => expect(screen.queryByTestId("recording-box")).toBeNull());
+    expect(fetch).toHaveBeenCalledWith("/api/voice/recordings/s1", { method: "DELETE" });
   });
 });

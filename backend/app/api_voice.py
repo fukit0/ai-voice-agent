@@ -7,9 +7,15 @@ ADR 0001: profil sıcak olmalı; soğuksa 409 profile_not_warm döner (Hazırla)
 """
 from __future__ import annotations
 
+import json
+import re
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from . import stt_runs
 from .api_profiles import _provider
 from .profiles import load_profiles
 
@@ -25,6 +31,7 @@ class OfferRequest(BaseModel):
     scenario: str | None = None          # verilirse konuşmayı senaryo akışı yönetir (lab-003)
     phone_filter: bool = False           # dar bant telefon sesi (300-3400 Hz)
     values: dict[str, str] | None = None  # müşteri değerleri: HITAP, MT_HITAP, GORUSME_TARIHI...
+    record: bool = False                 # core-013: stereo ses kaydı (sol müşteri, sağ ajan); varsayılan kapalı (gizlilik)
 
 
 @router.post("/offer")
@@ -74,7 +81,7 @@ async def offer(req: OfferRequest) -> dict:
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
-                              realtime_backend=backend)
+                              realtime_backend=backend, record=req.record)
     CONNECTIONS[conn.sid] = conn
     try:
         answer = await conn.accept(req.sdp, req.type)
@@ -101,6 +108,38 @@ async def phone_filter(sid: str, body: PhoneBody) -> dict:
 @router.get("/sessions")
 def sessions() -> list[dict]:
     return [c.info() for c in CONNECTIONS.values()]
+
+
+_SID = re.compile(r"^[0-9a-f]{12}$")   # yol gezintisini engeller: yalnızca oturum kimliği biçimi
+
+
+def _recording_path(sid: str) -> Path:
+    if not _SID.match(sid):
+        raise HTTPException(404, {"error": "unknown_recording", "message": "Kayıt bulunamadı."})
+    return stt_runs.data_dir() / "voice-sessions" / f"{sid}.wav"
+
+
+@router.get("/recordings/{sid}.wav")
+def recording(sid: str) -> FileResponse:
+    path = _recording_path(sid)
+    if not path.is_file():
+        raise HTTPException(404, {"error": "unknown_recording", "message": f"Kayıt bulunamadı: {sid}"})
+    return FileResponse(path, media_type="audio/wav", filename=path.name)
+
+
+@router.delete("/recordings/{sid}")
+def delete_recording(sid: str) -> dict:
+    """Kaydı siler (KVKK: saklama/silme kontrolü kullanıcıda); oturum dökümü (JSON) kalır, `audio` alanı işaretlenir."""
+    path = _recording_path(sid)
+    if not path.is_file():
+        raise HTTPException(404, {"error": "unknown_recording", "message": f"Kayıt bulunamadı: {sid}"})
+    path.unlink()
+    meta = path.with_suffix(".json")
+    if meta.is_file():
+        doc = json.loads(meta.read_text(encoding="utf-8"))
+        doc["audio"] = {"deleted": True}
+        meta.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"deleted": sid}
 
 
 @router.delete("/{sid}")

@@ -317,9 +317,36 @@
       "notes": "Kaynak: Opus analizi (2026-10-26). Bilinen zayıf noktalar: true/false tip kuralı açık değil (L1 metin 'true' yazıyor); kesirli puan/aralık/yuvarlama kuralı yok; intent öncelik sırası tanımsız (örn. 'puanım sekiz ama bir daha aramayın'); CheckIn'de soru/onay ayrımı için örnek yok; müşteri sözü ayraçsız prompt'a giriyor (injection; CallbackTime metni TTS'e gidiyor); few-shot ve Ollama JSON format yok; L4 boş çıktı (varsayım: think/num_predict). Varsayım: Whisper rakam ve noktalama üretebilir, prompt'taki 'noktalamasız' tarifi yanlış olabilir (doğrulanmadı). Ön koşul ve sınır: gerçek Mac LLM'leri gerekir, bulutta ölçülemez; gerçek STT çıktısı için lab-002 kayıtları kullanılmalı. Kıyas matrisinden (eval-001) önce dondurulmalı."
     },
     {
+      "id": "core-013",
+      "plan_ref": "F7.3 (kayıt/dinleme) / lab-002 test seti",
+      "priority": 14,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Konuşma ses kaydı (stereo WAV, kullanıcı onayıyla)",
+      "user_visible_behavior": "Playground'da 'Konuşmayı kaydet' açılırsa görüşme stereo WAV olarak saklanır (sol müşteri, sağ ajan); durdurunca oynatılır, indirilir, silinir. Varsayılan kapalıdır.",
+      "status": "passing",
+      "verification": [
+        "Kayıt varsayılan kapalı: record bayrağı olmadan WAV yazılmaz, oturum JSON'unda audio alanı yoktur.",
+        "Açıkken Durdur sonrası data/voice-sessions/<id>.wav stereo 16 kHz 16-bit yazılır; iki kanalda da gerçek ses vardır (sol müşteri mikrofonu, sağ ajan); JSON'da audio meta alanı (dosya, süre, kanal düzeni) bulunur.",
+        "Kanal hizası ve sınır birim testli: başlangıç farkı duvar saatiyle hizalanır; boş kayıt dosya üretmez; MAX_SECONDS aşılınca truncated işaretlenir.",
+        "GET /api/voice/recordings/<id>.wav dosyayı sunar; DELETE siler ve JSON'da audio:{deleted:true} bırakır; yol gezintisi (kimlik biçimi dışı) 404.",
+        "Gerçek Chromium + WebRTC + sahte mikrofon: Playground'da onay kutusu, kayıt oynatıcısı ve Kaydı sil çalışır."
+      ],
+      "evidence": [
+        "backend/app/voice/recording.py",
+        "backend/app/voice/rtc.py",
+        "backend/app/api_voice.py",
+        "backend/tests/test_voice.py",
+        "frontend/e2e/voice-playground.spec.ts",
+        "docs/demo-soru-cevap.md#S9"
+      ],
+      "notes": "Bulut kanıtı (2026-10-26): pytest 292, vitest 40, tsc temiz, Playwright 12 (yeni: ses kaydı stereo WAV, iki kanalda enerji, oynatıcı, silme). Kayıt taşıma katmanında (rtc.py) olduğu için cascade ve realtime oturumları aynı kodla kaydeder; sol kanal ham mikrofon (telefon filtresi öncesi). DOGRULANMAMIS: gerçek mikrofon/gerçek insan sesiyle kaydı dinleyip kalite ve kanal ayrımı kontrolü (kullanıcı); şifreleme/erişim kontrolü/otomatik silme süresi yok (PoC; üretimde KVKK politikası gerekir); WAV'ı STT modellerine yeniden verip WER karşılaştıran araç yok (olası sonraki adım, lab-002 genişletmesi)."
+    },
+    {
       "id": "core-005",
       "plan_ref": "F1.5",
-      "priority": 14,
+      "priority": 15,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -336,7 +363,7 @@
     {
       "id": "core-006",
       "plan_ref": "F1.6",
-      "priority": 15,
+      "priority": 16,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -354,7 +381,7 @@
     {
       "id": "core-008",
       "plan_ref": "F1.8",
-      "priority": 16,
+      "priority": 17,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -371,7 +398,7 @@
     {
       "id": "lab-004",
       "plan_ref": "F7.4",
-      "priority": 17,
+      "priority": 18,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -388,7 +415,7 @@
     {
       "id": "eval-001",
       "plan_ref": "F6.1",
-      "priority": 18,
+      "priority": 19,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -406,7 +433,7 @@
     {
       "id": "eval-003",
       "plan_ref": "F6.3",
-      "priority": 19,
+      "priority": 20,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -423,7 +450,7 @@
     {
       "id": "eval-002",
       "plan_ref": "F6.2",
-      "priority": 20,
+      "priority": 21,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -442,7 +469,7 @@
     {
       "id": "lab-005",
       "plan_ref": "F7.5",
-      "priority": 21,
+      "priority": 22,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -459,7 +486,7 @@
     {
       "id": "core-011",
       "plan_ref": "F7.3 (A2/A3 notu)",
-      "priority": 22,
+      "priority": 23,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -487,7 +514,7 @@
     {
       "id": "core-009",
       "plan_ref": "F1.9",
-      "priority": 23,
+      "priority": 24,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -503,7 +530,7 @@
     {
       "id": "core-010",
       "plan_ref": "F1.10",
-      "priority": 24,
+      "priority": 25,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "could",
@@ -519,7 +546,7 @@
     {
       "id": "scn-001",
       "plan_ref": "F2.1",
-      "priority": 25,
+      "priority": 26,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -537,7 +564,7 @@
     {
       "id": "scn-002",
       "plan_ref": "F2.2",
-      "priority": 26,
+      "priority": 27,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -554,7 +581,7 @@
     {
       "id": "scn-003",
       "plan_ref": "F2.3",
-      "priority": 27,
+      "priority": 28,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -571,7 +598,7 @@
     {
       "id": "scn-004",
       "plan_ref": "F2.4",
-      "priority": 28,
+      "priority": 29,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -588,7 +615,7 @@
     {
       "id": "scn-007",
       "plan_ref": "F2.7",
-      "priority": 29,
+      "priority": 30,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -606,7 +633,7 @@
     {
       "id": "scn-009",
       "plan_ref": "F2.9",
-      "priority": 30,
+      "priority": 31,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -622,7 +649,7 @@
     {
       "id": "sim-001",
       "plan_ref": "F3.1",
-      "priority": 31,
+      "priority": 32,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -638,7 +665,7 @@
     {
       "id": "sim-002",
       "plan_ref": "F3.2",
-      "priority": 32,
+      "priority": 33,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -654,7 +681,7 @@
     {
       "id": "sim-003",
       "plan_ref": "F3.3",
-      "priority": 33,
+      "priority": 34,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -670,7 +697,7 @@
     {
       "id": "res-001",
       "plan_ref": "F4.1",
-      "priority": 34,
+      "priority": 35,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -686,7 +713,7 @@
     {
       "id": "res-002",
       "plan_ref": "F4.2",
-      "priority": 35,
+      "priority": 36,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -702,7 +729,7 @@
     {
       "id": "res-003",
       "plan_ref": "F4.3",
-      "priority": 36,
+      "priority": 37,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -718,7 +745,7 @@
     {
       "id": "eval-004",
       "plan_ref": "F6.4",
-      "priority": 37,
+      "priority": 38,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -735,7 +762,7 @@
     {
       "id": "eval-005",
       "plan_ref": "F6.5",
-      "priority": 38,
+      "priority": 39,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -752,7 +779,7 @@
     {
       "id": "scn-005",
       "plan_ref": "F2.5",
-      "priority": 39,
+      "priority": 40,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -768,7 +795,7 @@
     {
       "id": "scn-006",
       "plan_ref": "F2.6",
-      "priority": 40,
+      "priority": 41,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -784,7 +811,7 @@
     {
       "id": "scn-008",
       "plan_ref": "F2.8",
-      "priority": 41,
+      "priority": 42,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -800,7 +827,7 @@
     {
       "id": "scn-010",
       "plan_ref": "F2.10",
-      "priority": 42,
+      "priority": 43,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -816,7 +843,7 @@
     {
       "id": "sim-004",
       "plan_ref": "F3.4",
-      "priority": 43,
+      "priority": 44,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "should",
@@ -832,7 +859,7 @@
     {
       "id": "res-004",
       "plan_ref": "F4.4",
-      "priority": 44,
+      "priority": 45,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -848,7 +875,7 @@
     {
       "id": "res-005",
       "plan_ref": "F4.5",
-      "priority": 45,
+      "priority": 46,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -864,7 +891,7 @@
     {
       "id": "res-006",
       "plan_ref": "F4.6",
-      "priority": 46,
+      "priority": 47,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -880,7 +907,7 @@
     {
       "id": "plat-001",
       "plan_ref": "F5.1",
-      "priority": 47,
+      "priority": 48,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -896,7 +923,7 @@
     {
       "id": "plat-002",
       "plan_ref": "F5.2",
-      "priority": 48,
+      "priority": 49,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -913,7 +940,7 @@
     {
       "id": "scn-011",
       "plan_ref": "F2.11",
-      "priority": 49,
+      "priority": 50,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "could",
@@ -929,7 +956,7 @@
     {
       "id": "res-007",
       "plan_ref": "F4.7",
-      "priority": 50,
+      "priority": 51,
       "area": "results",
       "phase": "faz-2",
       "moscow": "could",
@@ -945,7 +972,7 @@
     {
       "id": "sim-005",
       "plan_ref": "F3.5",
-      "priority": 51,
+      "priority": 52,
       "area": "simulator",
       "phase": "later",
       "moscow": "could",
@@ -961,7 +988,7 @@
     {
       "id": "plat-003",
       "plan_ref": "F5.3",
-      "priority": 52,
+      "priority": 53,
       "area": "platform",
       "phase": "later",
       "moscow": "could",

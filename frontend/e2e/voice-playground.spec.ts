@@ -124,3 +124,40 @@ test("Söz kesme: ajan konuşurken kullanıcı konuşmaya başlar, ajan sesi tar
   expect(stats.bargeCutMs ?? 0).toBeLessThanOrEqual(500);
   await page.getByRole("button", { name: "Durdur" }).click();
 });
+
+// core-013: ses kaydı. Varsayılan kapalıdır; açılınca konuşma stereo WAV olarak saklanır (sol müşteri, sağ ajan),
+// Durdur sonrası oynatıcı çıkar, dosya sunucudan inebilir ve silinebilir. Gerçek Chromium + gerçek WebRTC + sahte mikrofon.
+test("Ses kaydı: kapalı gelir, açılınca stereo WAV (sol müşteri, sağ ajan) kaydedilir, oynatılır ve silinir", async ({ page, request }) => {
+  await request.post("/api/profiles/V1/warmup?keep_others=true");
+  await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
+  await page.goto("/playground");
+  await page.getByLabel("Senaryo").selectOption("");
+  await expect(page.getByTestId("record-toggle")).not.toBeChecked();
+  await page.getByTestId("record-toggle").check();
+  await page.getByRole("button", { name: "Başlat" }).click();
+  await expect(page.getByTestId("voice-lines")).toContainText("Siz: ses geldi", { timeout: 30_000 });
+  await expect(page.getByTestId("voice-lines")).toContainText("Anladım", { timeout: 30_000 });
+  await page.getByRole("button", { name: "Durdur" }).click();
+
+  const box = page.getByTestId("recording-box");
+  await expect(box).toBeVisible({ timeout: 15_000 });
+  const src = await page.getByTestId("recording-audio").getAttribute("src");
+  expect(src).toMatch(/^\/api\/voice\/recordings\/[0-9a-f]{12}\.wav$/);
+  const res = await request.get(src!);
+  expect(res.status()).toBe(200);
+  const wav = await res.body();
+  expect(wav.subarray(0, 4).toString()).toBe("RIFF");
+  expect(wav.readUInt16LE(22)).toBe(2);        // stereo
+  expect(wav.readUInt32LE(24)).toBe(16000);
+  let left = 0, right = 0;                       // iki kanalda da gerçek ses var (müşteri mikrofonu + ajan)
+  for (let i = 44; i + 3 < wav.length; i += 4) {
+    left = Math.max(left, Math.abs(wav.readInt16LE(i)));
+    right = Math.max(right, Math.abs(wav.readInt16LE(i + 2)));
+  }
+  expect(left).toBeGreaterThan(500);
+  expect(right).toBeGreaterThan(500);
+
+  await box.getByRole("button", { name: "Kaydı sil" }).click();
+  await expect(box).toBeHidden();
+  expect((await request.get(src!)).status()).toBe(404);
+});
