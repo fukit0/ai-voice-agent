@@ -164,3 +164,9 @@ agents do not update it automatically.
 - Dogrulama (bulut): pytest 286 (yeni test_realtime.py 22), vitest 39, Playwright 11 (yeni: realtime profil Chromium e2e).
 - BLOCKER: OpenAI/Google API'lerine bulut ve Mac VM'inden erisim yok. Canli dogrulama icin kullanici eylemi: Mac'te (VM disinda) `.venv/bin/python scripts/realtime_smoke.py` calistirip evidence/core-011-live-smoke.json ve data/realtime-smoke/*.wav ciktisini paylasmak (ses dosyalarini dinleyip Turkce kaliteyi degerlendirmek). Sonra core-011 kalan maddeleri: A3 Turkce guvenilirlik, A2/A3 vs L2 gecikme karsilastirmasi.
 - Yan degisiklik: e2e fixture'a RT profili eklendi; spec varsayilan profili V1'e sabitler.
+
+### Session 013 (core-011 canli smoke sonucu — hala BLOCKED, kismen dogrulandi)
+- Kullanici canli smoke'u Mac'te calistirdi. Ilk calisma: websockets eksikti (venv'e kuruldu). Ikinci: A2 fonksiyon cagrisinda anahtar adini 'answer' yazdi (0/8) -> parse_tool_args'a alias toleransi + test (pytest 287), commit 57d62b9. Ucuncu calisma: A2 8/8, A3 8/8 (tip gecerli + dogru).
+- Olcumler (tek atis): ilk ses A2 0.74 sn / A3 0.89 sn; AYNEN SOYLE sadakati A2 1.0 / A3 0.976; fonksiyon cagrisi turu A2 0.64-0.83 sn, A3 0.41-0.91 sn. Kanit: evidence/core-011-live-smoke.json.
+- Gozlem: A2 anahtar adi sapmasi calismalar arasi degisti (non-deterministik); tolerans kalici, gercek akis testinde tekrar izlenmeli.
+- Dogrulanmamis/kalan: Turkce ses kalitesi (WAV dinleme - kullanici), Playground'da gercek A2/A3 ile tam senaryo, A2/A3 vs L2 5 aramalik gecikme, 8 vakalik kucuk orneklem.

@@ -1,0 +1,346 @@
+[
+  {
+    "provider": "openai_realtime",
+    "model": "gpt-realtime-2.1-mini",
+    "speak": {
+      "got_audio": true,
+      "first_audio_s": 0.744,
+      "audio_seconds": 5.4,
+      "wav": "/Users/furkan.tanriverdi/sahibinden-voice-agent/data/realtime-smoke/openai_realtime.wav",
+      "requested": "Merhaba, ben Elif. Sahibinden.com adına arıyorum. Ahmet Yılmaz ile mi görüşüyorum?",
+      "agent_transcript": "Merhaba, ben Elif. Sahibinden.com adına arıyorum. Ahmet Yılmaz ile mi görüşüyorum?",
+      "verbatim_ratio": 1.0,
+      "timeout": false
+    },
+    "tool_calls": [
+      {
+        "step": "musaitlik",
+        "utterance": "evet müsaitim",
+        "expected": {
+          "intent": "answer",
+          "value": true
+        },
+        "called": true,
+        "latency_s": 0.805,
+        "raw": "{\"intent\":\"answer\",\"value_json\":\"true\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": true
+        },
+        "correct": true
+      },
+      {
+        "step": "musaitlik",
+        "utterance": "hayır şu an değilim",
+        "expected": {
+          "intent": "answer",
+          "value": false
+        },
+        "called": true,
+        "latency_s": 0.752,
+        "raw": "{\"intent\":\"answer\",\"value_json\":\"false\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": false
+        },
+        "correct": true
+      },
+      {
+        "step": "q2",
+        "utterance": "sekiz veririm",
+        "expected": {
+          "intent": "answer",
+          "value": 8
+        },
+        "called": true,
+        "latency_s": 0.776,
+        "raw": "{\"intent\":\"answer\",\"value_json\":\"8\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 8
+        },
+        "correct": true
+      },
+      {
+        "step": "q3_1",
+        "utterance": "bence on",
+        "expected": {
+          "intent": "answer",
+          "value": 10
+        },
+        "called": true,
+        "latency_s": 0.817,
+        "raw": "{\"intent\":\"answer\",\"value_json\":\"10\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 10
+        },
+        "correct": true
+      },
+      {
+        "step": "q5",
+        "utterance": "yaklaşık kırk beş saniye bekledim",
+        "expected": {
+          "intent": "answer",
+          "value": 45
+        },
+        "called": true,
+        "latency_s": 0.826,
+        "raw": "{\"intent\":\"answer\",\"value_json\":\"45\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 45
+        },
+        "correct": true
+      },
+      {
+        "step": "musaitlik",
+        "utterance": "şimdi müsait değilim, sonra arayın",
+        "expected": {
+          "intent": "callback",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.696,
+        "raw": "{\"intent\":\"callback\",\"value_json\":\"null\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "callback",
+          "value": null
+        },
+        "correct": true
+      },
+      {
+        "step": "giris",
+        "utterance": "beni bir daha aramayın",
+        "expected": {
+          "intent": "dnc",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.64,
+        "raw": "{\"intent\":\"dnc\",\"value_json\":\"null\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "dnc",
+          "value": null
+        },
+        "correct": true
+      },
+      {
+        "step": "q3",
+        "utterance": "bu ankete katılmak istemiyorum",
+        "expected": {
+          "intent": "refuse",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.676,
+        "raw": "{\"intent\":\"refuse\",\"value_json\":\"null\"}",
+        "valid_type": true,
+        "got": {
+          "intent": "refuse",
+          "value": null
+        },
+        "correct": true
+      }
+    ],
+    "errors": [],
+    "summary": {
+      "cases": 8,
+      "called": 8,
+      "valid_type": 8,
+      "correct": 8
+    },
+    "profile": "A2"
+  },
+  {
+    "provider": "gemini_live",
+    "model": "gemini-3.8-live",
+    "speak": {
+      "got_audio": true,
+      "first_audio_s": 0.891,
+      "audio_seconds": 5.6,
+      "wav": "/Users/furkan.tanriverdi/sahibinden-voice-agent/data/realtime-smoke/gemini_live.wav",
+      "requested": "Merhaba, ben Elif. Sahibinden.com adına arıyorum. Ahmet Yılmaz ile mi görüşüyorum?",
+      "agent_transcript": "Merhaba, ben  Elif. Sahibinden.com  adına  arıyorum. Ahmet  Yılmaz ile mi görüşüyorum?",
+      "verbatim_ratio": 0.976,
+      "timeout": false
+    },
+    "tool_calls": [
+      {
+        "step": "musaitlik",
+        "utterance": "evet müsaitim",
+        "expected": {
+          "intent": "answer",
+          "value": true
+        },
+        "called": true,
+        "latency_s": 0.908,
+        "raw": {
+          "intent": "answer",
+          "value_json": "true"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": true
+        },
+        "correct": true
+      },
+      {
+        "step": "musaitlik",
+        "utterance": "hayır şu an değilim",
+        "expected": {
+          "intent": "answer",
+          "value": false
+        },
+        "called": true,
+        "latency_s": 0.652,
+        "raw": {
+          "value_json": "false",
+          "intent": "answer"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": false
+        },
+        "correct": true
+      },
+      {
+        "step": "q2",
+        "utterance": "sekiz veririm",
+        "expected": {
+          "intent": "answer",
+          "value": 8
+        },
+        "called": true,
+        "latency_s": 0.409,
+        "raw": {
+          "intent": "answer",
+          "value_json": "8"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 8
+        },
+        "correct": true
+      },
+      {
+        "step": "q3_1",
+        "utterance": "bence on",
+        "expected": {
+          "intent": "answer",
+          "value": 10
+        },
+        "called": true,
+        "latency_s": 0.489,
+        "raw": {
+          "value_json": "10",
+          "intent": "answer"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 10
+        },
+        "correct": true
+      },
+      {
+        "step": "q5",
+        "utterance": "yaklaşık kırk beş saniye bekledim",
+        "expected": {
+          "intent": "answer",
+          "value": 45
+        },
+        "called": true,
+        "latency_s": 0.704,
+        "raw": {
+          "value_json": "45",
+          "intent": "answer"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "answer",
+          "value": 45
+        },
+        "correct": true
+      },
+      {
+        "step": "musaitlik",
+        "utterance": "şimdi müsait değilim, sonra arayın",
+        "expected": {
+          "intent": "callback",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.654,
+        "raw": {
+          "intent": "callback",
+          "value_json": "null"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "callback",
+          "value": null
+        },
+        "correct": true
+      },
+      {
+        "step": "giris",
+        "utterance": "beni bir daha aramayın",
+        "expected": {
+          "intent": "dnc",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.544,
+        "raw": {
+          "value_json": "null",
+          "intent": "dnc"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "dnc",
+          "value": null
+        },
+        "correct": true
+      },
+      {
+        "step": "q3",
+        "utterance": "bu ankete katılmak istemiyorum",
+        "expected": {
+          "intent": "refuse",
+          "value": null
+        },
+        "called": true,
+        "latency_s": 0.822,
+        "raw": {
+          "value_json": "null",
+          "intent": "refuse"
+        },
+        "valid_type": true,
+        "got": {
+          "intent": "refuse",
+          "value": null
+        },
+        "correct": true
+      }
+    ],
+    "errors": [],
+    "summary": {
+      "cases": 8,
+      "called": 8,
+      "valid_type": 8,
+      "correct": 8
+    },
+    "profile": "A3"
+  }
+]
