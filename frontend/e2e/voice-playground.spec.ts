@@ -20,6 +20,7 @@ test("Başlat → bağlanır, ajan selamlar, sahte mikrofon konuşması ajana ul
   await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
   await page.reload();
 
+  await expect(page.getByLabel("Senaryo").locator("option")).not.toHaveCount(1);   // senaryo listesi yüklenmeden seçim ezilir
   await page.getByLabel("Senaryo").selectOption("");   // bu test serbest sohbet; senaryo modu aşağıda
   await page.getByRole("button", { name: "Başlat" }).click();
   await expect(page.getByRole("button", { name: "Durdur" })).toBeVisible({ timeout: 15_000 });
@@ -113,6 +114,7 @@ test("Söz kesme: ajan konuşurken kullanıcı konuşmaya başlar, ajan sesi tar
   await request.post("/api/profiles/V1/warmup?keep_others=true");
   await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
   await page.goto("/playground");
+  await expect(page.getByLabel("Senaryo").locator("option")).not.toHaveCount(1);   // senaryo listesi yüklenmeden seçim ezilir
   await page.getByLabel("Senaryo").selectOption("");
   await page.getByRole("button", { name: "Başlat" }).click();
   await expect(page.getByText(/söz kesme: 1/)).toBeVisible({ timeout: 20_000 });
@@ -131,6 +133,7 @@ test("Ses kaydı: kapalı gelir, açılınca stereo WAV (sol müşteri, sağ aja
   await request.post("/api/profiles/V1/warmup?keep_others=true");
   await expect.poll(async () => (await (await request.get("/api/profiles/V1/warmup")).json()).state, { timeout: 10_000 }).not.toBe("running");
   await page.goto("/playground");
+  await expect(page.getByLabel("Senaryo").locator("option")).not.toHaveCount(1);   // senaryo listesi yüklenmeden seçim ezilir
   await page.getByLabel("Senaryo").selectOption("");
   await expect(page.getByTestId("record-toggle")).not.toBeChecked();
   await page.getByTestId("record-toggle").check();

@@ -23,9 +23,14 @@ def resample(audio: np.ndarray, src_rate: int, dst_rate: int) -> np.ndarray:
     return resample_poly(audio, dst_rate // g, src_rate // g).astype(np.float32)
 
 
-def decode_audio(data: bytes) -> tuple[np.ndarray, int]:
-    """WAV/FLAC/OGG baytlarını mono float32'ye çevirir."""
-    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=False)
+def decode_audio(data: bytes, channel: str = "mix") -> tuple[np.ndarray, int]:
+    """WAV/FLAC/OGG baytlarını mono float32'ye çevirir.
+
+    channel: "mix" (kanalların ortalaması), "left" ya da "right". Ses kaydı (core-013) stereodur: sol müşteri, sağ ajan;
+    STT karşılaştırması için "left" seçilmezse iki ses karışır. Tek kanallı dosyada seçim yok sayılır."""
+    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
+    if channel in ("left", "right") and audio.shape[1] >= 2:
+        return np.ascontiguousarray(audio[:, 0 if channel == "left" else 1]), int(rate)
     return to_mono_float32(audio), int(rate)
 
 

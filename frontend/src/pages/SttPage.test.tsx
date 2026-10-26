@@ -71,4 +71,20 @@ describe("STT test ekranı", () => {
     expect(within(results).getByText(/Soğuk, ölçülmedi/)).toBeInTheDocument();
     expect((screen.getByLabelText("Referans metin") as HTMLTextAreaElement).value).toBe("Merhaba dünya");
   });
+  it("kanal ve alan ipucu seçenekleri karşılaştırma isteğine eklenir; WAV dosyası kanal seçimi bozulmasın diye çevrilmeden gider (core-013)", async () => {
+    render(<SttPage />);
+    await screen.findByText("BuzzASR/turkish");
+    const file = new File([new Uint8Array([82, 73, 70, 70])], "oturum.wav", { type: "audio/wav" });
+    fireEvent.change(screen.getByTestId("stt-file"), { target: { files: [file] } });
+    fireEvent.change(screen.getByLabelText("Kanal"), { target: { value: "left" } });
+    fireEvent.change(screen.getByLabelText("Alan ipucu"), { target: { value: "sahibinden.com" } });
+    const run = screen.getByRole("button", { name: "Karşılaştır" });
+    await waitFor(() => expect(run).toBeEnabled());
+    fireEvent.click(run);
+    await waitFor(() => expect(fetchMock.mock.calls.some(([u]) => u === "/api/stt/compare")).toBe(true));
+    const form = fetchMock.mock.calls.find(([u]) => u === "/api/stt/compare")![1].body as FormData;
+    expect(form.get("channel")).toBe("left");
+    expect(form.get("prompt")).toBe("sahibinden.com");
+    expect((form.get("audio") as File).size).toBe(4);      // çevrilmedi: özgün baytlar
+  });
 });

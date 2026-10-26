@@ -14,6 +14,7 @@ from .api_profiles import _call, _provider
 from .profiles import load_profiles
 from .providers import PROVIDERS, ProviderNotReady, cached, missing_env, provider_key, record_call
 from .providers.audio import decode_audio, encode_wav
+from .providers.local import MlxWhisperSTT
 from .wer import wer
 
 router = APIRouter(prefix="/api/stt", tags=["stt"])
@@ -47,7 +48,7 @@ def list_models() -> list[dict]:
 
 @router.post("/compare")
 def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference: str = Form(""),
-            language: str = Form("tr")) -> dict:
+            language: str = Form("tr"), channel: str = Form("mix"), prompt: str = Form("")) -> dict:
     ids = [i for i in dict.fromkeys(x.strip() for x in profiles.split(",")) if i]
     if not ids:
         raise HTTPException(400, {"error": "no_models", "message": "En az bir STT modeli seçin."})
@@ -55,7 +56,7 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, {"error": "audio_too_large", "message": "Ses dosyası 25 MB'tan büyük."})
     try:
-        samples, rate = decode_audio(data)
+        samples, rate = decode_audio(data, channel)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(400, {"error": "bad_audio", "message": f"Ses çözülemedi: {exc}"}) from exc
     audio_seconds = len(samples) / rate
@@ -93,8 +94,21 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
         if reference:
             item.update(wer(reference, result.text).to_dict())
         results.append(item)
+        if prompt.strip() and isinstance(provider, MlxWhisperSTT):   # aynı model, alan ipucu ile: etkisini yan yana ölç
+            try:
+                res2, sec2 = _call(profile, "stt", provider,
+                                   lambda p=provider: p.transcribe(samples, rate, language, prompt=prompt.strip()))
+            except HTTPException as exc:
+                results.append({**base, "model": f"{base['model']} + ipucu", "status": "failed",
+                                "error": exc.detail.get("message", "") if isinstance(exc.detail, dict) else str(exc.detail)})
+                continue
+            item2 = {**base, "status": "ok", "model": f"{res2.model or base['model']} + ipucu", "text": res2.text,
+                     "seconds": round(res2.seconds, 3), "rtf": round(res2.seconds / audio_seconds, 3), "prompt": prompt.strip()}
+            if reference:
+                item2.update(wer(reference, res2.text).to_dict())
+            results.append(item2)
     run = stt_runs.save_run({"filename": audio.filename, "audio_seconds": round(audio_seconds, 2),
-                             "sample_rate": rate, "reference": reference, "language": language,
+                             "sample_rate": rate, "reference": reference, "language": language, "channel": channel,
                              "results": results}, encode_wav(samples, rate))
     return run
 

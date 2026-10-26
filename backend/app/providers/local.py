@@ -43,14 +43,18 @@ class MlxWhisperSTT(STTProvider):
     kind = "mlx_whisper"
     _lock = threading.Lock()  # mlx aynı anda tek çağrı
 
-    def transcribe(self, audio, sample_rate, language="tr"):
+    def transcribe(self, audio, sample_rate, language="tr", prompt=None):
+        """prompt: Whisper `initial_prompt` (alan kelimeleri ipucu); verilmezse profildeki `initial_prompt` seçeneği.
+        Varsayılan kapalıdır: kısa seslerde ipucu metnini aynen yazma (halüsinasyon) riski var, ölçülerek açılmalı."""
         import mlx_whisper
 
         audio16 = resample(audio, sample_rate, 16000)
+        prompt = prompt or self.options.get("initial_prompt")
+        extra = {"initial_prompt": prompt} if prompt else {}
         t0 = time.perf_counter()
         with self._lock:
             out = mlx_whisper.transcribe(audio16, path_or_hf_repo=self.model, language=language,
-                                         verbose=None, condition_on_previous_text=False)
+                                         verbose=None, condition_on_previous_text=False, **extra)
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)
 

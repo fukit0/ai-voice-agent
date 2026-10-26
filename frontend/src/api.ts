@@ -115,11 +115,17 @@ export const fetchSttRuns = () => fetch("/api/stt/runs").then((r) => json<SttRun
 export const fetchSttRun = (id: string) => fetch(`/api/stt/runs/${id}`).then((r) => json<SttRun>(r));
 export const sttAudioUrl = (id: string) => `/api/stt/runs/${id}/audio`;
 
-export function compareStt(audio: Blob, filename: string, profiles: string[], reference: string): Promise<SttRun> {
+export type SttChannel = "mix" | "left" | "right";
+
+// channel: stereo ses kaydında (core-013) sol = müşteri, sağ = ajan; prompt: Whisper alan ipucu (MLX), verilirse aynı model ipuçlu da koşar.
+export function compareStt(audio: Blob, filename: string, profiles: string[], reference: string,
+                           channel: SttChannel = "mix", prompt = ""): Promise<SttRun> {
   const form = new FormData();
   form.append("audio", audio, filename);
   form.append("profiles", profiles.join(","));
   form.append("reference", reference);
+  form.append("channel", channel);
+  form.append("prompt", prompt);
   return fetch("/api/stt/compare", { method: "POST", body: form }).then((r) => json<SttRun>(r));
 }
 

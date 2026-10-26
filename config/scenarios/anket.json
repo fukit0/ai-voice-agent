@@ -117,6 +117,7 @@
     "preview": "İyi günler, benim adım Elif. Sahibinden.com adına Nielsen Araştırma Hizmetleri'nden arıyorum. Sahibinden.com'un verdiği yetkiye istinaden, çağrı merkezi temsilcisinden aldığınız hizmetten memnuniyetinizi ölçmek adına, beş dakika sürecek bir görüşme yapmak istiyoruz. Görüşmemiz kayıt altına alınacak ve hizmet kalitesinin ölçümlenmesi amacıyla kullanılacaktır. Detaylar için Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni'ni dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
     "custom": true,
     "condition": "1 → aydınlatma metni okunur (IVR), 2 → devam edilir.",
+    "llmHint": "Bu soru görüşmeyi kabul etmeyi değil, aydınlatma metnini DİNLEME tercihini sorar. 'dinlemek istemiyorum', 'gerek yok', 'direkt devam edelim', 'hayır' = devam (value=devam); 'evet', 'dinleyeyim', 'okuyun' = dinle (value=dinle). 'şu an müsait değilim', 'sonra arayın' = callback. Yalnızca 'ilgilenmiyorum', 'katılmak istemiyorum' gibi görüşmenin kendisini açıkça reddetme refuse'tur; 'aramayın' dnc'dir.",
     "dtmf": true,
     "min": 1,
     "max": 10,

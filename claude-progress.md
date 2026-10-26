@@ -177,3 +177,10 @@ agents do not update it automatically.
 - Ek inceleme (kod değişikliği YOK): kayıtlı L2 oturumu 3568fd3933eb ve diğerleri incelendi. Bulgular: (a) giris adımında 'Dinlemek istemiyorum' / 'Müsaade değilim' LLM'de refuse çıkıp görüşmeyi kapatıyor (kapanis_ret) — doğru yorum: dinleme tercihi = devam; (b) STT hataları ('Katılman', 'Buyurun davetin', 'Ben adım') off_topic sayılınca 'Sorunuzu not aldım' yersiz söyleniyor; (c) 'olabilir' evet/hayır sorusunda anlaşılamıyor. core-012 beklemede; (a)-(c) core-012 ölçüm setine örnek olarak alınacak, STT kelime hataları lab-002/STT kalitesi konusudur.
 - Dikkat: Mac çalışma ağacında kullanıcıdan gelen commit'lenmemiş backend/app/trnorm.py ve backend/tests/test_trnorm.py değişiklikleri var; bu commit'e katılmadı.
 - Doğrulanmamış: gerçek mikrofonla kaydı dinleme; üretim için şifreleme/erişim/saklama süresi.
+
+### Session 015 (öneri 1, 2, 4: KVKK/STT düzeltmeleri, core-014, STT karşılaştırma araçları)
+- (1) giris adımına llmHint (anket.json) ve flow.py INTENTS/refuse/unclear/off_topic metinleri; build_messages adıma özel kuralı ekler. Birim test: prompt içeriği + 'devam' seçimiyle KVKK atlanır. GERÇEK LLM ile doğrulanmadı; realtime hatta iletilmiyor.
+- (2) feature_list: core-014 (STT kelime hataları, not_started) eklendi; core-012 notlarına oturum örnekleri eklendi.
+- (4) Karşılaştırma araçları: /api/stt/compare channel (mix/left/right) ve prompt alanları (aynı MLX Whisper modeli ipuçsuz/ipuçlu yan yana); MlxWhisperSTT initial_prompt seçeneği (varsayılan kapalı); STT test ekranı Kanal + Alan ipucu; WAV artık çevrilmeden gider (toWav kanalları ortalayıp stereo seçimi bozuyordu). Karşılaştırmanın KENDİSİ yapılmadı: gerçek model ve gerçek kayıt Mac'te gerekli (önceki oturumda ses kaydı yoktu).
+- Doğrulama (bulut): pytest 297, vitest 41, tsc temiz, Playwright 12/12. Bir kez düşen kayıt e2e testi: senaryo listesi yarışı (testte), bekleme eklendi, 8/8.
+- Kullanıcı adımı: Mac'te npm run build + backend yeniden başlat; Playground'da kayıt aç, 2-3 görüşme yap; STT test ekranında WAV yükle, Kanal=Sol, modelleri seç, ipucu yaz, Karşılaştır; sonuçları paylaş.

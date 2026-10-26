@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   compareStt, fetchSttModels, fetchSttRun, fetchSttRuns, getWarmup, startWarmup, sttAudioUrl,
-  type SttModel, type SttResult, type SttRun, type SttRunSummary,
+  type SttChannel, type SttModel, type SttResult, type SttRun, type SttRunSummary,
 } from "../api";
 import { toWav } from "../wav";
 
@@ -15,6 +15,8 @@ export function SttPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [audio, setAudio] = useState<{ blob: Blob; name: string; url: string } | null>(null);
   const [reference, setReference] = useState("");
+  const [channel, setChannel] = useState<SttChannel>("mix");
+  const [prompt, setPrompt] = useState("");
   const [run, setRun] = useState<SttRun | null>(null);
   const [runs, setRuns] = useState<SttRunSummary[]>([]);
   const [busy, setBusy] = useState(false);
@@ -48,7 +50,10 @@ export function SttPage() {
     if (!file) return;
     setError(null);
     try {
-      setAudioBlob(await toWav(file), file.name.replace(/\.[^.]+$/, "") + ".wav");
+      // WAV olduğu gibi gönderilir: stereo ses kaydında (sol müşteri, sağ ajan) kanal seçimi sunucuda yapılır;
+      // toWav() kanalları ortalayıp tek kanala indirir ve seçimi imkânsız kılar. Diğer biçimler (m4a, webm) WAV'a çevrilir.
+      const isWav = /\.wav$/i.test(file.name) || /^audio\/(x-)?wav$/.test(file.type);
+      setAudioBlob(isWav ? file : await toWav(file), file.name.replace(/\.[^.]+$/, "") + ".wav");
     } catch {
       setError("Ses dosyası çözülemedi. WAV, MP3, M4A veya OGG deneyin.");
     }
@@ -107,7 +112,7 @@ export function SttPage() {
     setError(null);
     try {
       const profiles = models.filter((m) => selected.has(modelKey(m))).map((m) => m.profile);
-      setRun(await compareStt(audio.blob, audio.name, profiles, reference));
+      setRun(await compareStt(audio.blob, audio.name, profiles, reference, channel, prompt));
       void loadRuns();
       void loadModels();
     } catch (e) {
@@ -174,6 +179,22 @@ export function SttPage() {
       <textarea rows={3} value={reference} onChange={(e) => setReference(e.target.value)}
         placeholder="Seste söylenenin doğru yazılışı" aria-label="Referans metin" />
 
+      <h3 className="sub">4 · Seçenekler (isteğe bağlı)</h3>
+      <div className="voice-options">
+        <label>Kanal{" "}
+          <select value={channel} onChange={(e) => setChannel(e.target.value as SttChannel)} aria-label="Kanal"
+                  title="Playground'da kaydedilen stereo ses: sol kanal müşteri, sağ kanal ajan. Müşteri hatalarını ölçmek için Sol'u seçin.">
+            <option value="mix">Karışık (varsayılan)</option>
+            <option value="left">Sol (müşteri)</option>
+            <option value="right">Sağ (ajan)</option>
+          </select>
+        </label>
+        <label>Alan ipucu{" "}
+          <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} aria-label="Alan ipucu" size={48}
+                 placeholder="örn. sahibinden.com, çağrı merkezi, müşteri temsilcisi, bir ile on arasında puan"
+                 title="Yalnızca MLX Whisper: aynı model ipuçsuz ve ipuçlu yan yana koşar (kısa seslerde ipucunu aynen yazma riski vardır)." />
+        </label>
+      </div>
       <p>
         <button type="button" className="primary" disabled={!canRun} onClick={execute}>
           {busy ? "Çalışıyor…" : "Karşılaştır"}

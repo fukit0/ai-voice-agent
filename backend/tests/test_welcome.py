@@ -110,3 +110,34 @@ def test_check_in_value_is_strict_boolean():
     step = S.step_map(S.get("welcome"))["paket_taahhutlu"]
     assert check_value(step, {"intent": "answer", "value": True}) == (True, True)
     assert check_value(step, {"intent": "answer", "value": "evet"})[0] is False
+
+
+# ---- giris (KVKK) adımı: 'dinlemek istemiyorum' ret değil, devam seçimidir (prompt kuralı; gerçek LLM Mac'te doğrulanır) ----
+def test_giris_step_prompt_carries_listen_preference_hint_and_stt_garbage_rule():
+    from app import scenario as S
+    from app.voice.flow import INTENTS, build_messages
+    sc = S.get("anket")
+    giris = next(s for s in sc["steps"] if s["key"] == "giris")
+    system = build_messages(giris, "Aydınlatma metnini dinlemek ister misiniz?", "dinlemek istemiyorum")[0]["content"]
+    assert "DİNLEME tercihini" in system and "value=devam" in system and "refuse DEĞİLDİR" in system
+    other = next(s for s in sc["steps"] if s["key"] == "musaitlik")
+    assert "Bu soruya özel kural" not in build_messages(other, "Müsait misiniz?", "evet")[0]["content"]
+    assert "anlamsız" in INTENTS["unclear"] and "off_topic değildir" in INTENTS["off_topic"]
+
+
+def test_giris_dinlemek_istemiyorum_as_devam_choice_skips_kvkk_text_and_continues():
+    from app import scenario as S
+    from app.voice.flow import FlowDriver
+
+    class R:
+        text = '{"intent":"answer","value":"devam"}'
+
+    class L:
+        def complete(self, m, n, t):
+            return R()
+
+    f = FlowDriver(S.get("anket"), L(), None)
+    f.start()
+    r = f.handle("dinlemek istemiyorum")
+    assert not f.finished and f.path == ["giris", "musaitlik"]
+    assert any("müsait" in u.lower() for u in r.utterances)

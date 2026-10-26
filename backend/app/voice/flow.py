@@ -21,9 +21,11 @@ MAX_RETRIES = 2
 INTENTS = {
     "answer": "Soruya cevap verdi (value dolu).",
     "repeat": "Soruyu duymadı / tekrar istiyor.",
-    "refuse": "Cevap vermek / ankete devam etmek istemiyor.",
-    "unclear": "Bilmiyor / belirsiz; cevap çıkarılamıyor.",
-    "off_topic": "Soruyla ilgisiz soru ya da şikayet soruyor.",
+    "refuse": "Görüşmeye/ankete katılmayı açıkça reddediyor. Sorulan şeye 'istemiyorum' demek (örn. aydınlatma metnini dinlemek "
+              "istememek) refuse DEĞİLDİR; soruya verilmiş cevaptır.",
+    "unclear": "Bilmiyor / belirsiz; cevap çıkarılamıyor. Konuşma tanıma hatasından gelen anlamsız ya da cümleye benzemeyen "
+               "kelimeler de unclear'dır.",
+    "off_topic": "Müşteri soruyla ilgisiz AÇIK bir soru sordu ya da şikayet etti. Anlamsız/bozuk kelimeler off_topic değildir.",
     "callback": "Şu an müsait değil, başka zamanda aranmak istiyor.",
     "dnc": "Bir daha aranmak istemiyor ('beni aramayın').",
 }
@@ -76,6 +78,8 @@ def build_messages(step: dict, question: str, utterance: str) -> list[dict]:
         f"Bu sorunun value kuralı: {value_rule(step)}.\n"
         "Sayıları rakamla yaz (örn. 'dokuz' -> 9). Müşteri birden fazla şey söylerse sorulan soruya verdiği asıl cevabı al."
     )
+    if step.get("llmHint"):   # adıma özel yorum kuralı (senaryo yazarı verir; örn. KVKK sorusu dinleme tercihidir, ret değil)
+        system += "\nBu soruya özel kural: " + step["llmHint"]
     user = f"Soru: {question}"
     if step["kind"] == "Choice":
         user += "\nSeçenekler: " + ", ".join(f"{c['value']} = {c['label']}" for c in step["choices"])
