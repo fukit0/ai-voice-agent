@@ -18,9 +18,11 @@ agents do not update it automatically.
 - Repository root: ~/sahibinden-voice-agent (git, main)
 - Standard startup path: `./init.sh` (bağımlılık + testler + hızlı model kontrolü); `scripts/dev.sh` Lab'i başlatır (http://localhost:5173)
 - Standard verification path: `python -m pytest -q backend`, `npm --prefix frontend test`, `npm --prefix frontend run e2e` (build sonrası), `scripts/healthcheck.py`
-- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003, core-002, core-004 (12 / 51)
-- Current highest-priority unfinished feature: core-004 (anket yürütme, FlowDriver ile büyük ölçüde var; gerçek model ölçümü eksik) ve core-005/lab-004
-- Current blocker: yok. Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
+- Passing: setup-001, lab-000, core-003, lab-006, lab-002, lab-001, norm-007, eval-llm, core-001, lab-003, core-002, core-004, core-013, core-008 (14 / 54)
+- Blocked: core-011 (A3 Türkçe kalite dinleme + A2/A3 vs L2 gecikme; kullanıcı), core-014 (gerçek ses kaydı + modeller; kullanıcı)
+- Current highest-priority unfinished feature: core-012 (kullanıcı kararıyla beklemede; eval-llm üretim prompt'unu ölçmüyor), sonra core-005/core-006, lab-004
+- Partial (not_started ama kısmen yapıldı, ayrıntı feature_list notes): scn-001/004/005/006/007, sim-001/002/003/004, eval-003, core-005/006/009
+- Current blocker: core-011 ve core-014 kullanıcı eylemi bekliyor (canlı/gerçek ses doğrulaması). Doğrulanmamış: mikrofon düğmesi, BuzzASR indirme, telefon turu (8 kHz) gerçek modelle, gerçek insan dinlemesi, normalize metnin gerçek TTS ile dinlenmesi, Mac tarayıcısında normalize önizleme
 
 ## Session Log
 
@@ -184,3 +186,8 @@ agents do not update it automatically.
 - (4) Karşılaştırma araçları: /api/stt/compare channel (mix/left/right) ve prompt alanları (aynı MLX Whisper modeli ipuçsuz/ipuçlu yan yana); MlxWhisperSTT initial_prompt seçeneği (varsayılan kapalı); STT test ekranı Kanal + Alan ipucu; WAV artık çevrilmeden gider (toWav kanalları ortalayıp stereo seçimi bozuyordu). Karşılaştırmanın KENDİSİ yapılmadı: gerçek model ve gerçek kayıt Mac'te gerekli (önceki oturumda ses kaydı yoktu).
 - Doğrulama (bulut): pytest 297, vitest 41, tsc temiz, Playwright 12/12. Bir kez düşen kayıt e2e testi: senaryo listesi yarışı (testte), bekleme eklendi, 8/8.
 - Kullanıcı adımı: Mac'te npm run build + backend yeniden başlat; Playground'da kayıt aç, 2-3 görüşme yap; STT test ekranında WAV yükle, Kanal=Sol, modelleri seç, ipucu yaz, Karşılaştır; sonuçları paylaş.
+
+### Session 016 (feature_list envanteri)
+- not_started görünen 40 madde Haiku yardımcı oturumuyla tarandı; ana bulgular kodda elle doğrulandı. Sonuç: core-008 -> passing (gerçek test araması: evidence/core-008-session-3568fd3933eb.json, logs/provider-calls.jsonl; JSONL yerine çağrı JSONL'ı + oturum JSON'u olarak karşılandı, sapma notlandı); core-014 -> blocked (kullanıcı kaydı/Mac gerekir); 13 kısmi madde not_started kaldı ama notes alanına mevcut kapsam ve eksikler yazıldı (scn-001/004/005/006/007, sim-001/002/003/004, eval-003, core-005/006/009). Kalan 25 madde gerçekten başlanmamış.
+- Durum: 14 passing / 2 blocked / 38 not_started (54). Açık karar: core-009 (kayıt 8 kHz filtreli mi, 16 kHz ham mı).
+- Not: yardımcı oturum buluttaki kopyayı taradığı için bazı kanıt dosyalarını (lab-006 ADR, evidence/*.json) bulamadı; Mac'te mevcutlar (docs/adr/0001, evidence/).

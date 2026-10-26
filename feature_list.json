@@ -352,7 +352,7 @@
       "moscow": "must",
       "title": "Telefon konuşmasında STT kelime hatalarının ölçülmesi ve azaltılması",
       "user_visible_behavior": "Gerçek sesle yapılan görüşmelerde müşterinin söylediği kelimeler doğru tanınır; STT test ekranında kayıtlı görüşmenin müşteri kanalı farklı STT modelleri ve ayarlarıyla yan yana ölçülür.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Gerçek insan sesinden en az 30 cümle/cevap (evet/hayır, puan, süre, serbest cümle) Playground'da kaydedilir (core-013); sol kanal alınır ve referans metinleri elle yazılır; telefon filtresi açık ve kapalı iki sürüm.",
         "L1, L2, L3 (ve A1 Deepgram) aynı kayıtlarla STT test ekranında koşulur: WER ve kısa cevaplarda cevap-düzeyi doğruluk (evet/hayır, puan, süre) ayrı raporlanır; sonuçlar evidence/stt-real-*.json olarak kaydedilir.",
@@ -361,7 +361,7 @@
         "Karar ve sınırlar ADR'ye ve Demo Q&A'ya yazılır; core-004'teki 'yanlış anlama -> yanlış dal' riski için STT hatalı kısa cevap örnekleri core-012 setine aktarılır."
       ],
       "evidence": [],
-      "notes": "Kaynak: kayıtlı L2 oturumu 3568fd3933eb (2026-10-26) — 'Katılmadım' -> 'Katılman.', 'Buyurun davetin.', 'Ben adım.', 'Rica ederim.' gibi bozuk çıktılar; Q2 iki tekrardan sonra cevapsız kaldı. Bu oturumda ses kaydı yoktu, yani hatanın STT mi mikrofon/telefon filtresi mi kaynaklı olduğu DUYULARAK ayrılamadı (telefon filtresi açıktı; varsayım: filtreli ses STT'yi zorluyor, doğrulanmadı). ARAÇLAR HAZIR (2026-10-26): core-013 ses kaydı; STT test ekranında Kanal seçimi (Sol = müşteri) ve Alan ipucu (aynı MLX Whisper modeli ipuçsuz/ipuçlu yan yana); profilde stt.initial_prompt seçeneği (varsayılan kapalı). ÖLÇÜM YAPILMADI: gerçek modeller ve gerçek ses Mac'te olmalı; bulutta yalnızca mekanik testler var. Kullanıcı adımı: Playground'da 'Konuşmayı kaydet' ile 2-3 görüşme kaydet, indirilen WAV'ı STT test ekranına yükle, Kanal=Sol, modelleri seç, Karşılaştır."
+      "notes": "Kaynak: kayıtlı L2 oturumu 3568fd3933eb (2026-10-26) — 'Katılmadım' -> 'Katılman.', 'Buyurun davetin.', 'Ben adım.', 'Rica ederim.' gibi bozuk çıktılar; Q2 iki tekrardan sonra cevapsız kaldı. Bu oturumda ses kaydı yoktu, yani hatanın STT mi mikrofon/telefon filtresi mi kaynaklı olduğu DUYULARAK ayrılamadı (telefon filtresi açıktı; varsayım: filtreli ses STT'yi zorluyor, doğrulanmadı). ARAÇLAR HAZIR (2026-10-26): core-013 ses kaydı; STT test ekranında Kanal seçimi (Sol = müşteri) ve Alan ipucu (aynı MLX Whisper modeli ipuçsuz/ipuçlu yan yana); profilde stt.initial_prompt seçeneği (varsayılan kapalı). ÖLÇÜM YAPILMADI: gerçek modeller ve gerçek ses Mac'te olmalı; bulutta yalnızca mekanik testler var. Kullanıcı adımı: Playground'da 'Konuşmayı kaydet' ile 2-3 görüşme kaydet, indirilen WAV'ı STT test ekranına yükle, Kanal=Sol, modelleri seç, Karşılaştır. BLOCKER (2026-10-26): ölçüm için kullanıcının Mac'inde gerçek ses kaydı (Playground, Konuşmayı kaydet) ve gerçek STT modelleri gerekir; bulut/yardımcı oturum bunları üretemez. Kullanıcı eylemi tamamlanınca açılır."
     },
     {
       "id": "core-005",
@@ -378,7 +378,7 @@
         "Cümle başına ortalama kelime sayısı raporlanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): flow.py'de kısa cevap kuralı ve HITAP değişkeni var; serbest sohbet PERSONA'sı session.py'de. Ayrı persona promptu çalışması, 5 aramalık transkript incelemesi ve cümle başı kelime raporu yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "core-006",
@@ -396,7 +396,7 @@
         "'Bot musun?' sorusuna dürüst cevap verilir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): 'Şu an müsait değilim' -> geri arama/randevu dalı çalışıyor (flow.py callback, test_flow). 8 sn sessizlikte kontrol cümlesi yok (sessiz hat bağlı değil) ve 'Bot musun?' için dürüst cevap kuralı senaryo/flow'da yok (yalnızca serbest sohbet PERSONA'sında var). Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "core-008",
@@ -407,13 +407,19 @@
       "moscow": "must",
       "title": "Transkript, cevap ve gecikme logları",
       "user_visible_behavior": "Her arama için transkript, cevap JSON'u ve tur bazında gecikmeler kaydedilir.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Bir test araması yapılır.",
         "JSONL logda tüm turlar ve STT/LLM/TTS süreleri bulunur."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "backend/app/voice/session.py",
+        "backend/app/voice/realtime.py",
+        "backend/tests/test_voice.py",
+        "logs/provider-calls.jsonl",
+        "evidence/core-008-session-3568fd3933eb.json"
+      ],
+      "notes": "Gerçek test aramasıyla doğrulandı (2026-10-26, L2, 23 tur, 22 kullanıcı konuşması; evidence/core-008-session-3568fd3933eb.json): oturum JSON'unda tüm transkript ve her turda stt_s, llm_s, tts_first_s, first_audio_after_end_s, endpoint_wait_ms; logs/provider-calls.jsonl'da her sağlayıcı çağrısı (STT/LLM/TTS, source=voice, 288 satır) süresiyle. SAPMA (karar): 'JSONL log' maddesi iki kayıtla karşılandı — çağrı düzeyinde JSONL + oturum başına tek JSON (transkript ve tur sürelerini birlikte tutmak için); tek bir JSONL'da tur numarası yok. Sınır: provider-calls.jsonl oturum kimliği taşımaz, oturumla eşleşme zamandan yapılır; ses kaydı isteğe bağlıdır (core-013)."
     },
     {
       "id": "lab-004",
@@ -465,7 +471,7 @@
         "API profillerinde fiyat listesinden arama başı maliyet hesaplanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): logs/provider-calls.jsonl her sağlayıcı çağrısının süresini, karakter/ses saniyesini ve kaynağını (source) yazıyor; çıktı token alanı var. Arama başına toplama, GPU saniyesi, fiyat listesi ve maliyet hesabı yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "eval-002",
@@ -545,7 +551,7 @@
         "Filtre açıkken kayıtların 8 kHz olduğu doğrulanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): voice/phone.py: 300-3400 Hz bant sınırı ve 8 kHz örnekleme, hem müşteri hem ajan sesine uygulanabiliyor, canlı açılıp kapanıyor (lab-003). µ-law/codec ve paket kaybı yok. UYARI: doğrulama maddesi 'kayıtlar 8 kHz' ile çelişiyor; core-013 kaydı 16 kHz stereo (sol kanal ham mikrofon). Karar gerekli: kayıt filtreli 8 kHz mi, ham 16 kHz mi (şimdilik ham, filtre bilgisi JSON'da). Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "core-010",
@@ -579,7 +585,7 @@
         "Eski aramalar eski versiyona bağlı kalır."
       ],
       "evidence": [],
-      "notes": "Lab backend'i ve kabuğu üzerine kurulur."
+      "notes": "KISMEN (2026-10-26 envanter): api_scenarios.py: liste/detay, adım metni PUT/DELETE, önizleme. Oluşturma, yayınlama, versiyon, arşiv yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "scn-002",
@@ -630,7 +636,7 @@
         "Simülatörde her dalın tetiklendiği doğrulanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): scenario.next_step: Choice, Evet/Hayır, Zaman verdi/vermedi, cevapsız (NO_ANSWER) ve varsayılan ('') dallar çalışıyor (FlowDriver testli). 'içinde' ve 'aralık' kuralları, kural editörü ve simülatörde her dalı tetikleme doğrulaması yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "scn-007",
@@ -648,7 +654,7 @@
         "Tanımsız değişken uyarı verir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): {UPPER} yer tutucu tespiti, tanımsız yer tutucu uyarısı, örnek değerle okunuş önizlemesi çalışıyor. Değişken şeması (tip/örnek) editörü ve tanımlama ekranı yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "scn-009",
@@ -680,7 +686,7 @@
         "Seçilen müşterinin değişkenleri ajanın konuşmasında kullanılır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): POST /api/voice/offer 'values' ile müşteri değişkenlerini kabul ediyor (FlowDriver kullanıyor). Playground'da test müşterisi seçimi/düzenlemesi arayüzü yok; senaryo seçimi var. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "sim-002",
@@ -696,7 +702,7 @@
         "Arama çalar, açılır, konuşulur ve kapatılır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): Playground'da Başlat/Durdur, telefon filtresi, ses kaydı var (core-013). Ses oynatma kontrolleri ve sessize alma yok; kaydın yeniden oynatılması kayıt kutusunda mevcut. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "sim-003",
@@ -712,7 +718,7 @@
         "Aktif düğüm akış üzerinde vurgulanır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): Playground'da canlı transkript, aktif düğüm, ziyaret edilen düğümler, çıkarılan cevaplar var (lab-003). Akış şeması üzerinde vurgulama yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "res-001",
@@ -810,7 +816,7 @@
         "Her global durum simülatörde tetiklenir ve doğru akışa gider."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): scenario.GLOBAL_EXITS: ret (kapanis_ret) ve aranma yasağı (kapanis_dnc) FlowDriver'da çalışıyor, randevu/geri arama dalı bağlı. Sessiz hat (kapanis_sessiz) HENÜZ bağlı değil (flow.py başlığı), yanlış kişi/şikayet yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "scn-006",
@@ -826,7 +832,7 @@
         "Hatalı akış yayınlanamaz ve hatalar listelenir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): scenario.validate(): olmayan hedef, çıkışsız ve ulaşılamayan adım, genel çıkış hedefi kontrolü; API 'problems' döner. Hatalı akışın yayınlanmasını engelleyen kapı yok (yayın kavramı yok). Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "scn-008",
@@ -874,7 +880,7 @@
         "Bir arama boyunca tüm fonksiyon çağrıları listelenir."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "KISMEN (2026-10-26 envanter): Tur başına gecikme tablosu var (STT/LLM/TTS ya da realtime kırılımı). Fonksiyon çağrıları ve ham olay listesi arayüzde gösterilmiyor (tool_call olayı işlenmiyor). Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
     },
     {
       "id": "res-004",

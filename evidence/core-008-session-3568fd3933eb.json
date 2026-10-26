@@ -1,0 +1,641 @@
+{
+  "id": "3568fd3933eb",
+  "profile": "L2",
+  "started_at": "2026-10-26T10:12:58+00:00",
+  "stats": {
+    "frames_in": 15843,
+    "seconds_in": 316.86,
+    "utterances": 22,
+    "dropped": 15,
+    "barge_ins": 6,
+    "agent_seconds_out": 275.84,
+    "peak_in_db": -7.0,
+    "holds": 0,
+    "merged": 0,
+    "barge_cut_ms": [
+      138,
+      138,
+      140,
+      141,
+      140,
+      140
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "greeting": true,
+      "tts_first_s": 0.111,
+      "first_audio_after_end_s": 0.124,
+      "tts_total_s": 1.788
+    },
+    {
+      "turn": 2,
+      "user_seconds": 1.9,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.741,
+      "llm_s": 0.44,
+      "tts_first_s": 0.173,
+      "first_audio_after_end_s": 1.364,
+      "tts_total_s": 0.173
+    },
+    {
+      "turn": 3,
+      "user_seconds": 1.64,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.694,
+      "llm_s": 0.485,
+      "tts_first_s": 0.237,
+      "first_audio_after_end_s": 1.427,
+      "tts_total_s": 0.237
+    },
+    {
+      "turn": 4,
+      "user_seconds": 1.1,
+      "endpoint_wait_ms": 600,
+      "stt_s": 1.219,
+      "llm_s": 0.429,
+      "tts_first_s": 0.095,
+      "first_audio_after_end_s": 1.751,
+      "tts_total_s": 0.328
+    },
+    {
+      "turn": 5,
+      "user_seconds": 1.18,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.58,
+      "llm_s": 0.341,
+      "tts_first_s": 0.489,
+      "first_audio_after_end_s": 1.424,
+      "tts_total_s": 0.489
+    },
+    {
+      "turn": 6,
+      "user_seconds": 1.46,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.566,
+      "llm_s": 0.464,
+      "tts_first_s": 0.331,
+      "first_audio_after_end_s": 1.371,
+      "tts_total_s": 1.841
+    },
+    {
+      "turn": 8,
+      "user_seconds": 1.24,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.572,
+      "llm_s": 0.622,
+      "tts_first_s": 0.126,
+      "first_audio_after_end_s": 1.329,
+      "tts_total_s": 1.004
+    },
+    {
+      "turn": 10,
+      "user_seconds": 1.38,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.558,
+      "llm_s": 0.354,
+      "tts_first_s": 0.092,
+      "first_audio_after_end_s": 1.014,
+      "tts_total_s": 1.152
+    },
+    {
+      "turn": 12,
+      "user_seconds": 1.82,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.774,
+      "llm_s": 0.424,
+      "tts_first_s": 0.393,
+      "first_audio_after_end_s": 1.601,
+      "tts_total_s": 0.906
+    },
+    {
+      "turn": 13,
+      "user_seconds": 1.7,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.694,
+      "llm_s": 0.451,
+      "tts_first_s": 0.378,
+      "first_audio_after_end_s": 1.533,
+      "tts_total_s": 0.378
+    },
+    {
+      "turn": 14,
+      "user_seconds": 1.24,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.71,
+      "llm_s": 0.474,
+      "tts_first_s": 0.459,
+      "first_audio_after_end_s": 1.658,
+      "tts_total_s": 0.459
+    },
+    {
+      "turn": 15,
+      "user_seconds": 2.2,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.66,
+      "llm_s": 0.484,
+      "tts_first_s": 0.391,
+      "first_audio_after_end_s": 1.546,
+      "tts_total_s": 0.391
+    },
+    {
+      "turn": 16,
+      "user_seconds": 1.14,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.62,
+      "llm_s": 0.483,
+      "tts_first_s": 0.242,
+      "first_audio_after_end_s": 1.355,
+      "tts_total_s": 0.242
+    },
+    {
+      "turn": 17,
+      "user_seconds": 1.54,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.632,
+      "llm_s": 0.431,
+      "tts_first_s": 0.236,
+      "first_audio_after_end_s": 1.308,
+      "tts_total_s": 0.236
+    },
+    {
+      "turn": 18,
+      "user_seconds": 2.48,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.718,
+      "llm_s": 0.603,
+      "tts_first_s": 0.445,
+      "first_audio_after_end_s": 1.779,
+      "tts_total_s": 0.656
+    },
+    {
+      "turn": 19,
+      "user_seconds": 1.66,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.658,
+      "llm_s": 0.615,
+      "tts_first_s": 0.406,
+      "first_audio_after_end_s": 1.69,
+      "tts_total_s": 1.256
+    },
+    {
+      "turn": 21,
+      "user_seconds": 1.22,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.657,
+      "llm_s": 0.594,
+      "tts_first_s": 0.169,
+      "first_audio_after_end_s": 1.437,
+      "tts_total_s": 0.843
+    },
+    {
+      "turn": 22,
+      "user_seconds": 1.3,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.663,
+      "llm_s": 0.386,
+      "tts_first_s": 0.375,
+      "first_audio_after_end_s": 1.435,
+      "tts_total_s": 0.375
+    },
+    {
+      "turn": 23,
+      "user_seconds": 2.74,
+      "endpoint_wait_ms": 1200,
+      "stt_s": 0.651,
+      "tts_first_s": 0.109,
+      "first_audio_after_end_s": 0.765,
+      "tts_total_s": 0.109
+    },
+    {
+      "turn": 24,
+      "user_seconds": 2.22,
+      "endpoint_wait_ms": 1200,
+      "stt_s": 0.56,
+      "tts_first_s": 0.305,
+      "first_audio_after_end_s": 0.874,
+      "tts_total_s": 0.305
+    },
+    {
+      "turn": 25,
+      "user_seconds": 1.3,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.891,
+      "llm_s": 0.519,
+      "tts_first_s": 0.09,
+      "first_audio_after_end_s": 1.507,
+      "tts_total_s": 0.49
+    },
+    {
+      "turn": 27,
+      "user_seconds": 1.72,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.698,
+      "llm_s": 0.408,
+      "tts_first_s": 0.133,
+      "first_audio_after_end_s": 1.247,
+      "tts_total_s": 0.572
+    },
+    {
+      "turn": 29,
+      "user_seconds": 1.04,
+      "endpoint_wait_ms": 600,
+      "stt_s": 0.681,
+      "llm_s": 0.359,
+      "tts_first_s": 0.217,
+      "first_audio_after_end_s": 1.274,
+      "tts_total_s": 0.296
+    }
+  ],
+  "transcript": [
+    {
+      "role": "agent",
+      "text": "İyi günler, benim adım Elif. Sahibinden.com adına Nielsen Araştırma Hizmetleri'nden arıyorum. Sahibinden.com'un verdiği yetkiye istinaden, çağrı merkezi temsilcisinden aldığınız hizmetten memnuniyetinizi ölçmek adına, beş dakika sürecek bir görüşme yapmak istiyoruz. Görüşmemiz kayıt altına alınacak ve hizmet kalitesinin ölçümlenmesi amacıyla kullanılacaktır. Detaylar için Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni'ni dinlemek ister misiniz? Dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz.",
+      "t": 5.3
+    },
+    {
+      "role": "user",
+      "text": "direkt devam edebiliriz.",
+      "t": 39.68
+    },
+    {
+      "role": "agent",
+      "text": "Görüşme yapmak için müsait misiniz?",
+      "t": 40.12
+    },
+    {
+      "role": "user",
+      "text": "Evet buyurun müsaade.",
+      "t": 44.78
+    },
+    {
+      "role": "agent",
+      "text": "Son üç ay içerisinde çağrı merkezi ile ilgili herhangi bir ankete katıldınız mı?",
+      "t": 45.27
+    },
+    {
+      "role": "user",
+      "text": "Katılman.",
+      "t": 52.79
+    },
+    {
+      "role": "agent",
+      "text": "Özür dilerim, tam anlayamadım. Son üç ay içerisinde çağrı merkezi ile ilgili herhangi bir ankete katıldınız mı?",
+      "t": 53.22
+    },
+    {
+      "role": "user",
+      "text": "Katılmadım.",
+      "t": 61.73
+    },
+    {
+      "role": "agent",
+      "text": "yirmi iki Eylül tarihinde saat on dört otuzda, sahibinden.com çağrı merkezi müşteri temsilcisi Mehmet Bey ile telefonda yaptığınız görüşmeyi hatırlıyor musunuz?",
+      "t": 62.07
+    },
+    {
+      "role": "user",
+      "text": "Evet hatırlıyorum.",
+      "t": 75.96
+    },
+    {
+      "role": "agent",
+      "text": "Çağrı merkezi müşteri temsilcisi Mehmet Bey ile yapmış olduğunuz görüşmeyle ilgili birkaç soru sormak istiyorum. Sorularımı cevaplarken lütfen sahibinden.com'u değil, sadece telefonda görüştüğünüz çağrı merkezi müşteri temsilcisini düşünerek cevap veriniz. Sahibinden.com ile ilgili yorumlarınızı anketimizin sonunda paylaşabilirsiniz. Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir. Memnuniyet derecenize göre 1 ile 10 arasındaki puanları da kullanabilirsiniz.",
+      "t": 76.42
+    },
+    {
+      "role": "user",
+      "text": "Buyurun davetin.",
+      "t": 85.78
+    },
+    {
+      "role": "agent",
+      "text": "Sorunuzu not aldım, şimdi anketimize devam edelim. Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir. Memnuniyet derecenize göre 1 ile 10 arasındaki puanları da kullanabilirsiniz.",
+      "t": 86.41
+    },
+    {
+      "role": "user",
+      "text": "Ben adım.",
+      "t": 105.21
+    },
+    {
+      "role": "agent",
+      "text": "Kusura bakmayın, tekrar soruyorum. Her açıdan düşündüğünüzde, sahibinden.com çağrı merkezi temsilcisinden aldığınız hizmetten duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir. Memnuniyet derecenize göre 1 ile 10 arasındaki puanları da kullanabilirsiniz. Lütfen bir ile on arasında bir puan söyleyin.",
+      "t": 105.57
+    },
+    {
+      "role": "user",
+      "text": "Ortalama bir puan.",
+      "t": 113.48
+    },
+    {
+      "role": "agent",
+      "text": "Şimdi okuyacağım ifadeleri düşündüğünüzde, bu ifadeye ilişkin duyduğunuz memnuniyeti 1 ile 10 arasında değerlendirir misiniz? 10 çok memnun kaldım, 1 hiç memnun kalmadım anlamına gelmektedir. Müşteri temsilcisine bağlanana kadar geçen bekleme süresine kaç puan verirsiniz?",
+      "t": 113.91
+    },
+    {
+      "role": "user",
+      "text": "Altı yedi.",
+      "t": 132.08
+    },
+    {
+      "role": "agent",
+      "text": "Müşteri temsilcisinin size olan hitap tarzına, ses tonuna ve iletişim şekline kaç puan verirsiniz?",
+      "t": 132.54
+    },
+    {
+      "role": "user",
+      "text": "10 veriyorum.",
+      "t": 155.74
+    },
+    {
+      "role": "agent",
+      "text": "Müşteri temsilcisinin sizi etkin bir biçimde dinlemesine ve talebinizi anlamasına, yani sözünüzü kesmeden talebinizi anlatmanıza izin vermesine kaç puan verirsiniz?",
+      "t": 156.22
+    },
+    {
+      "role": "user",
+      "text": "Çok kızgın bir kesti. O yüzden iki.",
+      "t": 169.17
+    },
+    {
+      "role": "agent",
+      "text": "Hizmet almak istediğiniz konuyla ilgili açık ve anlaşılır bilgi verilmesine, yani hızlı konuşmadan ve konuyu geçiştirmeden anlatılmasına kaç puan verirsiniz?",
+      "t": 169.65
+    },
+    {
+      "role": "user",
+      "text": "Beş.",
+      "t": 182.45
+    },
+    {
+      "role": "agent",
+      "text": "Hizmet almak istediğiniz konunun çözümü için yeterli çabanın gösterilmesine kaç puan verirsiniz?",
+      "t": 182.93
+    },
+    {
+      "role": "user",
+      "text": "8 puan veriyorum.",
+      "t": 200.34
+    },
+    {
+      "role": "agent",
+      "text": "Müşteri temsilcisine bağlanana kadar yaklaşık olarak kaç saniye ya da dakika beklediniz?",
+      "t": 200.77
+    },
+    {
+      "role": "user",
+      "text": "Bir dakika bekledim. Daha kaç soru var acaba?",
+      "t": 210.77
+    },
+    {
+      "role": "agent",
+      "text": "Sahibinden.com çağrı merkezinden tekrar hizmet almayı tercih etme ya da etmeme konusundaki düşüncenizi 1 ile 10 arasında değerlendirir misiniz? 10 kesinlikle tercih ederim, 1 kesinlikle tercih etmem anlamına gelmektedir.",
+      "t": 211.37
+    },
+    {
+      "role": "user",
+      "text": "Kesinlikle tercih ederim.",
+      "t": 228.91
+    },
+    {
+      "role": "agent",
+      "text": "Şu ana kadar sorduğum sorular sahibinden.com çağrı merkezi temsilcisi ile ilgili sorulardı, cevapladığınız için teşekkür ederim. Son olarak çağrı merkezi temsilcisini değil, genel olarak sahibinden.com'u düşünmenizi rica edeceğim. Sahibinden.com'dan aldığınız hizmetleri arkadaşlarınıza ve tanıdıklarınıza ne düzeyde tavsiye edersiniz? 0 kesinlikle tavsiye etmem, 10 kesinlikle tavsiye ederim anlamına gelmektedir. Arada bir puan da verebilirsiniz.",
+      "t": 229.52
+    },
+    {
+      "role": "user",
+      "text": "Rica ederim.",
+      "t": 241.39
+    },
+    {
+      "role": "agent",
+      "text": "Sorunuzu not aldım, şimdi anketimize devam edelim. Sahibinden.com'dan aldığınız hizmetleri arkadaşlarınıza ve tanıdıklarınıza ne düzeyde tavsiye edersiniz? 0 kesinlikle tavsiye etmem, 10 kesinlikle tavsiye ederim anlamına gelmektedir. Arada bir puan da verebilirsiniz.",
+      "t": 241.98
+    },
+    {
+      "role": "user",
+      "text": "7 olsun.",
+      "t": 259.57
+    },
+    {
+      "role": "agent",
+      "text": "Sahibinden.com için neden bu puanı verdiniz, detaylı açıklar mısınız?",
+      "t": 259.96
+    },
+    {
+      "role": "user",
+      "text": "Zamanım yok. Sonuna çıkarım.",
+      "t": 270.24
+    },
+    {
+      "role": "agent",
+      "text": "Eklemek istediğiniz bir konu var mı?",
+      "t": 270.24
+    },
+    {
+      "role": "user",
+      "text": "Yok, teşekkür ederim.",
+      "t": 275.47
+    },
+    {
+      "role": "agent",
+      "text": "Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz?",
+      "t": 275.47
+    },
+    {
+      "role": "user",
+      "text": "olabilir.",
+      "t": 285.7
+    },
+    {
+      "role": "agent",
+      "text": "Özür dilerim, tam anlayamadım. Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz?",
+      "t": 286.22
+    },
+    {
+      "role": "user",
+      "text": "Olabilir, olabilir dedim.",
+      "t": 291.53
+    },
+    {
+      "role": "agent",
+      "text": "Kusura bakmayın, tekrar soruyorum. Sahibinden.com tarafından sizinle iletişime geçilmesini, yani aranmak ister misiniz? Evet ya da hayır diyebilirsiniz.",
+      "t": 291.94
+    },
+    {
+      "role": "user",
+      "text": "Alo.",
+      "t": 313.45
+    },
+    {
+      "role": "agent",
+      "text": "Sizi duymakta zorlanıyorum, rahatsız ettiğim için özür dilerim. İyi günler dilerim.",
+      "t": 313.82
+    }
+  ],
+  "flow": {
+    "scenario": "anket",
+    "outcome": "sistem_sonlandirdi",
+    "path": [
+      "giris",
+      "musaitlik",
+      "q3",
+      "q3x",
+      "anketor_oku",
+      "q2",
+      "q3_giris",
+      "q3_1",
+      "q3_2",
+      "q3_3",
+      "q3_4",
+      "q3_5",
+      "q5",
+      "q6",
+      "gecis",
+      "q12",
+      "q12_neden",
+      "q8",
+      "geri_arama_istegi"
+    ],
+    "answers": [
+      {
+        "step": "giris",
+        "code": null,
+        "title": "Giriş ve KVKK aydınlatma",
+        "kind": "Choice",
+        "value": "devam",
+        "utterance": "direkt devam edebiliriz.",
+        "unanswered": false
+      },
+      {
+        "step": "musaitlik",
+        "code": null,
+        "title": "Müsaitlik",
+        "kind": "YesNo",
+        "value": true,
+        "utterance": "Evet buyurun müsaade.",
+        "unanswered": false
+      },
+      {
+        "step": "q3",
+        "code": "Q3",
+        "title": "Son 3 ayda ankete katılım",
+        "kind": "YesNo",
+        "value": false,
+        "utterance": "Katılmadım.",
+        "unanswered": false
+      },
+      {
+        "step": "q3x",
+        "code": "Q3X",
+        "title": "Görüşmeyi hatırlama",
+        "kind": "YesNo",
+        "value": true,
+        "utterance": "Evet hatırlıyorum.",
+        "unanswered": false
+      },
+      {
+        "step": "q2",
+        "code": "Q2",
+        "title": "Temsilciden genel memnuniyet",
+        "kind": "Score",
+        "value": null,
+        "utterance": "",
+        "unanswered": true
+      },
+      {
+        "step": "q3_1",
+        "code": "Q3_1",
+        "title": "Süre – Hız",
+        "kind": "Score",
+        "value": 6,
+        "utterance": "Altı yedi.",
+        "unanswered": false
+      },
+      {
+        "step": "q3_2",
+        "code": "Q3_2",
+        "title": "Davranış",
+        "kind": "Score",
+        "value": 10,
+        "utterance": "10 veriyorum.",
+        "unanswered": false
+      },
+      {
+        "step": "q3_3",
+        "code": "Q3_3",
+        "title": "Etkinlik",
+        "kind": "Score",
+        "value": 2,
+        "utterance": "Çok kızgın bir kesti. O yüzden iki.",
+        "unanswered": false
+      },
+      {
+        "step": "q3_4",
+        "code": "Q3_4",
+        "title": "Bilgi Düzeyi",
+        "kind": "Score",
+        "value": 5,
+        "utterance": "Beş.",
+        "unanswered": false
+      },
+      {
+        "step": "q3_5",
+        "code": "Q3_5",
+        "title": "Çaba",
+        "kind": "Score",
+        "value": 8,
+        "utterance": "8 puan veriyorum.",
+        "unanswered": false
+      },
+      {
+        "step": "q5",
+        "code": "Q5",
+        "title": "Bekleme süresi",
+        "kind": "Duration",
+        "value": 60,
+        "utterance": "Bir dakika bekledim. Daha kaç soru var acaba?",
+        "unanswered": false
+      },
+      {
+        "step": "q6",
+        "code": "Q6",
+        "title": "Tekrar tercih",
+        "kind": "Score",
+        "value": 10,
+        "utterance": "Kesinlikle tercih ederim.",
+        "unanswered": false
+      },
+      {
+        "step": "q12",
+        "code": "Q12",
+        "title": "Tavsiye (NPS)",
+        "kind": "Score",
+        "value": 7,
+        "utterance": "7 olsun.",
+        "unanswered": false
+      },
+      {
+        "step": "q12_neden",
+        "code": "Q12_NEDEN",
+        "title": "Tavsiye puanının nedeni",
+        "kind": "OpenText",
+        "value": "Zamanım yok. Sonuna çıkarım.",
+        "utterance": "Zamanım yok. Sonuna çıkarım.",
+        "unanswered": false
+      },
+      {
+        "step": "q8",
+        "code": "Q8",
+        "title": "Eklemek istenen",
+        "kind": "OpenText",
+        "value": "Yok, teşekkür ederim.",
+        "utterance": "Yok, teşekkür ederim.",
+        "unanswered": false
+      }
+    ]
+  },
+  "phone_filter": true
+}
