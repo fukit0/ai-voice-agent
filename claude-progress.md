@@ -202,3 +202,7 @@ agents do not update it automatically.
 - Dogrulama (bulut): pytest 309, vitest 42, tsc temiz, Playwright 12/12. Mac venv bu VM'den calistirilamadi; Mac'te `.venv/bin/python -m pytest` kullanici/sonraki oturumda.
 - Sentetik gurultu karsilastirmasi: evidence/core-015-vad-noise.json (varsayilan 23 gurultu kesmesi -> -35/-30 dBFS'de 0; -25'te konusma da kesmez).
 - Acik: Mac'te gercek mikrofonla elle dogrulama (madde 6), gercek gurultu WAV'i, OpenAI esleme dogrulamasi, otomatik kalibrasyon ve speaking/thinking icin ayri esik (sonraki adim). core-015 BLOCKED (elle dogrulama bekliyor).
+
+## Session 019 - core-015 dogrulandi (2026-10-27)
+- Kullanici Mac'te gercek mikrofonla denedi: 'esik calisiyor'. core-015 PASSING (kanit: kullanici beyani; sayisal gercek-gurultu olcumu yok).
+- Geri bildirim: esigi gecen her ses (oksuruk) ajani hala boluyor -> yeni ozellik core-016 (akilli soz kesme, not_started). Bu oturumda uygulanmadi (tek aktif ozellik kurali).
