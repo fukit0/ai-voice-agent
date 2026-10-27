@@ -21,7 +21,7 @@ from .. import stt_runs, trnorm
 from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
-from .vad import FRAME, SAMPLE_RATE, Endpointer
+from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
 
 OUT_RATE = 48000
 GREETING = "Merhaba, ben Ayşe. sahibinden.com adına arıyorum. Size kısa bir anket yapabilir miyim?"
@@ -33,8 +33,6 @@ PERSONA = (
 )
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _SENTENCE = re.compile(r"(?<=[.!?…])\s+")
-BARGE_FRAMES = 8    # 160 ms kesintisiz yüksek ses: söz kesme (200 ms iken istemci ölçümü ≈380 ms; tarayıcı jitter payı için kısaltıldı)
-BARGE_MARGIN_DB = 6.0
 # Söz sırası (Smart Turn, PoC sürümü): öğrenilmiş model yok; üç basit katman —
 # 1) bitiş sessizliği düğüme göre (kısa cevaplarda 600 ms, açık uçlu cevaplarda 1200 ms),
 # 2) transkript tamamlanmamış görünüyorsa ("evet ama", "çünkü", "şey") HOLD_S kadar devam beklenir,
@@ -127,6 +125,16 @@ class VoiceSession:
             return
         self._spawn(self._speak_turn(self.greeting, turn=self._next_turn(), t_end=time.perf_counter(), role_text=True))
 
+    def set_vad(self, cmd: dict) -> None:
+        """core-015: ekrandan giriş eşiği / söz kesme ayarı (oturum açıkken, sesi yeniden başlatmadan)."""
+        applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
+                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")))
+        self.stats["vad"] = applied
+        self.emit({"type": "vad_settings", **applied, "server_side": self._server_vad_note(applied)})
+
+    def _server_vad_note(self, applied: dict) -> str | None:
+        return None   # kademeli profilde sunucu tarafı VAD yok; ayar tamamen yerel
+
     def set_phone_filter(self, on: bool) -> None:
         if on != self.phone_filter:
             self.phone_filter = on
@@ -162,11 +170,11 @@ class VoiceSession:
         events = self.vad.feed(frame)
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
-            loud = self.vad.level > max(self.vad.threshold_db, -45.0) + BARGE_MARGIN_DB
+            loud = self.vad.level > self.vad.barge_level_db
             if loud and self._barge == 0:
                 self._barge_t0 = time.perf_counter()
             self._barge = self._barge + 1 if loud else 0
-            if self._barge >= BARGE_FRAMES:
+            if self._barge >= self.vad.barge_frames:
                 self._barge_in()
         else:
             self._barge = 0
@@ -361,6 +369,6 @@ class VoiceSession:
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
                                                     "path": self.flow.path, "answers": self.flow.answers},
-            "phone_filter": self.phone_filter}, ensure_ascii=False, indent=2),
+            "phone_filter": self.phone_filter, "vad": self.vad.settings()}, ensure_ascii=False, indent=2),
             encoding="utf-8")
         return path

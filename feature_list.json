@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-26",
+  "last_updated": "2026-10-27",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -364,9 +364,35 @@
       "notes": "Kaynak: kayıtlı L2 oturumu 3568fd3933eb (2026-10-26) — 'Katılmadım' -> 'Katılman.', 'Buyurun davetin.', 'Ben adım.', 'Rica ederim.' gibi bozuk çıktılar; Q2 iki tekrardan sonra cevapsız kaldı. Bu oturumda ses kaydı yoktu, yani hatanın STT mi mikrofon/telefon filtresi mi kaynaklı olduğu DUYULARAK ayrılamadı (telefon filtresi açıktı; varsayım: filtreli ses STT'yi zorluyor, doğrulanmadı). ARAÇLAR HAZIR (2026-10-26): core-013 ses kaydı; STT test ekranında Kanal seçimi (Sol = müşteri) ve Alan ipucu (aynı MLX Whisper modeli ipuçsuz/ipuçlu yan yana); profilde stt.initial_prompt seçeneği (varsayılan kapalı). ÖLÇÜM YAPILMADI: gerçek modeller ve gerçek ses Mac'te olmalı; bulutta yalnızca mekanik testler var. Kullanıcı adımı: Playground'da 'Konuşmayı kaydet' ile 2-3 görüşme kaydet, indirilen WAV'ı STT test ekranına yükle, Kanal=Sol, modelleri seç, Karşılaştır. BLOCKER (2026-10-26): ölçüm için kullanıcının Mac'inde gerçek ses kaydı (Playground, Konuşmayı kaydet) ve gerçek STT modelleri gerekir; bulut/yardımcı oturum bunları üretemez. Kullanıcı eylemi tamamlanınca açılır."
     },
     {
+      "id": "core-015",
+      "plan_ref": "F1.2 (söz kesme ayarı) / F6 (gürültülü ortam)",
+      "priority": 16,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "Giriş sesi eşiği (mikrofon hassasiyeti) ekrandan ayarlanabilir; gürültü söz kesmesin",
+      "user_visible_behavior": "Playground'da 'Mikrofon hassasiyeti' ayarı bulunur: mikrofon seviye göstergesinin üzerinde eşik çizgisi görünür, kullanıcı eşiği oturum sırasında kaydırarak değiştirir. Dışarıdan gelen gürültü, uzaktan konuşma veya klavye sesi ajanı susturmaz ve konuşma bitişini geciktirmez; normal ses seviyesindeki konuşma ise ajanın sözünü hâlâ keser.",
+      "status": "blocked",
+      "verification": [
+        "Playground'da eşik kaydırıcısı (dBFS, öneri aralığı -60..-20, varsayılan mevcut davranış) ve mikrofon göstergesi üzerinde eşik çizgisi görünür; oturum açıkken değer değişince ses yeniden başlatılmadan uygulanır (phone_filter ile aynı veri kanalı komutu: {\"type\":\"vad_threshold\",...}).",
+        "Birim testi: eşik -45'ten -30 dBFS'e çekilince -40 dBFS'lik 200 ms'lik gürültü patlaması ajan konuşurken barge_in üretmez; -20 dBFS konuşma üretir. Aynı test düşünme (thinking) durumunda da koşulur: gürültü bekleyen cevabı iptal etmez.",
+        "Eşik hem söz kesme hem konuşma başlangıcı/bitişi (Endpointer) için aynı değerden türer; gürültülü kayıtla (arka plan TV/trafik/klavye karışımı, kayıtlı WAV tekrar oynatılarak) varsayılan eşikte 'start/drop' ve söz kesme sayıları ile yeni eşikteki sayılar karşılaştırılıp evidence/core-015-*.json olarak kaydedilir.",
+        "Söz kesme süresi (BARGE_FRAMES, şimdi 8 = 160 ms) ve marj (BARGE_MARGIN_DB = 6) ekranda 'gelişmiş' bölümünde ayarlanır; değerler oturum JSON'una ve stats'a yazılır ki hangi ayarla ölçüm yapıldığı bilinsin.",
+        "Realtime profillerde (core-011) ayarın karşılığı belirlenir: OpenAI server_vad.threshold (0-1, interrupt_response=True olduğundan sunucu da bağımsız keser), Gemini automaticActivityDetection.startOfSpeechSensitivity; karşılık yoksa ekranda 'bu profilde etkisiz' uyarısı gösterilir.",
+        "Mac'te gerçek mikrofonla elle doğrulama: gürültülü ortamda varsayılan eşikte sık kesilme yeniden üretilir, yükseltilmiş eşikte kesilme kaybolur ve normal sesle araya girme çalışır; sonuç notlara yazılır."
+      ],
+      "evidence": [
+        "evidence/core-015-vad-noise.json",
+        "backend/tests/test_vad_threshold.py",
+        "backend/tests/test_realtime.py::test_realtime_set_vad_applies_locally_and_reports_server_mapping",
+        "frontend/src/pages/PlaygroundPage.test.tsx (mikrofon hassasiyeti)"
+      ],
+      "notes": "Kaynak: kullanici geri bildirimi 2026-10-27 — 'en kucuk sesler bile soz kesmeye giriyor, konusma cok sik kesiliyor'. ANALIZ (kod okuma; gercek ses olcumu YAPILMADI): (1) Soz kesme esigi backend/app/voice/session.py:165 ve realtime.py:529: loud = vad.level > max(vad.threshold_db, -45.0) + BARGE_MARGIN_DB(6) => pratikte -39 dBFS (RMS ~0,011), cok dusuk; normal oda gurultusu, fan, klavye veya tarayici AGC'nin yukselttigi arka plan bu seviyeyi asar. BARGE_FRAMES=8 (160 ms) 'kesintisiz' sart ama surekli gurultu (trafik, TV, uzak konusma) bunu rahat saglar; core-002'de sure 200->160 ms kisaltildi, hassasiyeti artirdi. (2) vad.py: threshold_db = max(floor_db=-45, noise_db+12); noise_db yalnizca sessizlikte ogrenilir (baslangic -60, EMA 0,05) ve esik gurultu tabani yuzunden ancak ortam -57 dBFS ustune cikarsa yukselir; yani gurultulu ortamda esik fiilen sabit -45 dBFS. Gurultu esigin ustune cikinca 'konusma' sayildigi icin taban asla uyum saglayamaz (kilitlenme). (3) Ayni esik konusma baslangici (start_ms=60) ve bitisini de belirler: gurultu 'start' acar, bitis sessizligi (600 ms, acik uclu 1200 ms) dolmadigi icin kayit 15 sn'ye kadar uzayabilir, STT'ye gurultu gider ve gecikme artar. (4) thinking durumunda da soz kesme acik (session.py:164): gurultu bekleyen LLM/TTS cevabini iptal eder (_turn_id++), kullanici bunu 'konusma kesildi' diye yasar; speaking'e gore daha yuksek esik/sure gerekebilir. (5) Yanki: hoparlorde ajan sesi mikrofona sizarsa kendi kendini keser; tarayicida echoCancellation acik (voice.ts MIC_CONSTRAINTS) ama sunucuda ek yanki korumasi yok; kulaklikla test bu yuzden onerilir. (6) Mevcut ekranda ayar yok: PlaygroundPage.tsx'te yalnizca <meter> mikrofon seviyesi var (rms*4, dogrusal), esik gosterilmiyor; 'phone_filter' icin veri kanali komut deseni (rtc.py on_message) hazir, ayni desen kullanilabilir. (7) Realtime profillerde yerel Endpointer yaninda sunucu VAD'i da keser (OpenAI interrupt_response=True, Gemini START_OF_ACTIVITY_INTERRUPTS); yerel esik tek basina yetmez. ONERI: once ekranda esik+gosterge (hizli, geri bildirim aninda gorulur); sonra 'otomatik kalibrasyon' (oturum basinda 1-2 sn ortam olcumu -> esik = gurultu + marj) ve ayri speaking/thinking esikleri; kalici cozum Silero VAD (vad.py arayuzu bunun icin sabit tutulmustu). DOGRULANMAMIS: gercek mikrofon seviyeleri; hangi ortamda hangi dBFS'in gurultu sayildigi. | 2026-10-27 UYGULANDI (bulut: pytest 309, vitest 42, tsc temiz, Playwright 12/12): Endpointer.configure/manual_db/barge_frames/barge_margin_db/barge_level_db (vad.py); iki oturum sinifinda set_vad + 'vad_settings' olayi; veri kanali komutu {type:vad_threshold, db|auto, barge_frames, barge_margin_db}; teklifle baslangic ayari (OfferRequest.vad); oturum JSON'una 'vad' ve stats.vad; Playground: Mikrofon hassasiyeti kaydirici (-60..-20), Otomatik kutusu, mikrofon gostergesi artik dBFS olcekli ve kirmizi esik cizgisi, 'Gelismis: soz kesme' (sure/marj). OpenAI realtime: dBFS -> server_vad.threshold sezgisel esleme (-60..-20 -> 0.2..0.9) session.update ile canli; Gemini Live: canli degistirilemez, ekranda 'sunucu VAD'i ayarlanamiyor' notu. KANIT SINIRI: (a) birim testinde spec'teki -40 dBFS ornegi varsayilan soz kesme seviyesinin (-39) altinda kaldigindan -35 dBFS kullanildi; (b) evidence/core-015-vad-noise.json SENTETIK gurultu: otomatik/varsayilan 23 gurultu kesmesi, -35 ve -30 dBFS'de 0; -25 dBFS'de normal konusma (-22 dBFS) artik KESMEZ (cok yuksek esik); -35'te 5 yanlis STT soylemi, -30'da 0. Gercek kayitla olcum yok. (c) OpenAI esleme sezgisel, dogrulanmadi. KALAN (passing icin): madde 6 Mac'te gercek mikrofonla elle dogrulama + istege bagli gercek gurultu WAV'i ile `python scripts/vad_noise_report.py --wav ...`. NOT: uyarlanir taban yalnizca esigin ALTINDAKI sabit gurultuyu ogrenir (-47 dBFS hum denemede esigi -35'e cikardi); esigin USTUNDEKI surekli gurultu (≈-41 dBFS) tabani kilitliyor, elle esik bunun icindir."
+    },
+    {
       "id": "core-005",
       "plan_ref": "F1.5",
-      "priority": 16,
+      "priority": 17,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -383,7 +409,7 @@
     {
       "id": "core-006",
       "plan_ref": "F1.6",
-      "priority": 17,
+      "priority": 18,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -401,7 +427,7 @@
     {
       "id": "core-008",
       "plan_ref": "F1.8",
-      "priority": 18,
+      "priority": 19,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "must",
@@ -424,7 +450,7 @@
     {
       "id": "lab-004",
       "plan_ref": "F7.4",
-      "priority": 19,
+      "priority": 20,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -441,7 +467,7 @@
     {
       "id": "eval-001",
       "plan_ref": "F6.1",
-      "priority": 20,
+      "priority": 21,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -459,7 +485,7 @@
     {
       "id": "eval-003",
       "plan_ref": "F6.3",
-      "priority": 21,
+      "priority": 22,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -476,7 +502,7 @@
     {
       "id": "eval-002",
       "plan_ref": "F6.2",
-      "priority": 22,
+      "priority": 23,
       "area": "eval",
       "phase": "faz-1",
       "moscow": "must",
@@ -495,7 +521,7 @@
     {
       "id": "lab-005",
       "plan_ref": "F7.5",
-      "priority": 23,
+      "priority": 24,
       "area": "lab",
       "phase": "faz-1",
       "moscow": "must",
@@ -512,7 +538,7 @@
     {
       "id": "core-011",
       "plan_ref": "F7.3 (A2/A3 notu)",
-      "priority": 24,
+      "priority": 25,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -540,7 +566,7 @@
     {
       "id": "core-009",
       "plan_ref": "F1.9",
-      "priority": 25,
+      "priority": 26,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "should",
@@ -556,7 +582,7 @@
     {
       "id": "core-010",
       "plan_ref": "F1.10",
-      "priority": 26,
+      "priority": 27,
       "area": "voice-runtime",
       "phase": "faz-1",
       "moscow": "could",
@@ -572,7 +598,7 @@
     {
       "id": "scn-001",
       "plan_ref": "F2.1",
-      "priority": 27,
+      "priority": 28,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -590,7 +616,7 @@
     {
       "id": "scn-002",
       "plan_ref": "F2.2",
-      "priority": 28,
+      "priority": 29,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -607,7 +633,7 @@
     {
       "id": "scn-003",
       "plan_ref": "F2.3",
-      "priority": 29,
+      "priority": 30,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -624,7 +650,7 @@
     {
       "id": "scn-004",
       "plan_ref": "F2.4",
-      "priority": 30,
+      "priority": 31,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -641,7 +667,7 @@
     {
       "id": "scn-007",
       "plan_ref": "F2.7",
-      "priority": 31,
+      "priority": 32,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -659,7 +685,7 @@
     {
       "id": "scn-009",
       "plan_ref": "F2.9",
-      "priority": 32,
+      "priority": 33,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "must",
@@ -675,7 +701,7 @@
     {
       "id": "sim-001",
       "plan_ref": "F3.1",
-      "priority": 33,
+      "priority": 34,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -691,7 +717,7 @@
     {
       "id": "sim-002",
       "plan_ref": "F3.2",
-      "priority": 34,
+      "priority": 35,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -707,7 +733,7 @@
     {
       "id": "sim-003",
       "plan_ref": "F3.3",
-      "priority": 35,
+      "priority": 36,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "must",
@@ -723,7 +749,7 @@
     {
       "id": "res-001",
       "plan_ref": "F4.1",
-      "priority": 36,
+      "priority": 37,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -739,7 +765,7 @@
     {
       "id": "res-002",
       "plan_ref": "F4.2",
-      "priority": 37,
+      "priority": 38,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -755,7 +781,7 @@
     {
       "id": "res-003",
       "plan_ref": "F4.3",
-      "priority": 38,
+      "priority": 39,
       "area": "results",
       "phase": "faz-2",
       "moscow": "must",
@@ -771,7 +797,7 @@
     {
       "id": "eval-004",
       "plan_ref": "F6.4",
-      "priority": 39,
+      "priority": 40,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -788,7 +814,7 @@
     {
       "id": "eval-005",
       "plan_ref": "F6.5",
-      "priority": 40,
+      "priority": 41,
       "area": "eval",
       "phase": "faz-2",
       "moscow": "must",
@@ -805,7 +831,7 @@
     {
       "id": "scn-005",
       "plan_ref": "F2.5",
-      "priority": 41,
+      "priority": 42,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -821,7 +847,7 @@
     {
       "id": "scn-006",
       "plan_ref": "F2.6",
-      "priority": 42,
+      "priority": 43,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -837,7 +863,7 @@
     {
       "id": "scn-008",
       "plan_ref": "F2.8",
-      "priority": 43,
+      "priority": 44,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -853,7 +879,7 @@
     {
       "id": "scn-010",
       "plan_ref": "F2.10",
-      "priority": 44,
+      "priority": 45,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "should",
@@ -869,7 +895,7 @@
     {
       "id": "sim-004",
       "plan_ref": "F3.4",
-      "priority": 45,
+      "priority": 46,
       "area": "simulator",
       "phase": "faz-2",
       "moscow": "should",
@@ -885,7 +911,7 @@
     {
       "id": "res-004",
       "plan_ref": "F4.4",
-      "priority": 46,
+      "priority": 47,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -901,7 +927,7 @@
     {
       "id": "res-005",
       "plan_ref": "F4.5",
-      "priority": 47,
+      "priority": 48,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -917,7 +943,7 @@
     {
       "id": "res-006",
       "plan_ref": "F4.6",
-      "priority": 48,
+      "priority": 49,
       "area": "results",
       "phase": "faz-2",
       "moscow": "should",
@@ -933,7 +959,7 @@
     {
       "id": "plat-001",
       "plan_ref": "F5.1",
-      "priority": 49,
+      "priority": 50,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -949,7 +975,7 @@
     {
       "id": "plat-002",
       "plan_ref": "F5.2",
-      "priority": 50,
+      "priority": 51,
       "area": "platform",
       "phase": "faz-2",
       "moscow": "should",
@@ -966,7 +992,7 @@
     {
       "id": "scn-011",
       "plan_ref": "F2.11",
-      "priority": 51,
+      "priority": 52,
       "area": "scenario",
       "phase": "faz-2",
       "moscow": "could",
@@ -982,7 +1008,7 @@
     {
       "id": "res-007",
       "plan_ref": "F4.7",
-      "priority": 52,
+      "priority": 53,
       "area": "results",
       "phase": "faz-2",
       "moscow": "could",
@@ -998,7 +1024,7 @@
     {
       "id": "sim-005",
       "plan_ref": "F3.5",
-      "priority": 53,
+      "priority": 54,
       "area": "simulator",
       "phase": "later",
       "moscow": "could",
@@ -1014,7 +1040,7 @@
     {
       "id": "plat-003",
       "plan_ref": "F5.3",
-      "priority": 54,
+      "priority": 55,
       "area": "platform",
       "phase": "later",
       "moscow": "could",

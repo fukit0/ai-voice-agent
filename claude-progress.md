@@ -196,3 +196,9 @@ agents do not update it automatically.
 - Eklendi: backend/app/voice/latency_report.py, scripts/session_latency.py, test (test_realtime.py). Olcmez, kayitli oturumlari ozetler.
 - Eldeki gercek veri yetersiz (<5 arama): A1 3.55s, A2 2.41s, L2 1.43s, L3 3.14s p50; hepsi 1.2s hedefi disinda. Kanit: evidence/core-011-latency-compare.json.
 - Acik: A3 Playground'da fonksiyon cagrisi 0 (oturum 796d1ea27377); A2 8.8s aykiri tur; Turkce ses kalitesi dinlemesi; 5'er aramalik olcum. core-011 BLOCKED kalir.
+
+## Session 018 - core-015 giris esigi / mikrofon hassasiyeti (2026-10-27)
+- Kullanici sikayeti: en kucuk sesler soz kesiyor. Uygulandi: ekrandan esik kaydiricisi + Otomatik, dBFS gosterge ve esik cizgisi, soz kesme sure/marj (gelismis), canli veri kanali komutu, oturum JSON kaydi, OpenAI esleme / Gemini uyarisi.
+- Dogrulama (bulut): pytest 309, vitest 42, tsc temiz, Playwright 12/12. Mac venv bu VM'den calistirilamadi; Mac'te `.venv/bin/python -m pytest` kullanici/sonraki oturumda.
+- Sentetik gurultu karsilastirmasi: evidence/core-015-vad-noise.json (varsayilan 23 gurultu kesmesi -> -35/-30 dBFS'de 0; -25'te konusma da kesmez).
+- Acik: Mac'te gercek mikrofonla elle dogrulama (madde 6), gercek gurultu WAV'i, OpenAI esleme dogrulamasi, otomatik kalibrasyon ve speaking/thinking icin ayri esik (sonraki adim). core-015 BLOCKED (elle dogrulama bekliyor).

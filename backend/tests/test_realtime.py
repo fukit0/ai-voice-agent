@@ -314,3 +314,20 @@ def test_latency_report_excludes_greeting_flags_small_samples_and_target(tmp_pat
     text = render(rep)
     assert "örnek yetersiz (1/5 arama)" in text and "realtime: ayrı STT/LLM/TTS yok" in text
     assert "kayıtlı oturum yok" in render(summarize([]))
+
+
+def test_realtime_set_vad_applies_locally_and_reports_server_mapping(tmp_path, monkeypatch):
+    """core-015: realtime profilde yerel eşik anında uygulanır; sunucu VAD karşılığı kullanıcıya bildirilir."""
+    async def main():
+        s, backend, out, events = build(tmp_path, monkeypatch)
+        await s.start()
+        s.set_vad({"db": -32})
+        ev = [e for e in events if e["type"] == "vad_settings"][-1]
+        assert ev["threshold_db"] == -32.0 and s.vad.threshold_db == -32.0
+        assert "ayarlanamıyor" in ev["server_side"]   # sahte backend: sunucu VAD'i yok
+        oa = OpenAIRealtime("m")
+        s.backend = oa
+        s.set_vad({"db": -32})
+        ev = [e for e in events if e["type"] == "vad_settings"][-1]
+        assert oa.threshold == OpenAIRealtime.threshold_for_db(-32) and "server_vad.threshold" in ev["server_side"]
+    asyncio.run(main())

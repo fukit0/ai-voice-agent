@@ -12,6 +12,9 @@ import numpy as np
 
 SAMPLE_RATE = 16000
 FRAME = 320  # 20 ms
+BARGE_FRAMES = 8        # 160 ms kesintisiz yüksek ses: söz kesme (200 ms iken istemci ölçümü ≈380 ms; tarayıcı jitter payı için kısaltıldı)
+BARGE_MARGIN_DB = 6.0
+MANUAL_RANGE_DB = (-70.0, -10.0)
 
 
 def level_db(frame: np.ndarray) -> float:
@@ -31,6 +34,9 @@ class Endpointer:
         self.preroll = deque(maxlen=max(1, preroll_ms // 20))
         self.floor_db, self.margin_db = floor_db, margin_db
         self.noise_db = -60.0
+        self.manual_db: float | None = None   # core-015: ekrandan elle eşik (dBFS); None = uyarlanır eşik (eski davranış)
+        self.barge_frames = BARGE_FRAMES      # söz kesme için kesintisiz yüksek ses süresi (20 ms çerçeve)
+        self.barge_margin_db = BARGE_MARGIN_DB
         self.level = -120.0
         self.collecting = False
         self._run = 0       # ardışık konuşma çerçevesi (başlangıç doğrulaması)
@@ -44,7 +50,33 @@ class Endpointer:
 
     @property
     def threshold_db(self) -> float:
+        if self.manual_db is not None:
+            return self.manual_db
         return max(self.floor_db, self.noise_db + self.margin_db)
+
+    @property
+    def barge_level_db(self) -> float:
+        """Söz kesme seviyesi: eşik + marj. Otomatik modda eski davranış (eşik en az -45 dBFS) korunur; elle eşikte kullanıcının değeri esastır."""
+        base = self.threshold_db if self.manual_db is not None else max(self.threshold_db, -45.0)
+        return base + self.barge_margin_db
+
+    def configure(self, threshold_db=None, barge_frames=None, barge_margin_db=None, reset_threshold=False) -> dict:
+        """Çalışırken ayar (core-015). Değerler güvenli aralığa kırpılır; ne uygulandıysa döndürülür."""
+        lo, hi = MANUAL_RANGE_DB
+        if reset_threshold:
+            self.manual_db = None
+        elif threshold_db is not None:
+            self.manual_db = max(lo, min(hi, float(threshold_db)))
+        if barge_frames is not None:
+            self.barge_frames = max(1, min(50, int(barge_frames)))
+        if barge_margin_db is not None:
+            self.barge_margin_db = max(0.0, min(30.0, float(barge_margin_db)))
+        return self.settings()
+
+    def settings(self) -> dict:
+        return {"threshold_db": None if self.manual_db is None else round(self.manual_db, 1),
+                "effective_threshold_db": round(self.threshold_db, 1), "barge_frames": self.barge_frames,
+                "barge_margin_db": self.barge_margin_db, "barge_ms": self.barge_frames * 20}
 
     def is_speech(self, frame: np.ndarray) -> bool:
         self.level = level_db(frame)

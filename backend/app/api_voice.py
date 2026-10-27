@@ -31,6 +31,7 @@ class OfferRequest(BaseModel):
     scenario: str | None = None          # verilirse konuşmayı senaryo akışı yönetir (lab-003)
     phone_filter: bool = False           # dar bant telefon sesi (300-3400 Hz)
     values: dict[str, str] | None = None  # müşteri değerleri: HITAP, MT_HITAP, GORUSME_TARIHI...
+    vad: dict | None = None              # core-015: başlangıç giriş eşiği {"db"|"auto", "barge_frames", "barge_margin_db"}
     record: bool = False                 # core-013: stereo ses kaydı (sol müşteri, sağ ajan); varsayılan kapalı (gizlilik)
 
 
@@ -83,6 +84,8 @@ async def offer(req: OfferRequest) -> dict:
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
                               realtime_backend=backend, record=req.record)
     CONNECTIONS[conn.sid] = conn
+    if req.vad:
+        conn.session.set_vad(req.vad)
     try:
         answer = await conn.accept(req.sdp, req.type)
     except Exception as exc:  # noqa: BLE001

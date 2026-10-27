@@ -30,7 +30,7 @@ from .. import stt_runs
 from ..providers.audio import resample
 from . import phone
 from .flow import INTENTS, value_rule
-from .session import BARGE_FRAMES, BARGE_MARGIN_DB, END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
+from .session import END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
 from .vad import FRAME, SAMPLE_RATE, Endpointer
 
 SPEAK_TIMEOUT_S = 10.0
@@ -175,6 +175,22 @@ class OpenAIRealtime(_WsBackend):
     def __init__(self, model: str):
         super().__init__(model)
         self._seen_calls: set[str] = set()
+        self.threshold: float | None = None   # core-015: server_vad.threshold (0-1); None = sunucu varsayılanı
+
+    @staticmethod
+    def threshold_for_db(db: float) -> float:
+        """dBFS -> server_vad.threshold: -60..-20 dBFS aralığı 0,2..0,9'a doğrusal eşlenir (sezgisel; ölçülmedi)."""
+        return round(max(0.2, min(0.9, 0.2 + (db + 60.0) / 40.0 * 0.7)), 2)
+
+    def set_sensitivity(self, db: float) -> float:
+        self.threshold = self.threshold_for_db(db)
+        return self.threshold
+
+    async def apply_sensitivity(self) -> None:
+        if self.ws is not None and self.threshold is not None:
+            await self._send({"type": "session.update", "session": {"type": "realtime", "audio": {"input": {
+                "turn_detection": {"type": "server_vad", "threshold": self.threshold, "create_response": False,
+                                   "interrupt_response": True, "silence_duration_ms": 500}}}}})
 
     async def connect(self, instructions: str) -> None:
         import websockets
@@ -187,7 +203,8 @@ class OpenAIRealtime(_WsBackend):
                 "input": {"format": {"type": "audio/pcm", "rate": 24000},
                           "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr"},
                           "turn_detection": {"type": "server_vad", "create_response": False, "interrupt_response": True,
-                                             "silence_duration_ms": 500}},
+                                             "silence_duration_ms": 500,
+                                             **({"threshold": self.threshold} if self.threshold is not None else {})}},
                 "output": {"format": {"type": "audio/pcm", "rate": 24000}, "voice": "marin"}},
             "tools": [{"type": "function", "name": TOOL_NAME, "description": TOOL_DESCRIPTION, "parameters": TOOL_PARAMETERS}],
             "tool_choice": "none"}})
@@ -500,6 +517,25 @@ class RealtimeVoiceSession:
         kind = self.flow.steps[self.flow.current]["kind"] if self.flow.current is not None else None
         self.vad.set_end_ms(END_MS_OPEN if kind == "OpenText" else END_MS_DEFAULT)
 
+    def set_vad(self, cmd: dict) -> None:
+        """core-015: yerel eşik anında; sunucu VAD'i (OpenAI) varsa yaklaşık karşılığıyla session.update ile güncellenir."""
+        applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
+                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")))
+        self.stats["vad"] = applied
+        note = self._server_vad_note(applied)
+        self.emit({"type": "vad_settings", **applied, "server_side": note})
+
+    def _server_vad_note(self, applied: dict) -> str:
+        if not hasattr(self.backend, "set_sensitivity"):
+            return "Bu profilde sunucu VAD'i ayarlanamıyor: eşik yalnızca yerel söz kesmeyi/uç noktayı etkiler; sunucu kendi VAD'iyle kesebilir."
+        db = applied["effective_threshold_db"]
+        thr = self.backend.set_sensitivity(db)
+        try:
+            asyncio.get_running_loop().create_task(self.backend.apply_sensitivity())
+        except RuntimeError:   # döngü yok (birim testi): yalnızca değer hesaplandı
+            pass
+        return f"OpenAI server_vad.threshold={thr} (dBFS'ten yaklaşık eşleme; gerçek mikrofonla doğrulanmadı)"
+
     def set_phone_filter(self, on: bool) -> None:
         if on != self.phone_filter:
             self.phone_filter = on
@@ -526,11 +562,11 @@ class RealtimeVoiceSession:
         events = self.vad.feed(frame)
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
-            loud = self.vad.level > max(self.vad.threshold_db, -45.0) + BARGE_MARGIN_DB
+            loud = self.vad.level > self.vad.barge_level_db
             if loud and self._barge == 0:
                 self._barge_t0 = time.perf_counter()
             self._barge = self._barge + 1 if loud else 0
-            if self._barge >= BARGE_FRAMES and self._first_audio is not None:   # ajan gerçekten konuşuyorsa söz kesme
+            if self._barge >= self.vad.barge_frames and self._first_audio is not None:   # ajan gerçekten konuşuyorsa söz kesme
                 self._barge_in()
         else:
             self._barge = 0
@@ -685,5 +721,5 @@ class RealtimeVoiceSession:
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome, "path": self.flow.path,
                      "answers": self.flow.answers},
-            "phone_filter": self.phone_filter}, ensure_ascii=False, indent=2), encoding="utf-8")
+            "phone_filter": self.phone_filter, "vad": self.vad.settings()}, ensure_ascii=False, indent=2), encoding="utf-8")
         return path

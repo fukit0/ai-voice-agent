@@ -1,0 +1,53 @@
+{
+  "input": "sentetik (scripts/vad_noise_report.py synthetic_noise)",
+  "synthetic": true,
+  "seconds": 20.0,
+  "rows": [
+    {
+      "config": "otomatik (varsayılan)",
+      "threshold_db": null,
+      "noise_barge_ins": 23,
+      "speech_interrupts": true,
+      "starts": 2,
+      "drops": 0,
+      "false_utterances_to_stt": 1
+    },
+    {
+      "config": "-40 dBFS",
+      "threshold_db": -40.0,
+      "noise_barge_ins": 23,
+      "speech_interrupts": true,
+      "starts": 5,
+      "drops": 0,
+      "false_utterances_to_stt": 5
+    },
+    {
+      "config": "-35 dBFS",
+      "threshold_db": -35.0,
+      "noise_barge_ins": 0,
+      "speech_interrupts": true,
+      "starts": 5,
+      "drops": 0,
+      "false_utterances_to_stt": 5
+    },
+    {
+      "config": "-30 dBFS",
+      "threshold_db": -30.0,
+      "noise_barge_ins": 0,
+      "speech_interrupts": true,
+      "starts": 2,
+      "drops": 2,
+      "false_utterances_to_stt": 0
+    },
+    {
+      "config": "-25 dBFS",
+      "threshold_db": -25.0,
+      "noise_barge_ins": 0,
+      "speech_interrupts": false,
+      "starts": 0,
+      "drops": 0,
+      "false_utterances_to_stt": 0
+    }
+  ],
+  "caveat": "Sentetik gürültü: mantığı doğrular, gerçek ortamı kanıtlamaz; gerçek mikrofonla elle doğrulama gerekir."
+}

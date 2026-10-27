@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActiveProfile } from "../ActiveProfile";
 import { fetchScenarios, type ScenarioSummary } from "../api";
 import { useProfile } from "../ProfileContext";
-import { startVoice, type VoiceEvent, type VoiceHandle } from "../voice";
+import { dbToMeter, startVoice, type VoiceEvent, type VoiceHandle } from "../voice";
 
 type Line = { role: "user" | "agent"; text: string };
 type Turn = Extract<VoiceEvent, { type: "turn" }>;
@@ -38,6 +38,13 @@ export function PlaygroundPage() {
   const [barges, setBarges] = useState(0);
   const [bargeMs, setBargeMs] = useState<number | null>(null);
   const [held, setHeld] = useState<string | null>(null);
+  // core-015: giriş eşiği. auto = uyarlanır eşik (eski davranış); aksi halde elle dBFS. Oturum açıkken veri kanalıyla uygulanır.
+  const [auto, setAuto] = useState(true);
+  const [thresholdDb, setThresholdDb] = useState(-35);
+  const [bargeFrames, setBargeFrames] = useState(8);
+  const [bargeMargin, setBargeMargin] = useState(6);
+  const [effectiveDb, setEffectiveDb] = useState<number | null>(null);
+  const [serverNote, setServerNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const handle = useRef<VoiceHandle | null>(null);
   const running = state !== "idle" && state !== "closed";
@@ -60,6 +67,7 @@ export function PlaygroundPage() {
     else if (e.type === "node") { setNode(e); setVisited((v) => [...v, e.key]); }
     else if (e.type === "answer") setAnswers((a) => [...a, e]);
     else if (e.type === "outcome") setOutcome({ label: e.label });
+    else if (e.type === "vad_settings") { setEffectiveDb(e.effective_threshold_db); setServerNote(e.server_side); }
     else if (e.type === "error") setError(e.message);
   };
 
@@ -69,7 +77,8 @@ export function PlaygroundPage() {
     setState("connecting");
     try {
       handle.current = await startVoice(active.id, { onEvent, onLevels: (m, a) => setLevels([m, a]) },
-        { scenario: scenario || undefined, phoneFilter: phone, record });
+        { scenario: scenario || undefined, phoneFilter: phone, record,
+          vad: { ...(auto ? { auto: true } : { db: thresholdDb }), barge_frames: bargeFrames, barge_margin_db: bargeMargin } });
     } catch (e) {
       setError((e as Error).message);
       setState("idle");
@@ -94,6 +103,21 @@ export function PlaygroundPage() {
   function togglePhone(on: boolean) {
     setPhone(on);
     handle.current?.setPhoneFilter(on);
+  }
+
+  function changeAuto(on: boolean) {
+    setAuto(on);
+    handle.current?.setVad(on ? { auto: true } : { db: thresholdDb });
+  }
+  function changeThreshold(db: number) {
+    setThresholdDb(db);
+    setAuto(false);
+    handle.current?.setVad({ db });
+  }
+  function changeBarge(frames: number, margin: number) {
+    setBargeFrames(frames);
+    setBargeMargin(margin);
+    handle.current?.setVad({ barge_frames: frames, barge_margin_db: margin });
   }
 
   useEffect(() => () => { void handle.current?.close(); }, []);
@@ -140,11 +164,42 @@ export function PlaygroundPage() {
         {held !== null && <span className="chip chip-busy" data-testid="voice-hold" title={held}>Cümle bitmemiş gibi, devamını bekliyor…</span>}
       </p>
       {running && (
-        <div className="voice-meters" aria-hidden="true">
-          <label>Mikrofon <meter min={0} max={1} value={levels[0]} /></label>
+        <div className="voice-meters">
+          <label>Mikrofon{" "}
+            <span className="meter-wrap" style={{ position: "relative", display: "inline-block" }}>
+              <meter min={0} max={1} value={levels[0]} aria-hidden="true" />
+              <span className="threshold-line" data-testid="threshold-line" aria-hidden="true"
+                    style={{ position: "absolute", top: 0, bottom: 0, width: 2, background: "#d33",
+                             left: `${dbToMeter(auto ? (effectiveDb ?? -45) : thresholdDb) * 100}%` }} />
+            </span>
+          </label>
           <label>Ajan <meter min={0} max={1} value={levels[1]} /></label>
         </div>
       )}
+      <div className="voice-sensitivity" data-testid="sensitivity">
+        <label>Mikrofon hassasiyeti (giriş eşiği){" "}
+          <input type="range" min={-60} max={-20} step={1} value={thresholdDb} aria-label="Giriş eşiği (dBFS)"
+                 onChange={(e) => changeThreshold(Number(e.target.value))} />{" "}
+          <b>{auto ? `otomatik${effectiveDb !== null ? ` (${effectiveDb} dBFS)` : ""}` : `${thresholdDb} dBFS`}</b>
+        </label>{" "}
+        <label className="voice-check">
+          <input type="checkbox" checked={auto} onChange={(e) => changeAuto(e.target.checked)} aria-label="Otomatik eşik" /> Otomatik
+        </label>
+        <span className="meta"> · Gürültü ajanı kesiyorsa eşiği sağa (daha az hassas) çekin. Kırmızı çizgi eşiktir.</span>
+        <details>
+          <summary>Gelişmiş: söz kesme</summary>
+          <label>Süre{" "}
+            <input type="number" min={1} max={50} value={bargeFrames} aria-label="Söz kesme süresi (çerçeve)"
+                   onChange={(e) => changeBarge(Math.max(1, Number(e.target.value) || 1), bargeMargin)} />
+            {" "}çerçeve (×20 ms = {bargeFrames * 20} ms)
+          </label>{" "}
+          <label>Marj{" "}
+            <input type="number" min={0} max={30} value={bargeMargin} aria-label="Söz kesme marjı (dB)"
+                   onChange={(e) => changeBarge(bargeFrames, Math.max(0, Number(e.target.value) || 0))} /> dB
+          </label>
+        </details>
+        {serverNote && <p className="meta" data-testid="vad-server-note">{serverNote}</p>}
+      </div>
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && <p className="status status-ok" role="status" data-testid="voice-outcome">Görüşme bitti · sonuç: <b>{outcome.label}</b></p>}
 

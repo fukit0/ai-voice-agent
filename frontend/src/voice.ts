@@ -15,6 +15,8 @@ export type VoiceEvent =
   | { type: "outcome"; outcome: string | null; label: string }
   | { type: "finished"; outcome: string | null }
   | { type: "phone_filter"; on: boolean }
+  | { type: "vad_settings"; threshold_db: number | null; effective_threshold_db: number; barge_frames: number;
+      barge_margin_db: number; barge_ms: number; server_side: string | null }
   | { type: "error"; message: string };
 
 export type VoiceHooks = {
@@ -22,8 +24,18 @@ export type VoiceHooks = {
   onLevels?: (mic: number, agent: number) => void; // 0..1
 };
 
-export type VoiceOptions = { scenario?: string; phoneFilter?: boolean; values?: Record<string, string>; record?: boolean };
-export type VoiceHandle = { sessionId: string; close: () => Promise<void>; setPhoneFilter: (on: boolean) => void };
+export type VoiceOptions = { scenario?: string; phoneFilter?: boolean; values?: Record<string, string>; record?: boolean;
+                             vad?: { db?: number; auto?: boolean; barge_frames?: number; barge_margin_db?: number } };
+export type VadSettingsCmd = { db?: number; auto?: boolean; barge_frames?: number; barge_margin_db?: number };
+export type VoiceHandle = { sessionId: string; close: () => Promise<void>; setPhoneFilter: (on: boolean) => void;
+                            setVad: (cmd: VadSettingsCmd) => void };
+
+// Mikrofon göstergesi dBFS ölçeğindedir (-70..-10 dBFS -> 0..1): doğrusal ölçek sessiz sesleri görünmez kılıyordu
+// ve eşik çizgisiyle (dBFS) kıyaslanamıyordu (core-015).
+export const METER_MIN_DB = -70;
+export const METER_MAX_DB = -10;
+export const dbToMeter = (db: number) => Math.max(0, Math.min(1, (db - METER_MIN_DB) / (METER_MAX_DB - METER_MIN_DB)));
+export const rmsToMeter = (rms: number) => (rms > 1e-9 ? dbToMeter(20 * Math.log10(rms)) : 0);
 
 const MIC_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1,
@@ -93,7 +105,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
     const a = agentAn ? rms(agentAn, new Float32Array(agentAn.fftSize)) : 0;
     stats.remotePeak = Math.max(stats.remotePeak, a);
     if (a > 0.001) stats.remoteSamples += 1;
-    hooks.onLevels?.(Math.min(1, rms(micAn, bufM) * 4), Math.min(1, a * 4));
+    hooks.onLevels?.(rmsToMeter(rms(micAn, bufM)), Math.min(1, a * 4));
   }, 100);
 
   const cleanup = async () => {
@@ -113,7 +125,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
       body: JSON.stringify({
         sdp: pc.localDescription!.sdp, type: pc.localDescription!.type, profile,
         scenario: options.scenario || null, phone_filter: !!options.phoneFilter, values: options.values ?? null,
-        record: !!options.record,
+        record: !!options.record, vad: options.vad ?? null,
       }),
     });
     if (!res.ok) {
@@ -131,6 +143,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
     return {
       sessionId: answer.session_id,
       setPhoneFilter: (on: boolean) => { if (channel.readyState === "open") channel.send(JSON.stringify({ type: "phone_filter", on })); },
+      setVad: (cmd: VadSettingsCmd) => { if (channel.readyState === "open") channel.send(JSON.stringify({ type: "vad_threshold", ...cmd })); },
       close: async () => {
         await fetch(`/api/voice/${answer.session_id}`, { method: "DELETE" }).catch(() => {});
         await cleanup();

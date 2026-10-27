@@ -5,7 +5,7 @@ import type { VoiceHooks } from "../voice";
 import { PlaygroundPage } from "./PlaygroundPage";
 
 const startVoice = vi.fn();
-vi.mock("../voice", () => ({ startVoice: (...a: unknown[]) => startVoice(...a) }));
+vi.mock("../voice", async (orig) => ({ ...(await orig<typeof import("../voice")>()), startVoice: (...a: unknown[]) => startVoice(...a) }));
 
 const PROFILES = [{
   id: "L2", name: "Dengeli", purpose: "", mode: "cascade", realtime: null, notes: "", ready: true, warm: true, issues: [], missing_env: [], warmup: null,
@@ -16,12 +16,14 @@ const PROFILES = [{
 let hooks: VoiceHooks;
 const close = vi.fn(async () => {});
 const setPhone = vi.fn();
+const setVad = vi.fn();
 const SCENARIOS = [{ key: "anket", label: "Çağrı Merkezi Memnuniyet Anketi", shortLabel: "Anket", description: "", steps: 33, outcomes: [], problems: [] }];
 beforeEach(() => {
   startVoice.mockReset();
   close.mockClear();
-  startVoice.mockImplementation(async (_p: string, h: VoiceHooks) => { hooks = h; return { sessionId: "s1", close, setPhoneFilter: setPhone }; });
+  startVoice.mockImplementation(async (_p: string, h: VoiceHooks) => { hooks = h; return { sessionId: "s1", close, setPhoneFilter: setPhone, setVad }; });
   setPhone.mockClear();
+  setVad.mockClear();
   vi.stubGlobal("fetch", vi.fn(async (url: string) =>
     new Response(JSON.stringify(url === "/api/scenarios" ? SCENARIOS : PROFILES))));
 });
@@ -35,7 +37,7 @@ describe("Playground (core-001)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: false }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "transcript", role: "agent", text: "Merhaba, ben Ayşe.", t: 0.5 });
@@ -107,7 +109,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: true, record: false }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: true, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "node", key: "q2", code: "Q2", title: "Temsilciden genel memnuniyet", kind: "Score", group: "Temsilci Değerlendirmesi", spoken: "…", terminal: false });
@@ -150,7 +152,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, phoneFilter: false, record: false }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     expect(screen.queryByTestId("active-node")).not.toBeInTheDocument();
   });
   it("ses kaydı varsayılan kapalıdır; açılırsa record:true gönderilir, durdurunca kayıt oynatıcısı ve silme çıkar (core-013)", async () => {
@@ -162,7 +164,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: true }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     expect(screen.getByTestId("record-toggle")).toBeDisabled();            // konuşma sürerken değiştirilemez
     fireEvent.click(screen.getByRole("button", { name: "Durdur" }));
     const box = await screen.findByTestId("recording-box");
@@ -170,5 +172,26 @@ describe("Playground senaryo modu (lab-003)", () => {
     fireEvent.click(within(box).getByRole("button", { name: "Kaydı sil" }));
     await waitFor(() => expect(screen.queryByTestId("recording-box")).toBeNull());
     expect(fetch).toHaveBeenCalledWith("/api/voice/recordings/s1", { method: "DELETE" });
+  });
+
+  it("mikrofon hassasiyeti: kaydırıcı oturum sırasında vad komutu yollar, eşik çizgisi hareket eder, sunucu notu gösterilir (core-015)", async () => {
+    renderPage();
+    const start = await screen.findByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalled());
+    const slider = screen.getByLabelText("Giriş eşiği (dBFS)");
+    expect(screen.getByLabelText("Otomatik eşik")).toBeChecked();
+    fireEvent.change(slider, { target: { value: "-30" } });
+    expect(setVad).toHaveBeenLastCalledWith({ db: -30 });
+    expect(screen.getByLabelText("Otomatik eşik")).not.toBeChecked();
+    expect(parseFloat(screen.getByTestId("threshold-line").style.left)).toBeCloseTo(66.67, 1);   // (-30+70)/60
+    fireEvent.click(screen.getByLabelText("Otomatik eşik"));
+    expect(setVad).toHaveBeenLastCalledWith({ auto: true });
+    fireEvent.change(screen.getByLabelText("Söz kesme süresi (çerçeve)"), { target: { value: "12" } });
+    expect(setVad).toHaveBeenLastCalledWith({ barge_frames: 12, barge_margin_db: 6 });
+    act(() => hooks.onEvent({ type: "vad_settings", threshold_db: null, effective_threshold_db: -45, barge_frames: 12,
+      barge_margin_db: 6, barge_ms: 240, server_side: "Bu profilde sunucu VAD'i ayarlanamıyor" }));
+    expect(screen.getByTestId("vad-server-note")).toHaveTextContent("ayarlanamıyor");
   });
 });

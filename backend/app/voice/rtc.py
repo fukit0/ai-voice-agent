@@ -128,6 +128,8 @@ class RtcVoiceConnection:
                     return
                 if isinstance(cmd, dict) and cmd.get("type") == "phone_filter":
                     self.session.set_phone_filter(bool(cmd.get("on")))
+                elif isinstance(cmd, dict) and cmd.get("type") == "vad_threshold":
+                    self.session.set_vad(cmd)   # core-015: {"db": -35} | {"auto": true} | {"barge_frames": 12, "barge_margin_db": 8}
 
             for event in self._pending_events:
                 channel.send(json.dumps(event, ensure_ascii=False))
