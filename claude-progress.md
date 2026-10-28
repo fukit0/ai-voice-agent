@@ -243,3 +243,7 @@ agents do not update it automatically.
 - Kullanici: 'bu kadar kayit yeterli, modeller cok kotu'. A2: dis sesleri aliyor + KVKK 'dinlemek istemiyorum' sonlandirdi (eaee), 'nerde kaldik soyle bana' akistan kopma (16f2), konusulani anlamiyor (4d01). A3: yabanci kelimeler, anlamiyor (d507).
 - Karar ADR 0007: A2/A3 uretim adayi degil; uretim yonu cascade (ADR 0006 STT, sabit yasal metin on-uretilmis ses); A2/A3 referans/ust sinir.
 - core-018 PASSING, core-023 PASSING (orneklem kullanici karariyla kucuk, sapma notlu). core-019 BLOCKED (tek eksik: tekrar-sorma duzeltmesi canli dogrulanmadi), core-021 BLOCKED (tek eksik: llm-eval veya acik feragat). core-020, core-022 passing.
+
+## Session 026 - core-019 ve core-021 kapanisi (2026-10-28)
+- Kullanici A2 aramasi 832a49d28511 (giris sabit ses verbatim 1,0; tekrar-sorma 1,0) ve eval-llm-20261028-095926.json (L2 29/30, A1 29/30, ayni tek hata) sagladi. core-019 ve core-021 PASSING (sapmalar notlarda: kucuk orneklem, L3 dahil degil, tekrar-sorma yolu belirsiz).
+- core-018..023 hepsi passing. Acik: core-016, core-017 (canli dogrulama), core-024/025/026, core-011 kapanisi, core-012 beklemede.
