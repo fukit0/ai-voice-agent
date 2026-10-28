@@ -132,3 +132,8 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 ## S20. "A2'de modelin soruyu değiştirmesini nasıl engelledik?" (2026-10-28)
 - **Yaptık:** Tüm sabit sorular önceden üretilmiş sesle çalınır (model yalnızca dinler); her cevaptan sonra müşterinin eski sesi modelin bağlamından silinir; "Müsaitim" gibi açık evet/hayır cevapları modelin bildirimiyle çelişirse transkripte göre düzeltilir; sapma olay olarak kaydedilir.
 - **Sınır (saklanmaz):** Canlı doğrulama (10 arama) henüz yapılmadı. Ad/puan içeren cümleler ilk kullanımda ses üretimi bekler (1-8 sn). Çapraz kontrol yalnız açık evet/hayır kelimelerinde çalışır; puan ve seçim adımları korumasız. Kök sorun (model tutarsızlığı) çözülmedi, hafifletildi; üretim yönü hâlâ cascade.
+
+## S21. "Realtime modellerle neden devam etmiyoruz?" (2026-10-28)
+- **Gördüğümüz:** Sabit sesle metin sapması çözüldü (33 turda birebir), ama modelin anlaması düzelmedi: bir aramada 29 cevap bildiriminin 10'u geçersizdi, bir müşteri reddi "devam" sayıldı, model müşterinin söylemediği bir metni cevap diye bildirdi.
+- **Karar:** Diğer modellere göre başarısı düşük olduğu için realtime'a ek zaman ayrılmıyor; üretim yönü cascade. Realtime, hız ve doğal ses için üst sınır referansı olarak kalıyor.
+- **Sınır (saklanmaz):** Örneklem küçük (A2 ~8, A3 ~3 canlı arama, tek kişi, ev ortamı); sayılar yön göstergesi.

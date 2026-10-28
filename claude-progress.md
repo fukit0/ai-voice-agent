@@ -259,3 +259,7 @@ agents do not update it automatically.
 - Yapildi: tum sabit sorular sabit sesle (DEFAULT_STEPS '*'), cevap sonrasi musteri ses ogelerinin baglamdan silinmesi (conversation.item.delete), cevap istegine soru metni, YesNo transkript capraz kontrolu (flow.crosscheck_yesno), speech_deviation olayi. test_core024.py 7 test; toplam 373 gecti.
 - Dogrulanmadi: canli A2. core-024 NOT_STARTED kalir; kapanis icin 10 A2 aramasi (verbatim >=0,95 her turda; 'Musaitim' ve 'Dinlemek istemiyorum' dogru dala gitmeli).
 - Bilinen risk: dinamik metinli sabit turlarda ilk uretim gecikmesi; onbellek isitma henuz otomatik degil.
+
+## Session 029 - realtime kapanisi, siradaki is core-012 (2026-10-28)
+- 126f5d20c82a ve 5e921568e5e9 (A2) kontrol edildi: sabit ses verbatim 1,0 (33 tur), ama dogru dal olcutu gecmedi (yanlis dal, uydurma deger, %34 gecersiz bildirim, transkript gecikmesi). Karar: realtime'a daha fazla zaman ayrilmaz; core-024 dusuk oncelik (not_started), core-011 PASSING (sapmalar notta), ADR 0007 Ek 2.
+- Siradaki: core-012 (cascade LLM prompt olcumu ve dondurma).
