@@ -216,8 +216,8 @@ class OpenAIRealtime(_WsBackend):
             "type": "realtime", "model": self.model, "instructions": instructions, "output_modalities": ["audio"],
             "audio": {
                 "input": {"format": {"type": "audio/pcm", "rate": 24000},
-                          "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr",
-                                           "prompt": "Türkçe telefon anketi. Sık geçen kelimeler: alo, efendim, evet, hayır, müsaitim, dinlemek isterim, devam, hatırlıyorum, on."},
+                          # prompt KALDIRILDI: canlı A2 oturumu eaee33b00412'de model sessiz/gürültülü sesi prompt metniyle yazıya döktü
+                          "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr"},
                           # local_turns: tur sınırlarını yerel VAD verir (commit + cevap isteği); sunucu VAD'ı hoparlör yankısında
                           # ve gürültüde sahte tur açıyordu (core-018)
                           "turn_detection": None if self.local_turns else {
@@ -541,7 +541,9 @@ class RealtimeVoiceSession:
         self._drop_audio = False
         self._set_state("thinking")
         node = next((e["key"] for e in reversed(reply.events) if e.get("type") == "node"), None)
-        if self.fixed_audio is not None and len(reply.utterances) == 1 and not reply.finished and self.fixed_audio.applies(node):
+        if node is None and self.flow.current is not None:      # tekrar sorma: aynı adım, yeni 'node' olayı yok
+            node = self.flow.steps[self.flow.current].get("key")
+        if self.fixed_audio is not None and not reply.finished and self.fixed_audio.applies(node):
             self._tasks.append(asyncio.get_running_loop().create_task(self._play_fixed(text, rule, self._turn_no, node)))
             return
         await self.backend.speak(text, rule)

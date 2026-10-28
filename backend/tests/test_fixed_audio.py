@@ -127,3 +127,24 @@ def test_default_fixed_steps_cover_the_survey_intro_and_realtime_drops_foreign_t
         assert not any("목동" in x["text"] for x in s.transcript)
         await s.close()
     asyncio.run(main())
+
+
+def test_prefixed_reask_of_a_fixed_step_is_also_played_from_fixed_audio(tmp_path, monkeypatch):
+    """Canlı A2 eaee33b00412: 'Kusura bakmayın, tekrar soruyorum. <KVKK metni>' modele bırakılınca verbatim 0,027 oldu."""
+    async def main():
+        s, backend, out, events = build(tmp_path, monkeypatch, fake_speech)
+        await s.start()
+        await settle_rt(s, lambda: s.turns)
+        first_said = len(backend.said)
+        await s._deliver(s.flow.silence())                          # 'Sizi duyamadım...' + aynı adımın metni
+        await settle_rt(s, lambda: len(s.turns) >= 2)
+        assert len(backend.said) == first_said and s.stats["fixed_audio_turns"] == 2
+        assert s.turns[-1]["fixed_audio"] == "acilis" and s.turns[-1]["verbatim"] == 1.0
+        await s.close()
+    asyncio.run(main())
+
+
+def test_prompt_echo_is_a_hallucinated_transcript():
+    from backend.app.voice import sttguard
+    assert sttguard.check("Sık geçen kelimeler: Alo, Efendim, Evet.")[1] == "hallucination_phrase"
+    assert sttguard.check("Türkçe telefon anketi. Sık geçen kelimeler: alo")[1] == "hallucination_phrase"

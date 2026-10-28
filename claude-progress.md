@@ -234,3 +234,7 @@ agents do not update it automatically.
 - A2 kok neden: anket 'giris' adimi sabit-ses listesinde degildi (model KVKK metnini yorumladi, verbatim 0,148, akis musaitlik=hayir). Duzeltme: 'giris' eklendi. A3: realtime oturumda sttguard yabanci yazi transkriptini kayda almaz.
 - Yeni feature'lar: core-024 (A2 metin sapmasi genel cozum), core-025 (A1 TTS kalite/hiz), core-026 (A3 soz kesme + transkript dili). Hepsi not_started.
 - pytest 363. Ilk A2 oturumunda yeni kod calisiyordu (silences sayaci var) ama fixed_audio_turns yoktu: nedeni yukaridaki liste eksigi. Yeniden A2 denemesi gerekli.
+
+## Session 024 - ilk canli A2 sonrasi duzeltmeler (2026-10-28)
+- Oturum eaee33b00412: sabit giris sesi calisti (verbatim 1,0) fakat (1) ilk uretim 7,6 sn, (2) OpenAI transkripsiyon prompt'u kullanici transkripti olarak geri dondu (prompt kaldirildi, sttguard'a eklendi), (3) tekrar-sorma metni modele kaldi (verbatim 0,027; onekli sabit tekrarlar da sabit sese alindi), (4) 'Musaitim' -> refuse (core-024'e yazildi, cozulmedi).
+- pytest 365. Canli yeniden deneme gerekli; core-018/019 hala blocked.

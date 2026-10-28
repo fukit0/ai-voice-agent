@@ -13,7 +13,7 @@ import re
 _FOREIGN = re.compile(r"[^\sA-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû0-9.,;:!?'\"()\-–%/]")
 _LOOP = re.compile(r"(.{1,4}?)\1{7,}")        # "hıhıhıhı…" gibi tekrar döngüsü (L2/L3 öksürük çıktıları, core-020 ölçümü)
 MAX_WORD_LEN = 30                              # tek "kelime" bu uzunluğu aşarsa metin değildir
-HALLUCINATIONS = ("altyazı", "izlediğiniz için", "abone ol")
+HALLUCINATIONS = ("altyazı", "izlediğiniz için", "abone ol", "sık geçen kelimeler", "türkçe telefon anketi")
 MIN_CONFIDENCE = 0.5          # Deepgram alt.confidence; düşükse (öksürük, nefes) metin güvenilmez
 MIN_AVG_LOGPROB = -1.0        # Whisper segment ortalama log olasılığı
 MAX_COMPRESSION = 2.4         # Whisper sıkıştırma oranı; yüksekse tekrar/halüsinasyon
