@@ -385,3 +385,10 @@ def test_cascade_check_value_stays_strict():
     from backend.app.voice.flow import check_value
     yn = next(st for st in S.step_map(S.get("anket")).values() if st["kind"] == "YesNo")
     assert check_value(yn, {"intent": "answer", "value": "evet"})[0] is False
+
+
+def test_parse_tool_args_answer_key_holds_value_without_intent():
+    """Canlı oturum 5bf3c50abbb4: {"answer":"devam","value_json":"devam"} intent'siz cevap olarak okunmalı."""
+    from app.voice.realtime import parse_tool_args
+    assert parse_tool_args({"answer": "devam", "value_json": "devam"}) == {"intent": "answer", "value": "devam"}
+    assert parse_tool_args({"answer": "unclear", "value_json": None}) == {"intent": "unclear", "value": None}

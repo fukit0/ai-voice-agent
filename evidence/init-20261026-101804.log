@@ -1,0 +1,63 @@
+==> Working directory: /Users/furkan.tanriverdi/sahibinden-voice-agent
+==> Python: Python 3.11.11
+==> Bağımlılıklar senkronize ediliyor
+==> Frontend bağımlılıkları (npm ci)
+
+added 192 packages in 2s
+==> Backend testleri
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 75%]
+......................................................................   [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:45
+  /Users/furkan.tanriverdi/sahibinden-voice-agent/.venv/lib/python3.11/site-packages/starlette/testclient.py:45: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+286 passed, 1 warning in 52.25s
+==> Frontend testleri
+
+ RUN  v2.1.8 /Users/furkan.tanriverdi/sahibinden-voice-agent/frontend
+
+(node:15832) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15836) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15837) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15833) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15835) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15831) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15834) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wav.test.ts (2 tests) 3ms
+ ✓ src/pages/LlmEvalPage.test.tsx (4 tests) 148ms
+ ✓ src/pages/PlaygroundPage.test.tsx (7 tests) 147ms
+ ✓ src/pages/ScenariosPage.test.tsx (4 tests) 388ms
+ ✓ src/pages/TtsPage.test.tsx (7 tests) 800ms
+   ✓ TtsPage > previews how numbers, prices, dates and phones will be spoken (norm-007) 312ms
+   ✓ TtsPage > can switch normalization off and sends the choice with the session 350ms
+ ✓ src/pages/SttPage.test.tsx (4 tests) 1144ms
+   ✓ STT test ekranı > soğuk modeli Hazırla ile ısıtır (yalnızca STT bileşeni, diğer sıcaklar kalsın diye keep_others=true) ve listeyi yeniler 1024ms
+ ✓ src/App.test.tsx (11 tests) 1173ms
+   ✓ Hazırla (lab-006, ADR 0001) > Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer 1017ms
+
+ Test Files  7 passed (7)
+      Tests  39 passed (39)
+   Start at  10:19:00
+   Duration  2.39s (transform 298ms, setup 1.24s, collect 523ms, tests 3.80s, environment 3.49s, prepare 473ms)
+
+==> Model sağlık kontrolü
+  [PASS] ollama        24.59s  qwen3:30b-a3b-instruct-2507-q4_K_M -> 'Ankara', 64 tok/s (yükleme 24s)
+  [PASS] ema            2.62s  3.9s ses, RTF 0.05 (yükleme 0s)
+  [PASS] stt            2.34s  'Merhaba, sahibinden anketine hoş geldiniz. İlanını'
+  [SKIP] chatterbox
+==> Kanıt: evidence/healthcheck-20261026-101932.json
+==> Tüm kontroller geçti
+==> Hazır. Kanıtlar evidence/ altında.
+==> Lab'i başlatmak için: scripts/dev.sh  (arayüz http://localhost:5173)
+==> init.sh çıkış kodu: 0 (evidence/init-20261026-101804.log)

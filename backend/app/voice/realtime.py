@@ -74,7 +74,11 @@ def parse_tool_args(args: dict | str | None) -> dict | None:
             return None
     if isinstance(args, dict) and "intent" not in args and isinstance(args.get("answer"), str):
         # Canlı ölçüm (core-011, A2): zorunlu çağrıda model anahtar adını "answer" yazdı; değer geçerli intent ise kabul edilir
-        args = {**args, "intent": args["answer"]}
+        if args["answer"] in INTENTS:
+            args = {**args, "intent": args["answer"]}
+        else:
+            # Canlı ölçüm (5bf3c50abbb4, A2): model seçim değerini "answer" anahtarına yazıp intent'i atladı -> cevap sayılır
+            args = {**args, "intent": "answer", "value_json": args.get("value_json", args.get("value", args["answer"]))}
     if not isinstance(args, dict) or "intent" not in args:
         return None
     raw = args.get("value_json", args.get("value"))

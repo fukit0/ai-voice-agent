@@ -123,3 +123,8 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Ne yaptık:** yerel tur yönetimi (sahte tur yok), sabit yasal metin önceden üretilmiş sesle (KVKK birebir), yabancı transkript guard'ı. Bunlar sorunun bir kısmını çözdü; "anlama" kısmı modelin kendisi.
 - **Karar:** üretim yönü cascade (STT→LLM→TTS): anlama ölçülür ve korunur (Deepgram referans, ADR 0006). A2/A3 referans/üst sınır olarak kalır. ADR 0007.
 - **Sınır (demoda saklanmaz):** örneklem küçük (A2 4, A3 2 arama, tek kişi, ev ortamı); sayısal anlama doğruluğu ölçülmedi, kalitatif bulgudur.
+
+## S19. "A2'de ajan neden aynı girişi tekrar tekrar okudu?" (2026-10-28)
+- **Sebep:** Model, cevabı bildirdiği araçta alan adını yanlış kullandı ("answer" yazdı, "intent" atladı); akış bunu anlaşılmadı sayıp girişi yeniden okudu. Ses tarafı sorunsuzdu (KVKK metni her tekrarda birebir).
+- **Çözüm:** Araç çıktısı toleranslı okunuyor (alan adı karışsa da değer cevap sayılır); test eklendi.
+- **Sınır (saklanmaz):** Bu, modelin şemaya uymamasının bir belirtisi; kök sorun (model beklenen biçimden sapıyor) core-024'te açık. Cascade'de bu risk yok çünkü LLM serbest araç çağırmıyor, akışı kod yürütüyor.

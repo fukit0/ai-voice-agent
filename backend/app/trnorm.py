@@ -213,8 +213,19 @@ def _convert(m: re.Match) -> str:
     return text
 
 
+# Telaffuz sözlüğü: alan adı biçimindeki markalar TTS'e ham gidince (EMA) harf harf okunuyordu
+# ("sahibinden.com adına arıyorum", geri bildirim 2026-10-26). "com" -> "kom", nokta sözcükle yazılır;
+# metindeki ek ("com'un") apostrofsuz birleşir ("komun"; "com" son ünlüsü o: un/a/da/dan/u/la uyumu aynı kalır).
+_BRAND_RE = re.compile(r"\bsahibinden\.com(?:['\u2019](\w+))?", re.IGNORECASE)
+
+
+def _brand(m: re.Match) -> str:
+    return "sahibinden nokta kom" + (m.group(1) or "")
+
+
 def normalize(text: str) -> str:
     """Metindeki sayı, tarih, saat, telefon, para, yüzde ve oda/alan ifadelerini okunur Türkçeye çevirir."""
+    text = _BRAND_RE.sub(_brand, text)
     return re.sub(r"[ \t]{2,}", " ", _RE.sub(_convert, text)).strip()
 
 

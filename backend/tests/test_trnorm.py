@@ -124,3 +124,9 @@ def test_changes_lists_conversions_for_preview():
 ])
 def test_ordinals_units_iso_dates_and_edge_cases(text, expected):
     assert normalize(text) == expected
+
+
+def test_marka_alan_adi_okunur():
+    assert normalize("Sahibinden.com adına arıyorum.") == "sahibinden nokta kom adına arıyorum."
+    assert normalize("Sahibinden.com'un verdiği yetki") == "sahibinden nokta komun verdiği yetki"
+    assert "." not in normalize("sahibinden.com'a hoş geldiniz").replace("geldiniz", "")

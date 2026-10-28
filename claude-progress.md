@@ -249,3 +249,8 @@ agents do not update it automatically.
 - core-018..023 hepsi passing. Acik: core-016, core-017 (canli dogrulama), core-024/025/026, core-011 kapanisi, core-012 beklemede.
 
 - (Session 026 duzeltme) core-019 tekrar-sorma dogrulanmadigi icin BLOCKED'a geri alindi; core-021 passing (L3 LLM'i L2 ile ayni, ayri kosu gereksiz).
+
+## Session 027 - A2 "tekrar tekrar basa donuyor" (5bf3c50abbb4) (2026-10-28)
+- Bulgu: sabit ses 4 turda calisti (fixed_audio_turns=4, verbatim 1,0; onekli tekrar-sorma dahil) ama akis 'giris'ten cikmadi: model arac argumanini {"answer":"devam","value_json":"devam"} verdi (intent yok) -> 'anlasilmadi' -> giris metni yeniden okundu.
+- Duzeltme: realtime.parse_tool_args, 'answer' degeri INTENTS anahtari degilse onu cevap degeri sayar (intent="answer"). Yeni test; pytest 366 gecti. Mac'e aktarildi (realtime.py, test_realtime.py).
+- core-019 PASSING (tekrar-sorma sabit sesle canli dogrulandi; 10 arama STT benzerligi olcutu yapilmadi, sapma notta). Canli yeniden deneme: A2'de 'Evet/devam' cevabinin artik ilerledigi dogrulanmali (core-024).

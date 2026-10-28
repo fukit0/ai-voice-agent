@@ -23,12 +23,17 @@ def main() -> int:
     ap.add_argument("--providers", nargs="+", required=True, help="PROFİL:stt (örn. L2:stt)")
     ap.add_argument("--out", default=str(ROOT / "evidence" / "core-020-stt-eval.json"))
     args = ap.parse_args()
-    from backend.app.profiles import load_profiles
+    from backend.app.profiles import load_dotenv, load_profiles
+    load_dotenv()  # .env içindeki API anahtarları (DEEPGRAM_API_KEY vb.)
     profiles = load_profiles()
     provs = {}
     for ref in args.providers:
         pid, comp = ref.split(":")
-        provs[ref] = registry.get_provider(profiles[pid].component(comp), comp, pid)
+        spec = profiles[pid].component(comp)
+        if not spec:
+            ok = [p for p, v in profiles.items() if v.component(comp)]
+            raise SystemExit(f"{ref}: {pid} profilinde '{comp}' tanımlı değil (realtime/null profil). Tanımlı olanlar: {ok}")
+        provs[ref] = registry.get_provider(spec, comp, pid)
     report = stt_eval.evaluate(stt_eval.load_manifest(Path(args.manifest)), provs)
     print(stt_eval.render(report))
     out = Path(args.out)
