@@ -238,3 +238,8 @@ agents do not update it automatically.
 ## Session 024 - ilk canli A2 sonrasi duzeltmeler (2026-10-28)
 - Oturum eaee33b00412: sabit giris sesi calisti (verbatim 1,0) fakat (1) ilk uretim 7,6 sn, (2) OpenAI transkripsiyon prompt'u kullanici transkripti olarak geri dondu (prompt kaldirildi, sttguard'a eklendi), (3) tekrar-sorma metni modele kaldi (verbatim 0,027; onekli sabit tekrarlar da sabit sese alindi), (4) 'Musaitim' -> refuse (core-024'e yazildi, cozulmedi).
 - pytest 365. Canli yeniden deneme gerekli; core-018/019 hala blocked.
+
+## Session 025 - A2/A3 degerlendirme kapanisi (2026-10-28)
+- Kullanici: 'bu kadar kayit yeterli, modeller cok kotu'. A2: dis sesleri aliyor + KVKK 'dinlemek istemiyorum' sonlandirdi (eaee), 'nerde kaldik soyle bana' akistan kopma (16f2), konusulani anlamiyor (4d01). A3: yabanci kelimeler, anlamiyor (d507).
+- Karar ADR 0007: A2/A3 uretim adayi degil; uretim yonu cascade (ADR 0006 STT, sabit yasal metin on-uretilmis ses); A2/A3 referans/ust sinir.
+- core-018 PASSING, core-023 PASSING (orneklem kullanici karariyla kucuk, sapma notlu). core-019 BLOCKED (tek eksik: tekrar-sorma duzeltmesi canli dogrulanmadi), core-021 BLOCKED (tek eksik: llm-eval veya acik feragat). core-020, core-022 passing.

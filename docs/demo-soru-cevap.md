@@ -117,3 +117,9 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **A2:** Model bir adımda okunacak soruyu değiştirdi, müşteri farklı soruya cevap verdi ve akış yanlış dala gitti (verbatim 0,148). Önlem: sabit metinler önceden üretilmiş sesle çalınır (anket girişi listeye eklendi). Genel çözüm core-024'te; sınır: serbest soru cümleleri hâlâ model tarafından söyleniyor.
 - **A3:** Söz kesme zayıf; giriş transkriptine yabancı yazı karışıyor (Gemini'de dil ipucu yok). Yabancı yazı/halüsinasyon transkripti artık kayda alınmıyor; Latin harfli yabancı kelimeler yakalanmıyor. core-026.
 - **A1:** ElevenLabs flash modeli hızlı ama Türkçe tonlaması zayıf; ilk ses 2,4–3,9 sn. Model karşılaştırması core-025.
+
+## S18. "Realtime (A2/A3) modelleri neden üretim adayı değil?" (2026-10-28)
+- **Gördüğümüz:** Hız ve doğal ses güçlü yanları; ama Türkçe kısa cevabı ve gürültüyü anlama zayıf. A2: okunacak soruyu değiştirdi/akıştan koptu, "Müsaitim"i ret saydı; A3: transkripte yabancı kelimeler (suerte, schwer, locos), zayıf söz kesme.
+- **Ne yaptık:** yerel tur yönetimi (sahte tur yok), sabit yasal metin önceden üretilmiş sesle (KVKK birebir), yabancı transkript guard'ı. Bunlar sorunun bir kısmını çözdü; "anlama" kısmı modelin kendisi.
+- **Karar:** üretim yönü cascade (STT→LLM→TTS): anlama ölçülür ve korunur (Deepgram referans, ADR 0006). A2/A3 referans/üst sınır olarak kalır. ADR 0007.
+- **Sınır (demoda saklanmaz):** örneklem küçük (A2 4, A3 2 arama, tek kişi, ev ortamı); sayısal anlama doğruluğu ölçülmedi, kalitatif bulgudur.
