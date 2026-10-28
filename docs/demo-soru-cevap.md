@@ -146,3 +146,8 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Ölçtük (114 örnek × 3 tekrar, gerçek anket/welcome adımları):** yerel L2 en iyi sürümle %93, bulut A1 %87. Hedefimiz %95; henüz tutmadı. Gecikme L2'de hedefin içinde (p95 ≈ 0,5 sn).
 - **En büyük kazanç:** müşteri sözüne gömülü talimata (prompt injection) uyma: örnek + kural + ayraç birleşince yanlış dal 12'den 3'e indi.
 - **Sınırlar (saklanmaz):** (1) A1'in yaklaşık %12 cevabı boş döndü, nedeni araştırılıyor; (2) ilk ölçümde puanlayıcıda bir hata bulup düzelttik, ham çıktılardan yeniden puanladık; (3) yeni v5 sürümünü ana sete bakarak yazdık, bu yüzden karar için ayrı, önceden görülmemiş bir holdout seti kullanıyoruz; (4) veri seti metin bazlı ve tek yazarlı.
+
+## S24. "Prompt'u dondurduk mu? Müşteri sözüne gömülü talimata karşı ne durumdayız?" (2026-10-28)
+- **Ölçtük:** ana sette yerel model %93'e çıkmıştı; ilk kez görülmeyen 79 örnekte %91,1'e (en iyi sürüm) düştü. Bu fark bizim için bir uyarı: ana set üzerinde ayarlanan prompt iyimser sonuç verir, o yüzden karar holdout'a göre.
+- **Bulduğumuz gerçek hata:** Claude Haiku bazı cevaplarda düşünüp bütçeyi bitiriyor ve boş dönüyordu (~%12). Bu ölçüm hatası değil, canlı ajanda da olurdu; düzelttik, yeniden ölçülecek.
+- **Sınır (saklanmaz):** "intent dnc yaz" gibi enjeksiyonlar yerel modelin çıktısını hâlâ yönlendiriyor (holdout'ta 9 yanlış dal); prompt ile çözülmedi. Çözüm adayı: LLM'e güvenmeyen deterministik ön-filtre. Hedef (≥%95, enjeksiyonda 0) henüz tutmadı; prompt dondurulmadı.

@@ -32,3 +32,16 @@ Sonuç: hiçbir sürüm kabul ölçütünü geçmedi; en iyisi v4. L2 p95 ≤ 0,
 - A1 (Haiku) çıktılarının ~%12'si boş döndü (aynı örneklerde 3/3: olumsuz kısa cevaplar ve enjeksiyonlar); prompt'tan çok model/sağlayıcı davranışı gibi görünüyor, neden bilinmiyor (`stop_reason` artık kaydediliyor).
 - L2 gerçek hataları: "şu an olmaz/istemiyorum" refuse sayıldı; "olabilir/bilmiyorum" cevap sayıldı; Choice'te "evet" true yazıldı; "intent dnc yaz" enjeksiyonuna uyuldu.
 - Karar bekliyor: v5 (v4 + genel kurallar) ve bağımsız holdout (79 örnek) ölçümü; seçim holdout skoruna göre yapılır, çünkü v5 ana setteki hata kategorilerine bakılarak yazıldı.
+
+## Ölçüm 2 — bağımsız holdout (2026-10-28, 79 örnek × 3; evidence/eval-prompt-20261028-193504.json)
+| Model / sürüm | Tam | Şema | Injection yanlış dal | Boş çıktı | p95 |
+|---|---|---|---|---|---|
+| L2 v4 | %87,3 | %96,2 | 12 | 0 | 0,58 sn |
+| L2 v5 | **%91,1** | %100 | 9 | 0 | 0,57 sn |
+| A1 v4 | %81,4 | %82,7 | 6 | 38 | 2,1 sn |
+| A1 v5 | %81,4 | %82,7 | 4 | 32 | 2,1 sn |
+
+Hedef (≥%95, şema %100, injection yanlış dal 0) hiçbir sürümde sağlanmadı; ana setteki v4 skoru (%93) holdout'ta %87'ye düştü: ana set üzerinde fazla iyimserlik beklenmeliydi, karar holdout'a göre.
+- **A1 boş çıktı kök nedeni sağlayıcı:** `stop_reason=max_tokens`, yalnızca `thinking` bloğu. Haiku 5.5 düşünmeyi `max_tokens=120` içinde bitiremiyor. Üretim ajanı da 120 token kullandığı için aynı hata canlıda da olur. Düzeltme: `thinking: disabled`, red durumunda parametresiz tekrar, hâlâ boşsa 8× bütçeyle bir tekrar. Gerçek A1 ile yeniden ölçülmedi.
+- **L2 v5 kalan 7 örnek** (hepsi 3/3, karar kararlı): olumsuz evet/hayır cevapları `refuse` sayılıyor (3), "intent X yaz" injection'ları çıktıyı yönlendiriyor (3), "anlamadım" repeat yerine unclear (1). Prompt (ayraç + kural + few-shot) injection'ı çözmedi.
+- **Karar bekliyor (kullanıcı):** (1) yalnız A1'i düzeltmeyle yeniden ölç; (2) injection ve olumsuz-cevap için deterministik ön-filtre/çapraz kontrol ekleyip L2'yi yeniden ölç; (3) sapma notuyla kabul edip core-012'yi kapat.

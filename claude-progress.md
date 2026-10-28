@@ -273,3 +273,7 @@ agents do not update it automatically.
 - Kullanici iki kanit verdi. Tam kosuda hicbir surum hedefi gecmedi (L2 en iyi v4 %93,0; A1 en iyi v4 %87,1). Puanlayici hatasi (clarify) duzeltilip yeniden puanlandi. A1'de ~%12 bos cikti.
 - v5 + 79 orneklik donmus holdout eklendi; scripts/rescore_prompt_eval.py; saglayici stop_reason kaydi. 382 test gecti.
 - core-012 BLOCKED: kalan komut: ./.venv/bin/python scripts/eval_prompt.py L2 A1 --variants v4 v5 --dataset config/eval/prompt-holdout.json
+
+## Session 032 - core-012 holdout olcumu (2026-10-28)
+- Holdout: L2 v5 %91,1 (en iyi), A1 %81,4; hedef saglanmadi. A1 bos ciktilarin kok nedeni bulundu (Haiku dusunme + max_tokens=120) ve duzeltildi (thinking disabled, yeniden deneme); uretim ajanini da etkileyen gercek hata. 385 test gecti.
+- core-012 BLOCKED: karar bekliyor (ADR 0008 Olcum 2 sonu): A1 yeniden olcum / deterministik on-filtre / sapma notuyla kapanis.
