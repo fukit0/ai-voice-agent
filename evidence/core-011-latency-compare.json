@@ -4,64 +4,113 @@
   "min_sessions": 5,
   "profiles": {
     "A1": {
-      "sessions": 1,
-      "turns": 8,
-      "p50_s": 3.552,
-      "p95_s": 4.535,
-      "min_s": 2.389,
-      "max_s": 4.69,
+      "sessions": 5,
+      "turns": 62,
+      "p50_s": 3.288,
+      "p95_s": 4.992,
+      "min_s": 1.793,
+      "max_s": 11.401,
       "realtime": false,
       "meets_p50_target": false,
-      "enough_sessions": false,
+      "enough_sessions": true,
       "session_ids": [
-        "6b0b407d4aea"
+        "574e3e4d81b3",
+        "6b0b407d4aea",
+        "800f768c085f",
+        "b32a4cfcce08",
+        "e6c1414c3178"
       ]
     },
     "A2": {
+      "sessions": 9,
+      "turns": 48,
+      "p50_s": 2.606,
+      "p95_s": 40.533,
+      "min_s": 1.274,
+      "max_s": 47.101,
+      "realtime": true,
+      "meets_p50_target": false,
+      "enough_sessions": true,
+      "session_ids": [
+        "112d7cc08a3d",
+        "61b295e02897",
+        "86d5149d2d29",
+        "d227e6c2553e",
+        "e09cc13c3ff6",
+        "e8ab0f85f1f0",
+        "e950bd944ce3",
+        "eab94b9cdd7e",
+        "ed320652a602"
+      ]
+    },
+    "A3": {
       "sessions": 1,
-      "turns": 4,
-      "p50_s": 2.414,
-      "p95_s": 7.862,
-      "min_s": 2.082,
-      "max_s": 8.787,
+      "turns": 18,
+      "p50_s": 1.448,
+      "p95_s": 5.294,
+      "min_s": 0.849,
+      "max_s": 19.949,
       "realtime": true,
       "meets_p50_target": false,
       "enough_sessions": false,
       "session_ids": [
-        "112d7cc08a3d"
+        "47e1691a1c69"
       ]
     },
     "L2": {
-      "sessions": 3,
-      "turns": 24,
-      "p50_s": 1.425,
-      "p95_s": 1.775,
-      "min_s": 0.765,
-      "max_s": 2.33,
+      "sessions": 17,
+      "turns": 187,
+      "p50_s": 1.427,
+      "p95_s": 3.372,
+      "min_s": 0.705,
+      "max_s": 4.986,
       "realtime": false,
       "meets_p50_target": false,
-      "enough_sessions": false,
+      "enough_sessions": true,
       "session_ids": [
+        "1127dc7f3a43",
+        "2b6c53ceedc9",
+        "3377b67086f0",
         "3568fd3933eb",
+        "37b9f4dffdeb",
+        "406423fcd1b2",
+        "767a1b881917",
+        "7897a0aeb1ea",
+        "89cc438a2db2",
+        "925a4e4dbd50",
+        "a099662fdb64",
+        "a7ff3a55e5f9",
+        "b4d472ae0084",
         "bbb0c066fbee",
-        "e267094594d1"
+        "da076795e013",
+        "e267094594d1",
+        "fa2d308a2da7"
       ]
     },
     "L3": {
-      "sessions": 2,
-      "turns": 11,
-      "p50_s": 3.136,
-      "p95_s": 3.718,
-      "min_s": 2.668,
-      "max_s": 3.944,
+      "sessions": 11,
+      "turns": 102,
+      "p50_s": 2.917,
+      "p95_s": 3.933,
+      "min_s": 1.797,
+      "max_s": 6.297,
       "realtime": false,
       "meets_p50_target": false,
-      "enough_sessions": false,
+      "enough_sessions": true,
       "session_ids": [
         "0ce5e92a6cdb",
-        "c894c8d09b04"
+        "23b38cff9b2c",
+        "57cfcb5657dd",
+        "64a385dbb6ef",
+        "6da6f2ca3b2a",
+        "83e8400e8ed4",
+        "96280c0f03a4",
+        "c3e28b05c4f8",
+        "c894c8d09b04",
+        "dc7bc4909f1e",
+        "dff911cb1b02"
       ]
     }
   },
-  "scenario": "anket"
+  "scenario": null
 }

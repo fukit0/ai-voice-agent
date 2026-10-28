@@ -1,0 +1,132 @@
+{
+  "profile": "A3",
+  "sessions": 9,
+  "enough_sessions": true,
+  "answer_turns": 18,
+  "tool_call_rate": 1.0,
+  "invalid_tool_calls": 2,
+  "completion_rate": 0.0,
+  "outcomes": {
+    "bitmedi": 9
+  },
+  "foreign_or_non_turkish_transcript_rate": 0.162,
+  "sessions_with_errors": 0,
+  "median_answer_turns_per_session": 0,
+  "rows": [
+    {
+      "id": "0af4236ee23f",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 3,
+      "language_flags": {},
+      "errors": 0
+    },
+    {
+      "id": "35a3c5b3491a",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 2,
+      "language_flags": {},
+      "errors": 0
+    },
+    {
+      "id": "3b0c2ae80ad6",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 2,
+      "language_flags": {
+        "foreign_script": 2,
+        "non_turkish_words": 2
+      },
+      "errors": 0
+    },
+    {
+      "id": "47e1691a1c69",
+      "answer_turns": 18,
+      "no_tool_call_turns": 0,
+      "tool_calls": 19,
+      "invalid_tool_calls": 2,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 19,
+      "language_flags": {
+        "foreign_script": 1
+      },
+      "errors": 0
+    },
+    {
+      "id": "5cfc1e26dfcc",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 0,
+      "language_flags": {},
+      "errors": 0
+    },
+    {
+      "id": "6af0b4ee5dd0",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 5,
+      "language_flags": {},
+      "errors": 0
+    },
+    {
+      "id": "796d1ea27377",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 3,
+      "language_flags": {
+        "non_turkish_words": 1
+      },
+      "errors": 0
+    },
+    {
+      "id": "7ae9323b4762",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 3,
+      "language_flags": {},
+      "errors": 0
+    },
+    {
+      "id": "abdb09e675c2",
+      "answer_turns": 0,
+      "no_tool_call_turns": 0,
+      "tool_calls": 0,
+      "invalid_tool_calls": 0,
+      "outcome": null,
+      "completed": false,
+      "user_utterances": 0,
+      "language_flags": {},
+      "errors": 0
+    }
+  ]
+}

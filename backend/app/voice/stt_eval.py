@@ -83,7 +83,9 @@ def guard_decision(r: dict, thresholds: dict | None = None) -> str | None:
 def guard_rates(rows: list[dict], thresholds: dict | None = None) -> dict:
     """Doğru reddetme = hatalı/gürültü klibini reddetti; yanlış reddetme = doğru yazılmış klibi reddetti."""
     bad = [r for r in rows if _is_wrong(r)]
-    good = [r for r in rows if not _is_wrong(r)]
+    # Gürültü/öksürük klibinde STT'nin boş dönmesi doğru sonuçtur (yazı yok); geçidin boş metni "empty" diye reddetmesi
+    # yanlış ret sayılmaz. Yanlış ret yalnızca doğru yazılmış cevap klibi içindir.
+    good = [r for r in rows if not _is_wrong(r) and not r["should_reject"]]
     rej_bad = sum(1 for r in bad if guard_decision(r, thresholds))
     rej_good = sum(1 for r in good if guard_decision(r, thresholds))
     return {"bad_clips": len(bad), "good_clips": len(good),

@@ -223,3 +223,8 @@ agents do not update it automatically.
 - core-023: voice/realtime_report.py + scripts/realtime_report.py (A2/A3 cagri orani, tamamlama, transkript dili). BLOCKED: canli 5 arama yok; core-017 canli dogrulanmadan anlamsiz.
 - Dogrulama (bulut): pytest 357, vitest 43 (yeni: puan politikasi secici), tsc temiz, Playwright 12/12. Eski testler degisti (silinmedi): test_realtime'daki sunucu VAD testleri local_turns=False ile calistirilir (varsayilan degisti).
 - Sonraki kullanici adimi: Mac'te npm run build + backend yeniden basla; A2'de 5 arama (core-018/019), A3'te 5 arama (core-017/023), `scripts/realtime_report.py A3`, STT klipleri toplayip `scripts/stt_eval.py`; sonuclari paylasin, ilgili feature'lar passing'e cekilir.
+
+## Session 022 - core-020 STT olcumu (2026-10-28)
+- Kullanici 56 klip kaydetti (scripts/make_stt_manifest.py + record_stt_clips.sh) ve scripts/stt_eval.py'yi L2/L3/A1 icin calistirdi: evidence/core-020-stt-eval.json.
+- Bulgu: Deepgram en iyi; Whisper tabanli L2/L3 oksuruge metin uyduruyor, geçit yetmiyor; BuzzASR tekrar dongusu. Eklendi: sttguard repetition_loop kurali; stt_eval yanlis-ret tanimi duzeltildi (gurultuye bos donus dogru). ADR 0006 yazildi. core-020 PASSING (sapma: duz large-v3 olculmedi).
+- Dogrulama (bulut): pytest 362. Kalan: core-018/019 (A2 5 arama; ilk A2 oturumunda sabit ses calismadi - backend yeniden baslatilmamis olabilir), core-021 (llm-eval), core-023 (A3 5 arama) BLOCKED.

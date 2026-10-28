@@ -11,6 +11,8 @@ import re
 
 # Türkçe alfabe + rakam + temel noktalama dışındaki her harf (Çince, Kiril, İbranice, ã, ç dışı aksanlar...) şüphelidir.
 _FOREIGN = re.compile(r"[^\sA-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû0-9.,;:!?'\"()\-–%/]")
+_LOOP = re.compile(r"(.{1,4}?)\1{7,}")        # "hıhıhıhı…" gibi tekrar döngüsü (L2/L3 öksürük çıktıları, core-020 ölçümü)
+MAX_WORD_LEN = 30                              # tek "kelime" bu uzunluğu aşarsa metin değildir
 HALLUCINATIONS = ("altyazı", "izlediğiniz için", "abone ol")
 MIN_CONFIDENCE = 0.5          # Deepgram alt.confidence; düşükse (öksürük, nefes) metin güvenilmez
 MIN_AVG_LOGPROB = -1.0        # Whisper segment ortalama log olasılığı
@@ -27,6 +29,8 @@ def check(text: str, extra: dict | None = None) -> tuple[bool, str | None]:
     low = t.replace("İ", "i").replace("I", "ı").casefold()      # Türkçe büyük İ/I'nın casefold farkı
     if any(h in low for h in HALLUCINATIONS):
         return False, "hallucination_phrase"
+    if _LOOP.search(low) or any(len(w) > MAX_WORD_LEN for w in low.split()):
+        return False, "repetition_loop"
     extra = extra or {}
     conf = extra.get("confidence")
     if isinstance(conf, (int, float)) and conf < MIN_CONFIDENCE:

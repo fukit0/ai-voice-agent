@@ -49,6 +49,9 @@ def test_wer_guard_rates_and_recommendation(tmp_path):
     assert p["foreign_script_rate"] == 0.2 and p["noise_transcribed_rate"] == 1.0
     g = p["guard_default"]
     assert g["bad_clips"] == 3 and g["true_reject_rate"] == 1.0 and g["false_reject_rate"] == 0.0
+    silent = [{"file": "x", "category": "oksuruk", "reference": "", "hypothesis": "", "seconds": 0.1,
+               "extra": {"confidence": 0.0}, "should_reject": True}]
+    assert E.guard_rates(silent)["good_clips"] == 0 and E.guard_rates(silent)["bad_clips"] == 0     # boş dönüş doğru: yanlış ret değil
     assert p["recommended_thresholds"]["false_reject_rate"] <= 0.05
     text = E.render(rep)
     assert "örnek yetersiz (5/50 klip)" in text

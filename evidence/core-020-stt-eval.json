@@ -1,0 +1,2017 @@
+{
+  "min_clips": 50,
+  "clips": 56,
+  "providers": {
+    "L3:stt": {
+      "clips": 56,
+      "enough_clips": true,
+      "mean_wer": 2.011,
+      "exact_match_rate": 0.787,
+      "foreign_script_rate": 0.0,
+      "hallucination_rate": 0.036,
+      "noise_transcribed_rate": 1.0,
+      "p50_seconds": 1.339,
+      "by_category": {
+        "evet_hayir": {
+          "clips": 12,
+          "mean_wer": 7.0
+        },
+        "gurultu": {
+          "clips": 5,
+          "mean_wer": null
+        },
+        "kisa_cumle": {
+          "clips": 10,
+          "mean_wer": 0.45
+        },
+        "kod_karisimi": {
+          "clips": 6,
+          "mean_wer": 0.5
+        },
+        "oksuruk": {
+          "clips": 4,
+          "mean_wer": null
+        },
+        "on": {
+          "clips": 5,
+          "mean_wer": 0.0
+        },
+        "rakam": {
+          "clips": 14,
+          "mean_wer": 0.214
+        }
+      },
+      "guard_default": {
+        "bad_clips": 19,
+        "good_clips": 37,
+        "true_reject_rate": 0.105,
+        "false_reject_rate": 0.0
+      },
+      "recommended_thresholds": {
+        "min_confidence": 0.3,
+        "min_avg_logprob": -1.5,
+        "max_compression": 2.0,
+        "bad_clips": 19,
+        "good_clips": 37,
+        "true_reject_rate": 0.105,
+        "false_reject_rate": 0.0
+      },
+      "rows": [
+        {
+          "file": "data/stt-clips/c01.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 21.059,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c02.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.12,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c03.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.07,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c04.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.14,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c05.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.473,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c06.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim.İzlediğiniz için teşekkür ederim",
+          "seconds": 19.784,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c07.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet",
+          "seconds": 1.284,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c08.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet",
+          "seconds": 1.136,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c09.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet",
+          "seconds": 1.143,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c10.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet",
+          "seconds": 1.147,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c11.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır",
+          "seconds": 1.316,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c12.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır",
+          "seconds": 1.293,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c13.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır",
+          "seconds": 1.215,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c14.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır",
+          "seconds": 1.207,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c15.wav",
+          "category": "evet_hayir",
+          "reference": "evet evet",
+          "hypothesis": "Evet evet",
+          "seconds": 1.31,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c16.wav",
+          "category": "evet_hayir",
+          "reference": "yok",
+          "hypothesis": "Yok",
+          "seconds": 1.622,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c17.wav",
+          "category": "evet_hayir",
+          "reference": "olabilir",
+          "hypothesis": "Olabilir",
+          "seconds": 1.415,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c18.wav",
+          "category": "rakam",
+          "reference": "sıfır",
+          "hypothesis": "Sıfır",
+          "seconds": 1.427,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c19.wav",
+          "category": "rakam",
+          "reference": "bir",
+          "hypothesis": "Bir",
+          "seconds": 1.163,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c20.wav",
+          "category": "rakam",
+          "reference": "iki",
+          "hypothesis": "İki",
+          "seconds": 1.222,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c21.wav",
+          "category": "rakam",
+          "reference": "üç",
+          "hypothesis": "Üç",
+          "seconds": 1.328,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c22.wav",
+          "category": "rakam",
+          "reference": "dört",
+          "hypothesis": "İyi davet",
+          "seconds": 1.474,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c23.wav",
+          "category": "rakam",
+          "reference": "beş",
+          "hypothesis": "Beş",
+          "seconds": 1.277,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c24.wav",
+          "category": "rakam",
+          "reference": "altı",
+          "hypothesis": "Altı",
+          "seconds": 1.549,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c25.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Yedi",
+          "seconds": 1.247,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c26.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "sekiz",
+          "seconds": 4.017,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c27.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "Bakır",
+          "seconds": 2.018,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c28.wav",
+          "category": "rakam",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.232,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c29.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Yedi",
+          "seconds": 1.221,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c30.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "Sekiz",
+          "seconds": 1.27,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c31.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "Dokuz",
+          "seconds": 1.27,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c32.wav",
+          "category": "kod_karisimi",
+          "reference": "okay",
+          "hypothesis": "Okey",
+          "seconds": 1.135,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c33.wav",
+          "category": "kod_karisimi",
+          "reference": "okey",
+          "hypothesis": "Okey",
+          "seconds": 1.298,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c34.wav",
+          "category": "kod_karisimi",
+          "reference": "tamam okay",
+          "hypothesis": "Tamam okey",
+          "seconds": 1.349,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c35.wav",
+          "category": "kod_karisimi",
+          "reference": "yes",
+          "hypothesis": "Yasir",
+          "seconds": 1.268,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c36.wav",
+          "category": "kod_karisimi",
+          "reference": "ok",
+          "hypothesis": "Ok",
+          "seconds": 1.132,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c37.wav",
+          "category": "kod_karisimi",
+          "reference": "okay devam",
+          "hypothesis": "Okey devam",
+          "seconds": 1.272,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c38.wav",
+          "category": "kisa_cumle",
+          "reference": "dinlemek isterim",
+          "hypothesis": "Dinlemek isterim",
+          "seconds": 1.556,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c39.wav",
+          "category": "kisa_cumle",
+          "reference": "hatırlıyorum",
+          "hypothesis": "Hatırlıyorum",
+          "seconds": 1.417,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c40.wav",
+          "category": "kisa_cumle",
+          "reference": "müsaitim",
+          "hypothesis": "Bu sayede",
+          "seconds": 1.329,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c41.wav",
+          "category": "kisa_cumle",
+          "reference": "devam",
+          "hypothesis": "Devam",
+          "seconds": 1.264,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c42.wav",
+          "category": "kisa_cumle",
+          "reference": "evet müsaitim",
+          "hypothesis": "Evet bu sayede",
+          "seconds": 1.374,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c43.wav",
+          "category": "kisa_cumle",
+          "reference": "hayır istemiyorum",
+          "hypothesis": "Hayır istemiyorum",
+          "seconds": 1.364,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c44.wav",
+          "category": "kisa_cumle",
+          "reference": "yarın saat on beşte",
+          "hypothesis": "Yarın saat on beşte",
+          "seconds": 1.633,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c45.wav",
+          "category": "kisa_cumle",
+          "reference": "sekiz puan veriyorum",
+          "hypothesis": "Sekiz puan veriyorum",
+          "seconds": 1.668,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c46.wav",
+          "category": "kisa_cumle",
+          "reference": "biraz sonra arayın",
+          "hypothesis": "Biraz sonra arayın",
+          "seconds": 1.503,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c47.wav",
+          "category": "kisa_cumle",
+          "reference": "beni aramayın",
+          "hypothesis": "Ben aramaya gittim",
+          "seconds": 1.479,
+          "extra": {},
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c48.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Kıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhı",
+          "seconds": 48.791,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c49.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Şşş",
+          "seconds": 1.611,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c50.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Sistemik varlığı",
+          "seconds": 1.41,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c51.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Hıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhı",
+          "seconds": 36.766,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c52.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Kıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhı",
+          "seconds": 35.364,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c53.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "İstiklalara sahip olmalıdır",
+          "seconds": 1.896,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c54.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.",
+          "seconds": 1.626,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c55.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Biz de diğer herşeyi görürken",
+          "seconds": 1.868,
+          "extra": {},
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c56.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Ay ay ay",
+          "seconds": 1.396,
+          "extra": {},
+          "should_reject": true
+        }
+      ]
+    },
+    "L2:stt": {
+      "clips": 56,
+      "enough_clips": true,
+      "mean_wer": 0.617,
+      "exact_match_rate": 0.404,
+      "foreign_script_rate": 0.0,
+      "hallucination_rate": 0.071,
+      "noise_transcribed_rate": 1.0,
+      "p50_seconds": 0.52,
+      "by_category": {
+        "evet_hayir": {
+          "clips": 12,
+          "mean_wer": 0.333
+        },
+        "gurultu": {
+          "clips": 5,
+          "mean_wer": null
+        },
+        "kisa_cumle": {
+          "clips": 10,
+          "mean_wer": 0.65
+        },
+        "kod_karisimi": {
+          "clips": 6,
+          "mean_wer": 0.75
+        },
+        "oksuruk": {
+          "clips": 4,
+          "mean_wer": null
+        },
+        "on": {
+          "clips": 5,
+          "mean_wer": 0.6
+        },
+        "rakam": {
+          "clips": 14,
+          "mean_wer": 0.786
+        }
+      },
+      "guard_default": {
+        "bad_clips": 37,
+        "good_clips": 19,
+        "true_reject_rate": 0.351,
+        "false_reject_rate": 0.0
+      },
+      "recommended_thresholds": {
+        "min_confidence": 0.3,
+        "min_avg_logprob": -1.0,
+        "max_compression": 2.0,
+        "bad_clips": 37,
+        "good_clips": 19,
+        "true_reject_rate": 0.351,
+        "false_reject_rate": 0.0
+      },
+      "rows": [
+        {
+          "file": "data/stt-clips/c01.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "Om",
+          "seconds": 3.57,
+          "extra": {
+            "avg_logprob": -0.6414838433265686,
+            "compression_ratio": 0.2,
+            "no_speech_prob": 8.043214982933478e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c02.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 0.512,
+          "extra": {
+            "avg_logprob": -0.5855870246887207,
+            "compression_ratio": 0.2,
+            "no_speech_prob": 3.014525851163796e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c03.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "Evet.",
+          "seconds": 0.513,
+          "extra": {
+            "avg_logprob": -0.9000012397766113,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 2.3777854685214095e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c04.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "Om.",
+          "seconds": 0.513,
+          "extra": {
+            "avg_logprob": -1.0553509712219238,
+            "compression_ratio": 0.2727272727272727,
+            "no_speech_prob": 1.9178741927916576e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c05.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 0.502,
+          "extra": {
+            "avg_logprob": -0.765227198600769,
+            "compression_ratio": 0.2,
+            "no_speech_prob": 2.498586060273311e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c06.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.",
+          "seconds": 0.53,
+          "extra": {
+            "avg_logprob": -0.28585461775461835,
+            "compression_ratio": 0.8085106382978723,
+            "no_speech_prob": 1.2340943544852934e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c07.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 0.502,
+          "extra": {
+            "avg_logprob": -0.5852619171142578,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 6.095310367548734e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c08.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 0.529,
+          "extra": {
+            "avg_logprob": -0.5763185977935791,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 2.8243178629150378e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c09.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 0.534,
+          "extra": {
+            "avg_logprob": -0.46993074417114256,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 3.9786174355072035e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c10.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 0.525,
+          "extra": {
+            "avg_logprob": -0.6301576614379882,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 1.0355351992563655e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c11.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 0.539,
+          "extra": {
+            "avg_logprob": -0.3393260955810547,
+            "compression_ratio": 0.4666666666666667,
+            "no_speech_prob": 5.94941249043579e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c12.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 0.505,
+          "extra": {
+            "avg_logprob": -0.3202669143676758,
+            "compression_ratio": 0.4666666666666667,
+            "no_speech_prob": 5.134705161058406e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c13.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 0.509,
+          "extra": {
+            "avg_logprob": -0.4024492740631104,
+            "compression_ratio": 0.4666666666666667,
+            "no_speech_prob": 3.1499694519432353e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c14.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 0.507,
+          "extra": {
+            "avg_logprob": -0.8822064399719238,
+            "compression_ratio": 0.4666666666666667,
+            "no_speech_prob": 8.244979143867681e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c15.wav",
+          "category": "evet_hayir",
+          "reference": "evet evet",
+          "hypothesis": "Evet, evet.",
+          "seconds": 0.512,
+          "extra": {
+            "avg_logprob": -0.48171864237104145,
+            "compression_ratio": 0.6470588235294118,
+            "no_speech_prob": 3.1031996416963636e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c16.wav",
+          "category": "evet_hayir",
+          "reference": "yok",
+          "hypothesis": "Yok.",
+          "seconds": 0.503,
+          "extra": {
+            "avg_logprob": -0.43628950119018556,
+            "compression_ratio": 0.3333333333333333,
+            "no_speech_prob": 5.321864615659422e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c17.wav",
+          "category": "evet_hayir",
+          "reference": "olabilir",
+          "hypothesis": "Olabilir.",
+          "seconds": 0.507,
+          "extra": {
+            "avg_logprob": -0.3118487199147542,
+            "compression_ratio": 0.5294117647058824,
+            "no_speech_prob": 8.026718179010572e-12
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c18.wav",
+          "category": "rakam",
+          "reference": "sıfır",
+          "hypothesis": "Sefır.",
+          "seconds": 0.511,
+          "extra": {
+            "avg_logprob": -0.9191111155918666,
+            "compression_ratio": 0.4666666666666667,
+            "no_speech_prob": 4.429888678103566e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c19.wav",
+          "category": "rakam",
+          "reference": "bir",
+          "hypothesis": "Bir.",
+          "seconds": 0.504,
+          "extra": {
+            "avg_logprob": -0.4638816356658936,
+            "compression_ratio": 0.3333333333333333,
+            "no_speech_prob": 1.2892584222434778e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c20.wav",
+          "category": "rakam",
+          "reference": "iki",
+          "hypothesis": "İki.",
+          "seconds": 0.51,
+          "extra": {
+            "avg_logprob": -0.685774564743042,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 3.6723313279196645e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c21.wav",
+          "category": "rakam",
+          "reference": "üç",
+          "hypothesis": "3",
+          "seconds": 0.501,
+          "extra": {
+            "avg_logprob": -0.6969336867332458,
+            "compression_ratio": 0.1111111111111111,
+            "no_speech_prob": 4.387251673065862e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c22.wav",
+          "category": "rakam",
+          "reference": "dört",
+          "hypothesis": "Teşekkürler.",
+          "seconds": 0.51,
+          "extra": {
+            "avg_logprob": -0.8781726019723075,
+            "compression_ratio": 0.6363636363636364,
+            "no_speech_prob": 4.666052613733207e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c23.wav",
+          "category": "rakam",
+          "reference": "beş",
+          "hypothesis": "Beş.",
+          "seconds": 0.506,
+          "extra": {
+            "avg_logprob": -0.4150957266489665,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 9.410402318499322e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c24.wav",
+          "category": "rakam",
+          "reference": "altı",
+          "hypothesis": "Evet, tamamen.",
+          "seconds": 0.515,
+          "extra": {
+            "avg_logprob": -1.2762365341186523,
+            "compression_ratio": 0.6363636363636364,
+            "no_speech_prob": 3.6653801521735474e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c25.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Teşekkürler.",
+          "seconds": 0.511,
+          "extra": {
+            "avg_logprob": -0.8475958960396903,
+            "compression_ratio": 0.6363636363636364,
+            "no_speech_prob": 5.146101253461488e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c26.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "8",
+          "seconds": 0.501,
+          "extra": {
+            "avg_logprob": -0.9097455739974976,
+            "compression_ratio": 0.1111111111111111,
+            "no_speech_prob": 7.4766970392659e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c27.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "Evet.",
+          "seconds": 0.506,
+          "extra": {
+            "avg_logprob": -1.045585823059082,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 1.5379233997414588e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c28.wav",
+          "category": "rakam",
+          "reference": "on",
+          "hypothesis": "Evet.",
+          "seconds": 0.503,
+          "extra": {
+            "avg_logprob": -1.1503466606140136,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 1.3950367250270546e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c29.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Yedem.",
+          "seconds": 0.551,
+          "extra": {
+            "avg_logprob": -0.6422299657549176,
+            "compression_ratio": 0.42857142857142855,
+            "no_speech_prob": 2.147942379515655e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c30.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "Sekiz.",
+          "seconds": 0.596,
+          "extra": {
+            "avg_logprob": -0.42972715695699054,
+            "compression_ratio": 0.42857142857142855,
+            "no_speech_prob": 3.654503435979173e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c31.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "9",
+          "seconds": 0.588,
+          "extra": {
+            "avg_logprob": -0.7173653841018677,
+            "compression_ratio": 0.1111111111111111,
+            "no_speech_prob": 1.5678879028424575e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c32.wav",
+          "category": "kod_karisimi",
+          "reference": "okay",
+          "hypothesis": "Ok.",
+          "seconds": 0.586,
+          "extra": {
+            "avg_logprob": -0.9060047149658204,
+            "compression_ratio": 0.2727272727272727,
+            "no_speech_prob": 1.5737965097795126e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c33.wav",
+          "category": "kod_karisimi",
+          "reference": "okey",
+          "hypothesis": "Tamam.",
+          "seconds": 0.524,
+          "extra": {
+            "avg_logprob": -0.9083456039428711,
+            "compression_ratio": 0.42857142857142855,
+            "no_speech_prob": 7.89122864275349e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c34.wav",
+          "category": "kod_karisimi",
+          "reference": "tamam okay",
+          "hypothesis": "Tamam, ok.",
+          "seconds": 0.514,
+          "extra": {
+            "avg_logprob": -0.5732705933707101,
+            "compression_ratio": 0.5555555555555556,
+            "no_speech_prob": 6.566241994576671e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c35.wav",
+          "category": "kod_karisimi",
+          "reference": "yes",
+          "hypothesis": "Evet.",
+          "seconds": 0.506,
+          "extra": {
+            "avg_logprob": -0.35716423988342283,
+            "compression_ratio": 0.38461538461538464,
+            "no_speech_prob": 7.517071687335175e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c36.wav",
+          "category": "kod_karisimi",
+          "reference": "ok",
+          "hypothesis": "Ok.",
+          "seconds": 0.546,
+          "extra": {
+            "avg_logprob": -0.4371933937072754,
+            "compression_ratio": 0.2727272727272727,
+            "no_speech_prob": 3.985821672713996e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c37.wav",
+          "category": "kod_karisimi",
+          "reference": "okay devam",
+          "hypothesis": "Tamam.",
+          "seconds": 0.549,
+          "extra": {
+            "avg_logprob": -0.9852198600769043,
+            "compression_ratio": 0.42857142857142855,
+            "no_speech_prob": 5.362017496679528e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c38.wav",
+          "category": "kisa_cumle",
+          "reference": "dinlemek isterim",
+          "hypothesis": "Dinlemek isterim.",
+          "seconds": 0.525,
+          "extra": {
+            "avg_logprob": -0.3719991048177083,
+            "compression_ratio": 0.68,
+            "no_speech_prob": 1.330518611952769e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c39.wav",
+          "category": "kisa_cumle",
+          "reference": "hatırlıyorum",
+          "hypothesis": "Atırlıyorum.",
+          "seconds": 0.522,
+          "extra": {
+            "avg_logprob": -0.6865920424461365,
+            "compression_ratio": 0.6363636363636364,
+            "no_speech_prob": 8.54522771986943e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c40.wav",
+          "category": "kisa_cumle",
+          "reference": "müsaitim",
+          "hypothesis": "Üstelik.",
+          "seconds": 0.531,
+          "extra": {
+            "avg_logprob": -1.1480801105499268,
+            "compression_ratio": 0.5294117647058824,
+            "no_speech_prob": 2.817003297295173e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c41.wav",
+          "category": "kisa_cumle",
+          "reference": "devam",
+          "hypothesis": "Tamam.",
+          "seconds": 0.506,
+          "extra": {
+            "avg_logprob": -0.9457521438598633,
+            "compression_ratio": 0.42857142857142855,
+            "no_speech_prob": 1.722796211245381e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c42.wav",
+          "category": "kisa_cumle",
+          "reference": "evet müsaitim",
+          "hypothesis": "Evet, güzeldi.",
+          "seconds": 0.518,
+          "extra": {
+            "avg_logprob": -0.7717831134796143,
+            "compression_ratio": 0.6521739130434783,
+            "no_speech_prob": 3.8604414109855156e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c43.wav",
+          "category": "kisa_cumle",
+          "reference": "hayır istemiyorum",
+          "hypothesis": "Hayır, istemiyor.",
+          "seconds": 0.516,
+          "extra": {
+            "avg_logprob": -1.265455961227417,
+            "compression_ratio": 0.6923076923076923,
+            "no_speech_prob": 6.530908591706464e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c44.wav",
+          "category": "kisa_cumle",
+          "reference": "yarın saat on beşte",
+          "hypothesis": "Yarın saat 15'te.",
+          "seconds": 0.525,
+          "extra": {
+            "avg_logprob": -0.25955567359924314,
+            "compression_ratio": 0.6923076923076923,
+            "no_speech_prob": 2.843805052554771e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c45.wav",
+          "category": "kisa_cumle",
+          "reference": "sekiz puan veriyorum",
+          "hypothesis": "Sekiz bal veriyorum.",
+          "seconds": 0.535,
+          "extra": {
+            "avg_logprob": -0.3162160979376899,
+            "compression_ratio": 0.7142857142857143,
+            "no_speech_prob": 3.593836686577312e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c46.wav",
+          "category": "kisa_cumle",
+          "reference": "biraz sonra arayın",
+          "hypothesis": "Bir daha sonra arayın.",
+          "seconds": 0.537,
+          "extra": {
+            "avg_logprob": -0.2666463851928711,
+            "compression_ratio": 0.7419354838709677,
+            "no_speech_prob": 3.559630715188611e-11
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c47.wav",
+          "category": "kisa_cumle",
+          "reference": "beni aramayın",
+          "hypothesis": "Bina Ramet.",
+          "seconds": 0.539,
+          "extra": {
+            "avg_logprob": -0.8731740117073059,
+            "compression_ratio": 0.5789473684210527,
+            "no_speech_prob": 9.914824516954468e-10
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c48.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Köhömm Köhömm",
+          "seconds": 0.545,
+          "extra": {
+            "avg_logprob": -0.9597844343919021,
+            "compression_ratio": 0.85,
+            "no_speech_prob": 1.1674032573960602e-10
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c49.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.",
+          "seconds": 0.546,
+          "extra": {
+            "avg_logprob": -0.4944133758544922,
+            "compression_ratio": 0.8085106382978723,
+            "no_speech_prob": 8.901835518715373e-11
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c50.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "System 12.",
+          "seconds": 0.513,
+          "extra": {
+            "avg_logprob": -0.6965523560841879,
+            "compression_ratio": 0.5555555555555556,
+            "no_speech_prob": 1.7883786118666478e-10
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c51.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "Hıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıh",
+          "seconds": 1.367,
+          "extra": {
+            "avg_logprob": -0.06814884609646267,
+            "compression_ratio": 20.875,
+            "no_speech_prob": 9.168520109792411e-11
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c52.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Hıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıh",
+          "seconds": 1.363,
+          "extra": {
+            "avg_logprob": -0.14722985161675348,
+            "compression_ratio": 20.875,
+            "no_speech_prob": 8.57305545998166e-11
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c53.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.",
+          "seconds": 0.534,
+          "extra": {
+            "avg_logprob": -0.2773773471514384,
+            "compression_ratio": 0.8085106382978723,
+            "no_speech_prob": 1.8769573395527317e-10
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c54.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "İzlediğiniz için teşekkür ederim.",
+          "seconds": 0.548,
+          "extra": {
+            "avg_logprob": -0.4138425985972087,
+            "compression_ratio": 0.8085106382978723,
+            "no_speech_prob": 2.875818194691959e-10
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c55.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Evet, birer kanşı gibi birer.",
+          "seconds": 0.54,
+          "extra": {
+            "avg_logprob": -1.8633523668561662,
+            "compression_ratio": 0.8857142857142857,
+            "no_speech_prob": 1.4127993219759105e-10
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c56.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Ay ay ay",
+          "seconds": 0.537,
+          "extra": {
+            "avg_logprob": -0.7811196645100912,
+            "compression_ratio": 0.6153846153846154,
+            "no_speech_prob": 2.085014660924145e-10
+          },
+          "should_reject": true
+        }
+      ]
+    },
+    "A1:stt": {
+      "clips": 56,
+      "enough_clips": true,
+      "mean_wer": 0.287,
+      "exact_match_rate": 0.787,
+      "foreign_script_rate": 0.0,
+      "hallucination_rate": 0.0,
+      "noise_transcribed_rate": 0.111,
+      "p50_seconds": 1.055,
+      "by_category": {
+        "evet_hayir": {
+          "clips": 12,
+          "mean_wer": 0.083
+        },
+        "gurultu": {
+          "clips": 5,
+          "mean_wer": null
+        },
+        "kisa_cumle": {
+          "clips": 10,
+          "mean_wer": 0.0
+        },
+        "kod_karisimi": {
+          "clips": 6,
+          "mean_wer": 1.25
+        },
+        "oksuruk": {
+          "clips": 4,
+          "mean_wer": null
+        },
+        "on": {
+          "clips": 5,
+          "mean_wer": 0.4
+        },
+        "rakam": {
+          "clips": 14,
+          "mean_wer": 0.214
+        }
+      },
+      "guard_default": {
+        "bad_clips": 11,
+        "good_clips": 45,
+        "true_reject_rate": 0.818,
+        "false_reject_rate": 0.178
+      },
+      "recommended_thresholds": null,
+      "rows": [
+        {
+          "file": "data/stt-clips/c01.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On.",
+          "seconds": 3.164,
+          "extra": {
+            "confidence": 0.81274414
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c02.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On",
+          "seconds": 1.375,
+          "extra": {
+            "confidence": 0.9135742
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c03.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "O.",
+          "seconds": 2.306,
+          "extra": {
+            "confidence": 0.66882324
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c04.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "",
+          "seconds": 1.778,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c05.wav",
+          "category": "on",
+          "reference": "on",
+          "hypothesis": "On.",
+          "seconds": 3.059,
+          "extra": {
+            "confidence": 0.79296875
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c06.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "",
+          "seconds": 0.895,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c07.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 0.967,
+          "extra": {
+            "confidence": 0.8261719
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c08.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 1.25,
+          "extra": {
+            "confidence": 0.9760742
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c09.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 1.26,
+          "extra": {
+            "confidence": 0.9663086
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c10.wav",
+          "category": "evet_hayir",
+          "reference": "evet",
+          "hypothesis": "Evet.",
+          "seconds": 1.223,
+          "extra": {
+            "confidence": 0.98339844
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c11.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 2.095,
+          "extra": {
+            "confidence": 0.8955078
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c12.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır!",
+          "seconds": 1.903,
+          "extra": {
+            "confidence": 0.7949219
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c13.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır.",
+          "seconds": 1.006,
+          "extra": {
+            "confidence": 0.92285156
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c14.wav",
+          "category": "evet_hayir",
+          "reference": "hayır",
+          "hypothesis": "Hayır!",
+          "seconds": 0.991,
+          "extra": {
+            "confidence": 0.779541
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c15.wav",
+          "category": "evet_hayir",
+          "reference": "evet evet",
+          "hypothesis": "Evet, evet.",
+          "seconds": 1.025,
+          "extra": {
+            "confidence": 0.98828125
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c16.wav",
+          "category": "evet_hayir",
+          "reference": "yok",
+          "hypothesis": "Yok.",
+          "seconds": 1.048,
+          "extra": {
+            "confidence": 0.888916
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c17.wav",
+          "category": "evet_hayir",
+          "reference": "olabilir",
+          "hypothesis": "Olabilir.",
+          "seconds": 1.045,
+          "extra": {
+            "confidence": 0.99609375
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c18.wav",
+          "category": "rakam",
+          "reference": "sıfır",
+          "hypothesis": "Sıfır",
+          "seconds": 1.171,
+          "extra": {
+            "confidence": 0.78222656
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c19.wav",
+          "category": "rakam",
+          "reference": "bir",
+          "hypothesis": "Bir.",
+          "seconds": 0.943,
+          "extra": {
+            "confidence": 0.9394531
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c20.wav",
+          "category": "rakam",
+          "reference": "iki",
+          "hypothesis": "İki.",
+          "seconds": 0.923,
+          "extra": {
+            "confidence": 0.95214844
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c21.wav",
+          "category": "rakam",
+          "reference": "üç",
+          "hypothesis": "Üç.",
+          "seconds": 0.977,
+          "extra": {
+            "confidence": 0.77075195
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c22.wav",
+          "category": "rakam",
+          "reference": "dört",
+          "hypothesis": "Dört.",
+          "seconds": 1.027,
+          "extra": {
+            "confidence": 0.9003906
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c23.wav",
+          "category": "rakam",
+          "reference": "beş",
+          "hypothesis": "Beş",
+          "seconds": 0.979,
+          "extra": {
+            "confidence": 0.75
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c24.wav",
+          "category": "rakam",
+          "reference": "altı",
+          "hypothesis": "",
+          "seconds": 0.937,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c25.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Yedi",
+          "seconds": 1.236,
+          "extra": {
+            "confidence": 0.6723633
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c26.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "Sekiz.",
+          "seconds": 1.063,
+          "extra": {
+            "confidence": 0.92333984
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c27.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "",
+          "seconds": 0.981,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c28.wav",
+          "category": "rakam",
+          "reference": "on",
+          "hypothesis": "",
+          "seconds": 0.99,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c29.wav",
+          "category": "rakam",
+          "reference": "yedi",
+          "hypothesis": "Yedi.",
+          "seconds": 1.129,
+          "extra": {
+            "confidence": 0.97558594
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c30.wav",
+          "category": "rakam",
+          "reference": "sekiz",
+          "hypothesis": "Sekiz",
+          "seconds": 0.928,
+          "extra": {
+            "confidence": 0.96972656
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c31.wav",
+          "category": "rakam",
+          "reference": "dokuz",
+          "hypothesis": "Dokuz.",
+          "seconds": 0.934,
+          "extra": {
+            "confidence": 0.75512695
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c32.wav",
+          "category": "kod_karisimi",
+          "reference": "okay",
+          "hypothesis": "Okay.",
+          "seconds": 0.913,
+          "extra": {
+            "confidence": 0.6378174
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c33.wav",
+          "category": "kod_karisimi",
+          "reference": "okey",
+          "hypothesis": "",
+          "seconds": 0.947,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c34.wav",
+          "category": "kod_karisimi",
+          "reference": "tamam okay",
+          "hypothesis": "Tamam, okay.",
+          "seconds": 0.945,
+          "extra": {
+            "confidence": 0.9860026
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c35.wav",
+          "category": "kod_karisimi",
+          "reference": "yes",
+          "hypothesis": "",
+          "seconds": 0.914,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c36.wav",
+          "category": "kod_karisimi",
+          "reference": "ok",
+          "hypothesis": "Çok güzel bir şey yok.",
+          "seconds": 0.954,
+          "extra": {
+            "confidence": 0.38549805
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c37.wav",
+          "category": "kod_karisimi",
+          "reference": "okay devam",
+          "hypothesis": "Okey, devam.",
+          "seconds": 0.968,
+          "extra": {
+            "confidence": 0.9904785
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c38.wav",
+          "category": "kisa_cumle",
+          "reference": "dinlemek isterim",
+          "hypothesis": "Dinlemek isterim.",
+          "seconds": 0.947,
+          "extra": {
+            "confidence": 0.9904785
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c39.wav",
+          "category": "kisa_cumle",
+          "reference": "hatırlıyorum",
+          "hypothesis": "Hatırlıyorum.",
+          "seconds": 0.996,
+          "extra": {
+            "confidence": 0.8055013
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c40.wav",
+          "category": "kisa_cumle",
+          "reference": "müsaitim",
+          "hypothesis": "Müsaitim.",
+          "seconds": 0.901,
+          "extra": {
+            "confidence": 0.9166667
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c41.wav",
+          "category": "kisa_cumle",
+          "reference": "devam",
+          "hypothesis": "Devam.",
+          "seconds": 1.43,
+          "extra": {
+            "confidence": 0.6561279
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c42.wav",
+          "category": "kisa_cumle",
+          "reference": "evet müsaitim",
+          "hypothesis": "Evet, müsaitim.",
+          "seconds": 1.149,
+          "extra": {
+            "confidence": 0.9822591
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c43.wav",
+          "category": "kisa_cumle",
+          "reference": "hayır istemiyorum",
+          "hypothesis": "Hayır istemiyorum.",
+          "seconds": 1.305,
+          "extra": {
+            "confidence": 0.99316406
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c44.wav",
+          "category": "kisa_cumle",
+          "reference": "yarın saat on beşte",
+          "hypothesis": "Yarın saat on beşte.",
+          "seconds": 1.148,
+          "extra": {
+            "confidence": 0.99316406
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c45.wav",
+          "category": "kisa_cumle",
+          "reference": "sekiz puan veriyorum",
+          "hypothesis": "Sekiz puan veriyorum",
+          "seconds": 1.125,
+          "extra": {
+            "confidence": 0.91748047
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c46.wav",
+          "category": "kisa_cumle",
+          "reference": "biraz sonra arayın",
+          "hypothesis": "Biraz sonra arayın.",
+          "seconds": 1.179,
+          "extra": {
+            "confidence": 0.96533203
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c47.wav",
+          "category": "kisa_cumle",
+          "reference": "beni aramayın",
+          "hypothesis": "Beni aramayın.",
+          "seconds": 1.106,
+          "extra": {
+            "confidence": 0.9741211
+          },
+          "should_reject": false
+        },
+        {
+          "file": "data/stt-clips/c48.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.173,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c49.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.216,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c50.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.211,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c51.wav",
+          "category": "oksuruk",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.309,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c52.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.241,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c53.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 1.289,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c54.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "Teşekkür ederiz.",
+          "seconds": 1.709,
+          "extra": {
+            "confidence": 0.39172363
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c55.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 0.99,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        },
+        {
+          "file": "data/stt-clips/c56.wav",
+          "category": "gurultu",
+          "reference": "",
+          "hypothesis": "",
+          "seconds": 0.967,
+          "extra": {
+            "confidence": 0.0
+          },
+          "should_reject": true
+        }
+      ]
+    }
+  }
+}

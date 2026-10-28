@@ -176,3 +176,12 @@ def test_cascade_rejects_garbage_transcript_as_unclear_and_reasks_without_record
         assert s.flow.answers == [] and s.flow.current == first and s.flow.retries == 1      # cevap kaydedilmedi, tekrar soruldu
         assert s.stats["stt_rejected"] == 1
     asyncio.run(main())
+
+
+def test_sttguard_rejects_repetition_loops_but_keeps_real_answers():
+    """core-020 ölçümü: Whisper öksürükte 'Hıhıhı…' döngüsü üretti; metin değil, reddedilmeli."""
+    from backend.app.voice import sttguard
+    assert sttguard.check("Hı" + "hı" * 40)[1] == "repetition_loop"
+    assert sttguard.check("Kıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhıhı")[1] == "repetition_loop"
+    for ok in ("evet evet", "hayır hayır hayır", "on", "yedi sekiz arası", "okay devam", "tamam tamam tamam"):
+        assert sttguard.check(ok) == (True, None), ok

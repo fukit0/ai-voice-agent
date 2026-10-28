@@ -1143,18 +1143,18 @@
       "moscow": "must",
       "title": "Türkçe kısa cevap ve kod karışımı STT ölçüm seti; STT geçidi eşiklerinin ayarı",
       "user_visible_behavior": "Hangi STT'nin 'on', 'evet', rakam ve 'okay' gibi kod karışımlı kısa cevapları doğru yazdığı ölçülerek seçilir; geçit eşikleri veriyle belirlenir.",
-      "status": "blocked",
+      "status": "passing",
       "verification": [
         "≥ 50 klip (on, evet, rakamlar, okay, öksürük/boğaz temizleme dahil); turbo, large-v3, BuzzASR, Deepgram için WER, yabancı yazı ve halüsinasyon oranı tablosu.",
         "sttguard eşikleri (güven 0,5, logprob -1,0, sıkıştırma 2,4) ile doğru reddetme / yanlış reddetme oranı.",
         "Profil seçimi ADR ile kayda geçer."
       ],
       "evidence": [
-        "backend/tests/test_measurement_tools.py (WER, gecit oranlari, esik tarama, eksik klip)",
-        "scripts/stt_eval.py",
-        "backend/app/voice/stt_eval.py"
+        "evidence/core-020-stt-eval.json (56 klip; L2 turbo, L3 BuzzASR, A1 Deepgram)",
+        "docs/adr/0006-stt-selection-and-guard.md",
+        "backend/tests/test_measurement_tools.py + test_quickfixes.py (repetition_loop); bulut pytest 362"
       ],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-014 (STT kelime hatalari) ile ortusur: bu feature onu genisletir; ikisi birlikte yurutulmeli. Kayitlar core-013 ile toplanir. Gemini girdi transkripsiyonu dil ayari dogrulanmadi. | 2026-10-28 UYGULAMA: Olcum araci hazir: manifest (JSON/CSV: file, text, category; bos text = reddedilmesi gereken oksuruk/gurultu) -> saglayici basina WER, tam eslesme, yabanci yazi / halusinasyon / gurultu-yazi oranlari, sttguard dogru/yanlis reddetme ve esik izgara taramasi (yanlis red <= %5 icinde en iyi oneri). KLIP TOPLANMADI: >= 50 klip (on, evet, rakam, okay, oksuruk) kullanici kaydi gerektirir (core-013 kayitlari); turbo/large-v3/BuzzASR/Deepgram tablosu ve profil secimi ADR'si yapilmadi. Esikler hala sezgisel."
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-014 (STT kelime hatalari) ile ortusur: bu feature onu genisletir; ikisi birlikte yurutulmeli. Kayitlar core-013 ile toplanir. Gemini girdi transkripsiyonu dil ayari dogrulanmadi. | 2026-10-28 UYGULAMA: Olcum araci hazir: manifest (JSON/CSV: file, text, category; bos text = reddedilmesi gereken oksuruk/gurultu) -> saglayici basina WER, tam eslesme, yabanci yazi / halusinasyon / gurultu-yazi oranlari, sttguard dogru/yanlis reddetme ve esik izgara taramasi (yanlis red <= %5 icinde en iyi oneri). KLIP TOPLANMADI: >= 50 klip (on, evet, rakam, okay, oksuruk) kullanici kaydi gerektirir (core-013 kayitlari); turbo/large-v3/BuzzASR/Deepgram tablosu ve profil secimi ADR'si yapilmadi. Esikler hala sezgisel. | 2026-10-28 OLCUM TAMAM: 56 klip, 3 STT. Deepgram en iyi (WER 0,29; gurultu yazi orani 0,11; gecit dogru ret 0,82 / yanlis ret 0). Whisper turbo ve BuzzASR oksuruge metin uyduruyor (gurultu yazi orani 1,00), gecit %26-35 yakaliyor; BuzzASR tekrar dongusu (WER 2,01). Yeni gecit kurali repetition_loop; esikler degismedi. SAPMA: olcut 'large-v3' diyor; L2 large-v3-TURBO, duz large-v3 olculmedi. Tek konusmaci, sessiz oda, telefon filtresi yok. Yanlis ret hesabi duzeltildi (gurultu klibinde bos donus yanlis ret sayilmaz)."
     },
     {
       "id": "core-021",
