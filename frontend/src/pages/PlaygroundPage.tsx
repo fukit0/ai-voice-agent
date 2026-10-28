@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActiveProfile } from "../ActiveProfile";
 import { fetchScenarios, type ScenarioSummary } from "../api";
 import { useProfile } from "../ProfileContext";
-import { dbToMeter, startVoice, type VoiceEvent, type VoiceHandle } from "../voice";
+import { dbToMeter, startVoice, type ScorePolicy, type VoiceEvent, type VoiceHandle } from "../voice";
 
 type Line = { role: "user" | "agent"; text: string };
 type Turn = Extract<VoiceEvent, { type: "turn" }>;
@@ -25,6 +25,7 @@ export function PlaygroundPage() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [scenario, setScenario] = useState<string>("");
   const [phone, setPhone] = useState(false);
+  const [scorePolicy, setScorePolicy] = useState<ScorePolicy>("clarify");   // core-021: demoda değiştirilebilir
   const [record, setRecord] = useState(false);                         // core-013: varsayılan kapalı (gizlilik)
   const [recording, setRecording] = useState<string | null>(null);     // kaydedilen oturumun kimliği (durdurunca)
   const [state, setState] = useState<string>("idle");
@@ -77,7 +78,7 @@ export function PlaygroundPage() {
     setState("connecting");
     try {
       handle.current = await startVoice(active.id, { onEvent, onLevels: (m, a) => setLevels([m, a]) },
-        { scenario: scenario || undefined, phoneFilter: phone, record,
+        { scenario: scenario || undefined, scorePolicy, phoneFilter: phone, record,
           vad: { ...(auto ? { auto: true } : { db: thresholdDb }), barge_frames: bargeFrames, barge_margin_db: bargeMargin } });
     } catch (e) {
       setError((e as Error).message);
@@ -133,6 +134,14 @@ export function PlaygroundPage() {
           <select value={scenario} disabled={running} onChange={(e) => setScenario(e.target.value)} aria-label="Senaryo">
             <option value="">Serbest sohbet (senaryosuz)</option>
             {scenarios.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+        </label>
+        <label title="Müşteri 'çok memnun kaldım' ya da 'yedi sekiz arası' derse: Netleştir = ajan tek bir sayı ister; Serbest = model kendi yorumlar (A1 çevirmez, L2/L3 çevirir).">
+          Puan politikası{" "}
+          <select value={scorePolicy} disabled={running} onChange={(e) => setScorePolicy(e.target.value as ScorePolicy)}
+                  aria-label="Puan politikası">
+            <option value="clarify">Netleştir (varsayılan)</option>
+            <option value="free">Serbest (model karar verir)</option>
           </select>
         </label>
         <label className="voice-check">

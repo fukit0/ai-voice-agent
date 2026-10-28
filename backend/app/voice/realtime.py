@@ -15,6 +15,7 @@ erişimi olan makinede yapılabilir (bulut testleri FakeRealtime ile çalışır
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 import base64
 import json
 import math
@@ -31,6 +32,7 @@ from ..providers.audio import resample
 from . import phone
 from .flow import INTENTS, answer_rule
 from .session import END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
+from .silence import SilenceGuard
 from .vad import FRAME, SAMPLE_RATE, Endpointer
 
 SPEAK_TIMEOUT_S = 10.0
@@ -100,6 +102,11 @@ class RealtimeBackend:
 
     def set_answer_rule(self, rule: str | None) -> None:
         self.rule = rule
+
+    local_turns = False    # core-018: True ise tur sınırlarını sunucu değil yerel VAD belirler (commit + cevap isteği)
+
+    async def commit_audio(self) -> None: ...
+    async def clear_audio(self) -> None: ...
 
     async def connect(self, instructions: str) -> None: raise NotImplementedError
     async def send_audio(self, pcm16: bytes) -> None: raise NotImplementedError
@@ -172,8 +179,9 @@ class OpenAIRealtime(_WsBackend):
     in_rate = out_rate = 24000
     auto_answer = True
 
-    def __init__(self, model: str):
+    def __init__(self, model: str, local_turns: bool = True):
         super().__init__(model)
+        self.local_turns = local_turns      # profilde `local_turns: false` ile sunucu VAD'ına dönülebilir
         self._seen_calls: set[str] = set()
         self.threshold: float | None = None   # core-015: server_vad.threshold (0-1); None = sunucu varsayılanı
         self._active = False                  # aktif (üretilen) yanıt var mı: yoksa response.cancel "Cancellation failed" hatası verir
@@ -187,8 +195,14 @@ class OpenAIRealtime(_WsBackend):
         self.threshold = self.threshold_for_db(db)
         return self.threshold
 
+    async def commit_audio(self) -> None:
+        await self._send({"type": "input_audio_buffer.commit"})
+
+    async def clear_audio(self) -> None:
+        await self._send({"type": "input_audio_buffer.clear"})
+
     async def apply_sensitivity(self) -> None:
-        if self.ws is not None and self.threshold is not None:
+        if self.ws is not None and self.threshold is not None and not self.local_turns:
             await self._send({"type": "session.update", "session": {"type": "realtime", "audio": {"input": {
                 "turn_detection": {"type": "server_vad", "threshold": self.threshold, "create_response": False,
                                    "interrupt_response": False, "silence_duration_ms": 500}}}}})
@@ -204,9 +218,11 @@ class OpenAIRealtime(_WsBackend):
                 "input": {"format": {"type": "audio/pcm", "rate": 24000},
                           "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr",
                                            "prompt": "Türkçe telefon anketi. Sık geçen kelimeler: alo, efendim, evet, hayır, müsaitim, dinlemek isterim, devam, hatırlıyorum, on."},
-                          "turn_detection": {"type": "server_vad", "create_response": False, "interrupt_response": False,
-                                             "silence_duration_ms": 500,
-                                             **({"threshold": self.threshold} if self.threshold is not None else {})}},
+                          # local_turns: tur sınırlarını yerel VAD verir (commit + cevap isteği); sunucu VAD'ı hoparlör yankısında
+                          # ve gürültüde sahte tur açıyordu (core-018)
+                          "turn_detection": None if self.local_turns else {
+                              "type": "server_vad", "create_response": False, "interrupt_response": False, "silence_duration_ms": 500,
+                              **({"threshold": self.threshold} if self.threshold is not None else {})}},
                 "output": {"format": {"type": "audio/pcm", "rate": 24000}, "voice": "marin"}},
             "tools": [{"type": "function", "name": TOOL_NAME, "description": TOOL_DESCRIPTION, "parameters": TOOL_PARAMETERS}],
             "tool_choice": "none"}})
@@ -420,7 +436,7 @@ class FakeRealtime(RealtimeBackend):
 def make_backend(spec: dict) -> RealtimeBackend:
     kind, model = spec.get("provider"), spec.get("model") or ""
     if kind == "openai_realtime":
-        return OpenAIRealtime(model)
+        return OpenAIRealtime(model, local_turns=bool(spec.get("local_turns", True)))
     if kind == "gemini_live":
         return GeminiLive(model)
     if kind == "fake_realtime" and os.environ.get("SVA_FAKE_PROVIDERS") == "1":
@@ -436,9 +452,11 @@ class RealtimeVoiceSession:
                  flow, phone_filter: bool = False):
         self.sid, self.profile_id, self.backend, self.out, self.emit, self.flow = sid, profile_id, backend, out, send_event, flow
         self.phone_filter = phone_filter
+        self.fixed_audio = None                 # core-019: FixedAudio (sabit yasal metinler için önceden üretilmiş ses)
         self._in_filter = phone.PhoneFilter(SAMPLE_RATE)
         self._out_filter = phone.PhoneFilter(backend.out_rate)
         self.vad = Endpointer()
+        self.silence = SilenceGuard()           # core-022
         self.state = "idle"
         self.started_at = datetime.now(timezone.utc)
         self.turns: list[dict] = []
@@ -447,7 +465,8 @@ class RealtimeVoiceSession:
                       "agent_seconds_out": 0.0, "peak_in_db": -120.0, "holds": 0, "merged": 0, "barge_cut_ms": [],
                       "tool_calls": 0, "invalid_tool_calls": 0, "realtime": backend.kind}
         self._buf = np.zeros(0, np.float32)
-        self._send_q: asyncio.Queue[bytes | None] = asyncio.Queue()
+        self._send_q: asyncio.Queue[bytes | str | None] = asyncio.Queue()    # bytes: ses; "clear" / "answer": sıralı komut
+        self._ring: deque[np.ndarray] = deque(maxlen=20)                      # ajan konuşurken son 400 ms ham ses (söz kesmede sunucuya yetiştirilir)
         self._tasks: list[asyncio.Task] = []
         self._barge = 0
         self._barge_t0 = 0.0
@@ -480,6 +499,9 @@ class RealtimeVoiceSession:
     def _on_drained(self) -> None:
         if self.state == "speaking":
             self._set_state("listening")
+            self._ring.clear()
+            if self.backend.local_turns:
+                self._send_q.put_nowait("clear")      # yeni dinleme penceresi: tampon yalnız müşteri sesini içersin
 
     # -- başlangıç
     async def start(self) -> None:
@@ -518,8 +540,33 @@ class RealtimeVoiceSession:
         self._first_audio = None
         self._drop_audio = False
         self._set_state("thinking")
+        node = next((e["key"] for e in reversed(reply.events) if e.get("type") == "node"), None)
+        if self.fixed_audio is not None and len(reply.utterances) == 1 and not reply.finished and self.fixed_audio.applies(node):
+            self._tasks.append(asyncio.get_running_loop().create_task(self._play_fixed(text, rule, self._turn_no, node)))
+            return
         await self.backend.speak(text, rule)
         self._tasks.append(asyncio.get_running_loop().create_task(self._speak_watchdog(self._turn_no)))
+
+    async def _play_fixed(self, text: str, rule: str | None, turn_no: int, node: str | None) -> None:
+        """core-019: sabit yasal metin önceden üretilmiş OpenAI TTS sesiyle çalınır; model konuşmaz, yalnızca dinler."""
+        pcm = await self.fixed_audio.get(text)
+        if self._closed or turn_no != self._turn_no or self._expect != "speak":
+            return
+        if pcm is None:                                   # üretilemedi: modele geri dön (verbatim garantisi yok, olay ile bildirilir)
+            self.emit({"type": "fixed_audio_fallback", "step": node})
+            self.stats["fixed_audio_fallbacks"] = self.stats.get("fixed_audio_fallbacks", 0) + 1
+            await self.backend.speak(text, rule)
+            self._tasks.append(asyncio.get_running_loop().create_task(self._speak_watchdog(turn_no)))
+            return
+        step = 960                                        # 20 ms @ 24 kHz, 16 bit
+        for i in range(0, len(pcm), step):
+            if self._closed or self._drop_audio or turn_no != self._turn_no or self._expect != "speak":
+                return                                    # söz kesme: kalan ses atılır
+            self._on_audio(pcm[i:i + step], rate=24000)
+            await asyncio.sleep(0)
+        self.stats["fixed_audio_turns"] = self.stats.get("fixed_audio_turns", 0) + 1
+        self._rec = {**(self._rec or {}), "fixed_audio": node, "agent_said": text}
+        self._finish_speak()
 
     async def _speak_watchdog(self, turn_no: int) -> None:
         await asyncio.sleep(SPEAK_TIMEOUT_S)
@@ -541,6 +588,8 @@ class RealtimeVoiceSession:
         self.emit({"type": "vad_settings", **applied, "server_side": note})
 
     def _server_vad_note(self, applied: dict) -> str:
+        if self.backend.local_turns:
+            return "Tur yönetimi yerel (sunucu VAD'ı kapalı): eşik doğrudan konuşma başlangıç/bitişini ve söz kesmeyi belirler."
         if not hasattr(self.backend, "set_sensitivity"):
             return "Bu profilde sunucu VAD'i ayarlanamıyor: eşik yalnızca yerel söz kesmeyi/uç noktayı etkiler; sunucu kendi VAD'iyle kesebilir."
         db = applied["effective_threshold_db"]
@@ -571,7 +620,11 @@ class RealtimeVoiceSession:
             self._on_frame(frame)
             # yarı-dupleks: ajan konuşurken/düşünürken sunucuya sessizlik gider. Hoparlör yankısı ve oda gürültüsü sunucu VAD'ını
             # tetikleyip sahte tur/"tam anlayamadım" döngüsü üretiyordu; söz kesmeyi zaten yerel VAD yapar (kesince frames akmaya başlar).
-            out = frame if self.state == "listening" else np.zeros_like(frame)
+            if self.state == "listening":
+                out = frame
+            else:
+                out = np.zeros_like(frame)
+                self._ring.append(frame)
             self._send_q.put_nowait(to_int16(resample(out, SAMPLE_RATE, self.backend.in_rate)).tobytes())
 
     def _on_frame(self, frame: np.ndarray) -> None:
@@ -592,8 +645,30 @@ class RealtimeVoiceSession:
             if kind == "end" and self.state == "listening":
                 self.stats["utterances"] += 1
                 self._t_end = time.perf_counter()
+                if self.backend.local_turns and self._expect == "idle":
+                    self._expect, self._got_tool = "answer", False
+                    self._set_state("thinking")
+                    self._send_q.put_nowait("answer")     # sırayla: commit, sonra yalnız-fonksiyon cevabı isteği
             elif kind == "drop":
                 self.stats["dropped"] += 1
+                if self.state == "listening":
+                    self.silence.note_drop()
+                    if self.backend.local_turns:
+                        self._send_q.put_nowait("clear")  # tık/öksürük: sunucu tamponundan at
+        if not self.flow.finished and self.flow.current is not None:
+            listening = self.state == "listening" and self._expect == "idle"
+            if self.silence.tick(listening, self.vad.collecting):
+                asyncio.get_running_loop().create_task(self._on_silence())
+
+    async def _on_silence(self) -> None:
+        """core-022: müşteriden ses gelmedi; soru tekrarlanır ya da kibarca kapatılır."""
+        reply = self.flow.silence()
+        self.stats["silences"] = self.stats.get("silences", 0) + 1
+        self.emit({"type": "silence", "count": self.flow.silences})
+        self._turn_no += 1
+        self._rec = {"turn": self._turn_no, "greeting": True, "realtime": True, "silence": True}
+        self._t_end = time.perf_counter()
+        await self._deliver(reply)
 
     def _barge_in(self) -> None:
         cut_ms = round((time.perf_counter() - self._barge_t0) * 1000)
@@ -604,6 +679,11 @@ class RealtimeVoiceSession:
         self.stats["barge_cut_ms"].append(cut_ms)
         self.emit({"type": "barge_in", "cut_ms": cut_ms})
         self._set_state("listening")
+        if self.backend.local_turns:
+            # yerel tur yönetimi: tamponu temizle, ajan konuşurken sıfırlanan son 400 ms gerçek sesi sunucuya yetiştir
+            self._send_q.put_nowait("clear")
+            while self._ring:
+                self._send_q.put_nowait(to_int16(resample(self._ring.popleft(), SAMPLE_RATE, self.backend.in_rate)).tobytes())
         if self._expect == "speak":          # kesilen konuşma turu biter; müşterinin cevabı sunucu VAD olayıyla alınır
             self._expect = "idle"
             if self._rec:
@@ -618,7 +698,14 @@ class RealtimeVoiceSession:
             if pcm is None:
                 return
             try:
-                await self.backend.send_audio(pcm)
+                if pcm == "clear":
+                    await self.backend.clear_audio()
+                elif pcm == "answer":
+                    await self.backend.commit_audio()
+                    if self.backend.auto_answer:
+                        await self.backend.request_answer()
+                else:
+                    await self.backend.send_audio(pcm)
             except Exception as exc:  # noqa: BLE001
                 self.emit({"type": "error", "message": f"{self.backend.kind} ses gönderilemedi: {exc}"})
                 return
@@ -661,13 +748,14 @@ class RealtimeVoiceSession:
             self.errors.append(ev["message"])
             self.emit({"type": "error", "message": ev["message"]})
 
-    def _on_audio(self, pcm_bytes: bytes) -> None:
+    def _on_audio(self, pcm_bytes: bytes, rate: int | None = None) -> None:
         if self._drop_audio or not pcm_bytes:
             return
+        rate = rate or self.backend.out_rate
         audio = np.frombuffer(pcm_bytes, np.int16).astype(np.float32) / 32768.0
-        if self.phone_filter:
+        if self.phone_filter and rate == self.backend.out_rate:
             audio = self._out_filter.process(audio)
-        pcm = to_int16(resample(audio, self.backend.out_rate, OUT_RATE))
+        pcm = to_int16(resample(audio, rate, OUT_RATE))
         if self._first_audio is None:
             self._first_audio = time.perf_counter()
             if self._t_end is not None:
@@ -731,20 +819,24 @@ class RealtimeVoiceSession:
                 # cevap-bildirim yanıtının response.done'ı seslendirme yanıtından önce gelebilir; ses gelmeden bitiş sayılmaz
                 # (ses hiç gelmezse _speak_watchdog bırakır)
                 return
-            self._expect = "idle"
-            self.out.mark_end()
-            if self._first_audio is None:
-                self._set_state("listening")
-            if self._rec and self._rec.get("agent_said") and self._last_spoken:
-                import difflib
-                norm = lambda s: " ".join("".join(ch for ch in s.casefold() if ch.isalnum() or ch.isspace()).split())  # noqa: E731
-                self._rec["verbatim"] = round(difflib.SequenceMatcher(None, norm(self._last_spoken), norm(self._rec["agent_said"])).ratio(), 3)
-            if self._rec:
-                self.turns.append(self._rec)
-                self.emit({"type": "turn", **self._rec})
-                self._rec = {}
-            if self.flow.finished:
-                self.emit({"type": "finished", "outcome": self.flow.outcome})
+            self._finish_speak()
+
+    def _finish_speak(self) -> None:
+        """Ajan konuşma turu bitti (model yanıtı ya da sabit ses): tur kaydı, verbatim ölçümü, bitiş olayı."""
+        self._expect = "idle"
+        self.out.mark_end()
+        if self._first_audio is None:
+            self._set_state("listening")
+        if self._rec and self._rec.get("agent_said") and self._last_spoken:
+            import difflib
+            norm = lambda s: " ".join("".join(ch for ch in s.casefold() if ch.isalnum() or ch.isspace()).split())  # noqa: E731
+            self._rec["verbatim"] = round(difflib.SequenceMatcher(None, norm(self._last_spoken), norm(self._rec["agent_said"])).ratio(), 3)
+        if self._rec:
+            self.turns.append(self._rec)
+            self.emit({"type": "turn", **self._rec})
+            self._rec = {}
+        if self.flow.finished:
+            self.emit({"type": "finished", "outcome": self.flow.outcome})
 
     # -- kapanış
     async def close(self) -> Path | None:

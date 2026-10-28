@@ -22,6 +22,7 @@ from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
 from . import sttguard
+from .silence import SilenceGuard
 from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
 
 OUT_RATE = 48000
@@ -80,6 +81,7 @@ class VoiceSession:
         self.stt, self.llm, self.tts, self.out = stt, llm, tts, out
         self.emit = send_event
         self.vad = endpointer or Endpointer()
+        self.silence = SilenceGuard()      # core-022: sessiz hat bekçisi
         self.greeting = greeting
         self.flow = flow  # FlowDriver: verilirse konuşmayı senaryo akışı yönetir (aksi halde serbest persona)
         self.phone_filter = phone_filter
@@ -193,6 +195,21 @@ class VoiceSession:
                 self._spawn(self._respond(audio, t_end=time.perf_counter()))
             elif kind == "drop":
                 self.stats["dropped"] += 1
+                if self.state == "listening":
+                    self.silence.note_drop()      # kısa ses denemesi oldu ama duyulmadı: sessizlik bekleme süresi kısalır
+        if self.flow is not None and not self.flow.finished and self.flow.current is not None:
+            listening = self.state == "listening" and self._held is None and not self._tasks
+            if self.silence.tick(listening, self.vad.collecting):
+                self._on_silence()
+
+    def _on_silence(self) -> None:
+        reply = self.flow.silence()
+        self.stats["silences"] = self.stats.get("silences", 0) + 1
+        self.emit({"type": "silence", "count": self.flow.silences})
+        self._emit_reply(reply)
+        self._apply_endpointing()
+        if reply.utterances:
+            self._spawn(self._speak_turn(" ".join(reply.utterances), turn=self._next_turn(), t_end=time.perf_counter(), reply=reply))
 
     def _barge_in(self) -> None:
         cut_ms = round((time.perf_counter() - self._barge_t0) * 1000)   # ilk yüksek sesten ajan çıkışının boşaltılmasına

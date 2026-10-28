@@ -37,7 +37,7 @@ describe("Playground (core-001)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "transcript", role: "agent", text: "Merhaba, ben Ayşe.", t: 0.5 });
@@ -109,7 +109,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: true, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: true, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "node", key: "q2", code: "Q2", title: "Temsilciden genel memnuniyet", kind: "Score", group: "Temsilci Değerlendirmesi", spoken: "…", terminal: false });
@@ -144,6 +144,18 @@ describe("Playground senaryo modu (lab-003)", () => {
     expect(screen.queryByTestId("voice-hold")).not.toBeInTheDocument();
   });
 
+  it("puan politikası varsayılan 'Netleştir'dir; 'Serbest' seçilirse oturuma scorePolicy:free gider (core-021)", async () => {
+    renderPage();
+    const policy = await screen.findByLabelText("Puan politikası");
+    expect(policy).toHaveValue("clarify");
+    fireEvent.change(policy, { target: { value: "free" } });
+    const start = screen.getByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), expect.objectContaining({ scorePolicy: "free" })));
+    await waitFor(() => expect(screen.getByLabelText("Puan politikası")).toBeDisabled());   // oturum sürerken değiştirilemez
+  });
+
   it("senaryosuz serbest sohbet seçilirse senaryo gönderilmez", async () => {
     renderPage();
     const select = await screen.findByLabelText("Senaryo");
@@ -152,7 +164,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, scorePolicy: "clarify", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     expect(screen.queryByTestId("active-node")).not.toBeInTheDocument();
   });
   it("ses kaydı varsayılan kapalıdır; açılırsa record:true gönderilir, durdurunca kayıt oynatıcısı ve silme çıkar (core-013)", async () => {
@@ -164,7 +176,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", phoneFilter: false, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: false, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     expect(screen.getByTestId("record-toggle")).toBeDisabled();            // konuşma sürerken değiştirilemez
     fireEvent.click(screen.getByRole("button", { name: "Durdur" }));
     const box = await screen.findByTestId("recording-box");

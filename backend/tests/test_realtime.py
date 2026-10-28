@@ -326,7 +326,7 @@ def test_realtime_set_vad_applies_locally_and_reports_server_mapping(tmp_path, m
         ev = [e for e in events if e["type"] == "vad_settings"][-1]
         assert ev["threshold_db"] == -32.0 and s.vad.threshold_db == -32.0
         assert "ayarlanamıyor" in ev["server_side"]   # sahte backend: sunucu VAD'i yok
-        oa = OpenAIRealtime("m")
+        oa = OpenAIRealtime("m", local_turns=False)  # sunucu VAD yolu (core-018: varsayılan artık yerel tur)
         s.backend = oa
         s.set_vad({"db": -32})
         ev = [e for e in events if e["type"] == "vad_settings"][-1]
@@ -355,6 +355,7 @@ def test_openai_cancel_only_when_response_active_and_not_active_error_is_swallow
 def test_openai_server_vad_does_not_interrupt_on_its_own():
     """Söz kesmeyi yerel VAD yapar; sunucu VAD'ı hoparlör yankısında yanıtı iptal etmesin (canlı: 10 sn ses gelmedi)."""
     b = _backend(OpenAIRealtime, None)
+    b.local_turns = False          # sunucu VAD yolu (core-018: varsayılan artık yerel tur, sunucu VAD'ı kapalı)
     b.threshold = 0.6
     asyncio.run(b.apply_sensitivity())
     td = b.ws.msgs[0]["session"]["audio"]["input"]["turn_detection"]

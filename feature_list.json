@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-27",
+  "last_updated": "2026-10-28",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -1101,14 +1101,18 @@
       "moscow": "must",
       "title": "A2: tur yönetimi yerel uç nokta tespitiyle (sunucu VAD kapalı)",
       "user_visible_behavior": "Giriş metni okunurken veya ajan konuşurken sahte tur açılmaz; her cevap turu yerel VAD'in bitirdiği konuşmadan oluşur.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "turn_detection=null; yerel END'de input_audio_buffer.commit + cevap isteği, DROP'ta clear.",
         "5 canlı aramada uydurma cevap (utterance boşken answer) = 0, 'Cancellation failed' = 0; hoparlör ve kulaklık ayrı ölçülür.",
         "Gecikme p50 core-011 karşılaştırmasına girer."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-017 yari-dupleks yamasi yalniz hafifletme; kalici cozum Opus onerisi F-A. Dogrulanmadi."
+      "evidence": [
+        "backend/tests/test_local_turns.py (5 test)",
+        "backend/tests/test_realtime.py (sunucu VAD yolu local_turns=False ile ayri test)",
+        "Bulut: pytest 357, vitest 43, tsc temiz, Playwright 12/12 (2026-10-28)."
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-017 yari-dupleks yamasi yalniz hafifletme; kalici cozum Opus onerisi F-A. Dogrulanmadi. | 2026-10-28 UYGULAMA: OpenAIRealtime varsayilan local_turns=True: turn_detection=null; yerel VAD END -> input_audio_buffer.commit sonra yalniz-fonksiyon cevap istegi; DROP/yeni dinleme penceresi -> input_audio_buffer.clear; soz kesmede son 400 ms ham ses sunucuya yetistirilir. Profil secenegi realtime.local_turns=false eski sunucu VAD'ina doner. CANLI DOGRULANMADI: 5 canli aramada uydurma cevap=0 / 'Cancellation failed'=0 (hoparlor ve kulaklik ayri) kullanici testi bekliyor; gecikme p50 core-011'e girmedi. Bilinen risk: kullanicinin son sozunun transkripsiyonu arac cagrisindan sonra gelebilir (bayat _last_user); bos ifade puan netlestirme kontrolunu atlar."
     },
     {
       "id": "core-019",
@@ -1119,13 +1123,16 @@
       "moscow": "must",
       "title": "Sabit metinlerin (KVKK, giriş) önbellekli TTS ile çalınması; realtime model yalnız anlama işinde",
       "user_visible_behavior": "Kelimesi kelimesine okunması gereken hukuki metinler her aramada aynı okunur; model metinden sapmaz.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "KVKK/giriş metni ses kaydının STT'si ile senaryo metni arasında benzerlik ≥ 0,98 (10 arama).",
         "Gecikme L2 ve A2 ile karşılaştırılır; karar ADR'ye yazılır."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Sebep: AYNEN SOYLE olasiliksal modelde garanti degil; uretimde hukuki metin icin kabul edilemez. agent_said/verbatim olcumu core-017'de eklendi, ilk gercek olcum bu feature'in girdisi."
+      "evidence": [
+        "backend/tests/test_fixed_audio.py (5 test)",
+        "Bulut: pytest 357, vitest 43, tsc temiz, Playwright 12/12 (2026-10-28)."
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Sebep: AYNEN SOYLE olasiliksal modelde garanti degil; uretimde hukuki metin icin kabul edilemez. agent_said/verbatim olcumu core-017'de eklendi, ilk gercek olcum bu feature'in girdisi. | 2026-10-28 UYGULAMA: voice/fixedaudio.py: acilis ve guvenlik_scripti adimlari (varsayilan; profil realtime.fixed_audio.steps ile degisir, fixed_audio:false kapatir) OpenAI /v1/audio/speech (gpt-4o-mini-tts, ses marin, pcm 24 kHz) ile uretilir, data/fixed-audio/ altinda metin+model+ses hash'iyle onbelleklenir; model bu adimlarda konusmaz. Uretim hatasinda modele geri duser ve fixed_audio_fallback olayi + oturum sayaci yazar. Soz kesmede kalan ses atilir. CANLI DOGRULANMADI: gercek ses/ton tutarliligi, '10 aramada STT benzerligi >= 0,98' olcumu ve gecikme karsilastirmasi kullanici aramalarini bekliyor; ADR yazilmadi. Sinirlar: adim metni tek basina soylenmeli (onunde onay cumlesi varsa model soyler); ilk uretim onbellek bos oldugu icin ilk aramada gecikir (warm() ile isitilabilir, henuz otomatik degil)."
     },
     {
       "id": "core-020",
@@ -1136,14 +1143,18 @@
       "moscow": "must",
       "title": "Türkçe kısa cevap ve kod karışımı STT ölçüm seti; STT geçidi eşiklerinin ayarı",
       "user_visible_behavior": "Hangi STT'nin 'on', 'evet', rakam ve 'okay' gibi kod karışımlı kısa cevapları doğru yazdığı ölçülerek seçilir; geçit eşikleri veriyle belirlenir.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "≥ 50 klip (on, evet, rakamlar, okay, öksürük/boğaz temizleme dahil); turbo, large-v3, BuzzASR, Deepgram için WER, yabancı yazı ve halüsinasyon oranı tablosu.",
         "sttguard eşikleri (güven 0,5, logprob -1,0, sıkıştırma 2,4) ile doğru reddetme / yanlış reddetme oranı.",
         "Profil seçimi ADR ile kayda geçer."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-014 (STT kelime hatalari) ile ortusur: bu feature onu genisletir; ikisi birlikte yurutulmeli. Kayitlar core-013 ile toplanir. Gemini girdi transkripsiyonu dil ayari dogrulanmadi."
+      "evidence": [
+        "backend/tests/test_measurement_tools.py (WER, gecit oranlari, esik tarama, eksik klip)",
+        "scripts/stt_eval.py",
+        "backend/app/voice/stt_eval.py"
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). core-014 (STT kelime hatalari) ile ortusur: bu feature onu genisletir; ikisi birlikte yurutulmeli. Kayitlar core-013 ile toplanir. Gemini girdi transkripsiyonu dil ayari dogrulanmadi. | 2026-10-28 UYGULAMA: Olcum araci hazir: manifest (JSON/CSV: file, text, category; bos text = reddedilmesi gereken oksuruk/gurultu) -> saglayici basina WER, tam eslesme, yabanci yazi / halusinasyon / gurultu-yazi oranlari, sttguard dogru/yanlis reddetme ve esik izgara taramasi (yanlis red <= %5 icinde en iyi oneri). KLIP TOPLANMADI: >= 50 klip (on, evet, rakam, okay, oksuruk) kullanici kaydi gerektirir (core-013 kayitlari); turbo/large-v3/BuzzASR/Deepgram tablosu ve profil secimi ADR'si yapilmadi. Esikler hala sezgisel."
     },
     {
       "id": "core-021",
@@ -1154,14 +1165,18 @@
       "moscow": "must",
       "title": "Puan çıkarma politikası: sözlü ifade ve aralık için netleştirme sorusu",
       "user_visible_behavior": "'Çok memnun kaldım' veya 'yedi sekiz arası' denince ajan ya açık bir politikayla puana eşler ya da 'yedi mi sekiz mi?' diye netleştirir; modeller arası davranış aynıdır.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Ürün sahibi kararı: sözlü ifade puana çevrilir mi? Karar Demo Q&A ve ADR'de.",
         "llm-eval örnekleri (aralık, sözlü ifade) L2/L3/A1 için aynı sonucu verir (≥ %95 uyum).",
         "Realtime yolunda aynı kural uygulanır."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Gozlem: A1 (Haiku) sozlu cevabi puana cevirmiyor ('Gayet iyiydi' -> tam anlayamadim), L2/L3 (Qwen3) ceviriyor ('Cok memnun kaldim'->10, '7-8'->7), A2 uyduruyor ('Tesekkur ederim'->10). Anket yontemi acisindan A1 davranisi daha dogru olabilir; URUN KARARI gerekli, kod degistirilmedi."
+      "evidence": [
+        "backend/tests/test_score_policy.py (19 test)",
+        "frontend PlaygroundPage.test.tsx (puan politikasi secici)",
+        "Bulut: pytest 357, vitest 43, tsc temiz, Playwright 12/12 (2026-10-28)."
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Gozlem: A1 (Haiku) sozlu cevabi puana cevirmiyor ('Gayet iyiydi' -> tam anlayamadim), L2/L3 (Qwen3) ceviriyor ('Cok memnun kaldim'->10, '7-8'->7), A2 uyduruyor ('Tesekkur ederim'->10). Anket yontemi acisindan A1 davranisi daha dogru olabilir; URUN KARARI gerekli, kod degistirilmedi. | 2026-10-28 UYGULAMA: URUN KARARI (kullanici, 2026-10-28): 'netlestir' ve demoda DEGISTIRILEBILIR bir ozellik olarak sunulur. Uygulama: score_policy=clarify (varsayilan) / free; clarify'da puan yalnizca musterinin soyledigi tek sayidan cikar (extract_numbers), aralik/sozlu/ondalik ifade 'yedi mi sekiz mi?' netlestirme sorusu uretir, 2 denemeden sonra cevap yok sayilir (puan uydurulmaz); realtime yolunda ayni kural FlowDriver uzerinden. Playground'da 'Puan politikasi' secicisi (oturum sirasinda kilitli). Kalan dogrulama: llm-eval ile L2/L3/A1 uyumu >= %95 canli modellerle calistirilmadi (kural puan cikarimini modelden bagimsiz yaptigi icin beklenen yuksek, OLCULMEDI)."
     },
     {
       "id": "core-022",
@@ -1172,13 +1187,16 @@
       "moscow": "must",
       "title": "Sessiz hat / cevapsızlık bekçisi",
       "user_visible_behavior": "Soru sorulduktan sonra cevap gelmezse ajan 6 sn sonra soruyu tekrar sorar; ikinci seferde kibarca kapatır (kapanis_sessiz).",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Soru sonrası 6 sn sessizlikte tekrar sorma; ikincide kapanış (e2e test).",
         "Kısa DROP olduysa (kısa sesle cevap verilmeye çalışıldı) tekrar sorma öne alınır, 'duyamadım' denir."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Gozlem: L2 oturumu da076795e013'te 17 sn olu hat, hic tekrar sorulmadi. flow.py basliginda acik madde olarak vardi."
+      "evidence": [
+        "backend/tests/test_silence.py (7 test: sayac, tekrar sor -> kapanis, welcome yedegi, cascade ve realtime oturum)",
+        "Bulut: pytest 357, vitest 43, tsc temiz, Playwright 12/12 (2026-10-28)."
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Gozlem: L2 oturumu da076795e013'te 17 sn olu hat, hic tekrar sorulmadi. flow.py basliginda acik madde olarak vardi. | 2026-10-28 UYGULAMA: SilenceGuard: soru sonrasi 6 sn (kisa DROP sonrasi 3 sn) sessizlikte FlowDriver.silence() soruyu bir kez tekrar sorar, ikincisinde kapanis_sessiz (yoksa genel kapanis) ile bitirir; hem cascade hem realtime oturumlarinda. SAPMA (kayda gecirildi): kabul maddesi 'e2e test' diyor; dogrulama tarayici e2e'si yerine oturum duzeyinde entegrasyon testleriyle (simule ses cerceveleri) yapildi; gercek hat/mikrofonla canli denenmedi. Canli denemede 6 sn sure ayari gerekirse silence.py sabitleri."
     },
     {
       "id": "core-023",
@@ -1189,14 +1207,18 @@
       "moscow": "must",
       "title": "A3 (Gemini Live) yeniden değerlendirmesi",
       "user_visible_behavior": "core-017 kapı düzeltmesinden sonra A3 gerçek aramada anketi tamamlar; Türkçe anlama kalitesi ölçülür.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "5 arama: fonksiyon çağrısı oranı, anket tamamlama, Türkçe anlama doğruluğu.",
         "Giriş transkriptinin dili (İspanyolca/İngilizce çıkıyordu) için dil ayarı doğrulanır ya da sınır olarak yazılır.",
         "Sonuç core-011 kapanışına girer."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). 8 A3 oturumunun hepsinde tool_calls=0 idi; kok neden speech_stopped uretilmemesi + cagrinin sessizce atilmasi (core-017'de duzeltildi, canli dogrulanmadi)."
+      "evidence": [
+        "backend/tests/test_measurement_tools.py (realtime rapor testi)",
+        "scripts/realtime_report.py",
+        "backend/app/voice/realtime_report.py"
+      ],
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). 8 A3 oturumunun hepsinde tool_calls=0 idi; kok neden speech_stopped uretilmemesi + cagrinin sessizce atilmasi (core-017'de duzeltildi, canli dogrulanmadi). | 2026-10-28 UYGULAMA: Rapor araci hazir: A2/A3 oturum JSON'larindan fonksiyon cagrisi orani, gecersiz cagri, anket tamamlama (outcome=tamamlandi), yabanci/Turkce olmayan transkript orani (heuristik) ve hatali oturum sayisi. CANLI ARAMA YAPILMADI: core-017 A3 cagri kapisi duzeltmesi canli dogrulanmadan 5 arama anlamsiz; Gemini giris transkripsiyonu dil ayari dogrulanmadi (sinir olarak yazilacak)."
     }
   ]
 }

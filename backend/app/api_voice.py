@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -31,6 +32,7 @@ class OfferRequest(BaseModel):
     scenario: str | None = None          # verilirse konuşmayı senaryo akışı yönetir (lab-003)
     phone_filter: bool = False           # dar bant telefon sesi (300-3400 Hz)
     values: dict[str, str] | None = None  # müşteri değerleri: HITAP, MT_HITAP, GORUSME_TARIHI...
+    score_policy: Literal["clarify", "free"] = "clarify"   # core-021: sözlü/aralıklı puan netleştirilsin mi (clarify) yoksa model mi karar versin (free)
     vad: dict | None = None              # core-015: başlangıç giriş eşiği {"db"|"auto", "barge_frames", "barge_margin_db"}
     record: bool = False                 # core-013: stereo ses kaydı (sol müşteri, sağ ajan); varsayılan kapalı (gizlilik)
 
@@ -78,12 +80,15 @@ async def offer(req: OfferRequest) -> dict:
         from . import scenario as S
         from .voice.flow import FlowDriver
         try:
-            flow = FlowDriver(S.get(req.scenario), llm, req.values)
+            flow = FlowDriver(S.get(req.scenario), llm, req.values, score_policy=req.score_policy)
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
                               realtime_backend=backend, record=req.record)
     CONNECTIONS[conn.sid] = conn
+    if realtime:
+        from .voice.fixedaudio import FixedAudio
+        conn.session.fixed_audio = FixedAudio.from_spec(profile.realtime)   # core-019: sabit yasal metinler OpenAI TTS ile
     if req.vad:
         conn.session.set_vad(req.vad)
     try:

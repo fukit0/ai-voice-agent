@@ -212,3 +212,14 @@ agents do not update it automatically.
 - Hizli duzeltmeler uygulandi (core-017, bulut: pytest 321, Playwright 12/12; CANLI DOGRULANMADI -> core-017 blocked): STT gecidi, VAD min_ms 160, Gemini cagri kapisi, A2 yari-dupleks + interrupt_response=False + cancel yalniz aktifken, realtime cevap kurali + yumusak donusum, gozlemlenebilirlik alanlari.
 - Yeni feature'lar: core-018 (A2 yerel tur yonetimi), core-019 (sabit metin TTS), core-020 (STT olcum seti + gecit esikleri), core-021 (puan politikasi, URUN KARARI), core-022 (sessiz hat), core-023 (A3 yeniden degerlendirme). Akilli soz kesme (oksuruk) core-016'da.
 - Not: ornek aramalar (core-011) core-017 duzeltmeleri canli dogrulandiktan sonra yapilmali; aksi halde A3/A2 olcumleri anlamsiz.
+
+## Session 021 - core-018..023 (2026-10-28)
+- Kullanici hedefi: core-018..023 tamamlansin. Kararlar: core-021 -> puan politikasi 'netlestir' ve demoda DEGISTIRILEBILIR; core-019 -> sabit metinler OpenAI TTS.
+- core-018: A2 tur yonetimi yerel VAD'a alindi (turn_detection=null, END -> commit + yalniz-fonksiyon cevap istegi, DROP/yeni dinleme -> clear, soz kesmede 400 ms halka tamponu). Profil secenegi local_turns=false eski yola doner. BLOCKED: 5 canli arama (hoparlor/kulaklik) bekliyor.
+- core-019: voice/fixedaudio.py; acilis + guvenlik_scripti OpenAI TTS (gpt-4o-mini-tts, marin) ile uretilip data/fixed-audio/ onbellegine yazilir; model bu adimlarda konusmaz; hata -> modele geri dus + olay. BLOCKED: gercek ses, STT benzerligi >= 0,98 (10 arama) ve gecikme olcumu bekliyor; ADR yazilmadi.
+- core-020: voice/stt_eval.py + scripts/stt_eval.py (WER, yabanci yazi/halusinasyon, sttguard dogru/yanlis red, esik taramasi). BLOCKED: >= 50 gercek klip yok.
+- core-021: score_policy clarify|free (Playground secicisi), realtime dahil ayni kural. BLOCKED: llm-eval canli uyum olcumu (>= %95) yapilmadi.
+- core-022: SilenceGuard (6 sn / kisa DROP sonrasi 3 sn; tekrar sor -> kapanis_sessiz). PASSING, sapma: tarayici e2e yerine oturum duzeyi entegrasyon testi; canli denenmedi.
+- core-023: voice/realtime_report.py + scripts/realtime_report.py (A2/A3 cagri orani, tamamlama, transkript dili). BLOCKED: canli 5 arama yok; core-017 canli dogrulanmadan anlamsiz.
+- Dogrulama (bulut): pytest 357, vitest 43 (yeni: puan politikasi secici), tsc temiz, Playwright 12/12. Eski testler degisti (silinmedi): test_realtime'daki sunucu VAD testleri local_turns=False ile calistirilir (varsayilan degisti).
+- Sonraki kullanici adimi: Mac'te npm run build + backend yeniden basla; A2'de 5 arama (core-018/019), A3'te 5 arama (core-017/023), `scripts/realtime_report.py A3`, STT klipleri toplayip `scripts/stt_eval.py`; sonuclari paylasin, ilgili feature'lar passing'e cekilir.

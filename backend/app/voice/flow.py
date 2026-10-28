@@ -110,7 +110,30 @@ def coerce_obj(step: dict, obj: dict | None) -> dict | None:
     return {**obj, "value": new} if new is not v else obj
 
 
-def build_messages(step: dict, question: str, utterance: str) -> list[dict]:
+_NUM_WORDS = {"sıfır": 0, "sifir": 0, "bir": 1, "iki": 2, "üç": 3, "uc": 3, "dört": 4, "dort": 4, "beş": 5, "bes": 5, "altı": 6,
+              "alti": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
+_NUM_PARTICLE = {0: "sıfır mı", 1: "bir mi", 2: "iki mi", 3: "üç mü", 4: "dört mü", 5: "beş mi", 6: "altı mı", 7: "yedi mi",
+                 8: "sekiz mi", 9: "dokuz mu", 10: "on mu"}
+_BIR_FOLLOW = {"veririm", "veriyorum", "puan", "diyorum", "olur", "derim"}
+
+
+def extract_numbers(text: str) -> list[float]:
+    """Cümledeki puan adayları (rakam ya da yazıyla, soldan sağa). 'bir' belirsiz tanımlık olabileceği için yalnız tek başına ya da
+    'bir veririm / bir puan' gibi bağlamda sayılır. Ondalık ('2,5') ondalık olarak döner."""
+    t = text.replace("İ", "i").replace("I", "ı").casefold()
+    toks = re.findall(r"\d+(?:[.,]\d+)?|[a-zçğıöşüâ]+", t)
+    out: list[float] = []
+    for i, tok in enumerate(toks):
+        if tok[0].isdigit():
+            out.append(float(tok.replace(",", ".")))
+        elif tok in _NUM_WORDS:
+            if tok == "bir" and not (len(toks) == 1 or (i + 1 < len(toks) and toks[i + 1] in _BIR_FOLLOW)):
+                continue
+            out.append(float(_NUM_WORDS[tok]))
+    return out
+
+
+def build_messages(step: dict, question: str, utterance: str, score_policy: str = "free") -> list[dict]:
     intents = "\n".join(f"- {k}: {v}" for k, v in INTENTS.items())
     system = (
         "Sen bir sesli anket ajanının cevap ayrıştırıcısısın. Müşteri telefonda konuştu; cümlesi konuşma "
@@ -122,6 +145,9 @@ def build_messages(step: dict, question: str, utterance: str) -> list[dict]:
         f"Bu sorunun value kuralı: {value_rule(step)}.\n"
         "Sayıları rakamla yaz (örn. 'dokuz' -> 9). Müşteri birden fazla şey söylerse sorulan soruya verdiği asıl cevabı al."
     )
+    if score_policy == "clarify" and step["kind"] == "Score":
+        system += ("\nPuan sorusu: müşteri bir sayı söylemediyse (örn. 'çok memnun kaldım', 'gayet iyiydi') puan UYDURMA, intent=unclear "
+                   "ver. Aralık söylediyse ('yedi sekiz arası', '5-6') da intent=unclear ver.")
     if step.get("llmHint"):   # adıma özel yorum kuralı (senaryo yazarı verir; örn. KVKK sorusu dinleme tercihidir, ret değil)
         system += "\nBu soruya özel kural: " + step["llmHint"]
     user = f"Soru: {question}"
@@ -162,7 +188,12 @@ def check_value(step: dict, obj: dict) -> tuple[bool, Any]:
 
 
 class FlowDriver:
-    def __init__(self, scenario: dict, llm, values: dict[str, str] | None = None):
+    SCORE_POLICIES = ("clarify", "free")
+
+    def __init__(self, scenario: dict, llm, values: dict[str, str] | None = None, score_policy: str = "clarify"):
+        if score_policy not in self.SCORE_POLICIES:
+            raise ValueError(f"bilinmeyen puan politikası: {score_policy}")
+        self.score_policy = score_policy   # clarify: sözlü/aralıklı puan netleştirilir; free: model karar verir (eski davranış)
         self.sc = scenario
         self.steps = S.step_map(scenario)
         self.llm = llm
@@ -171,6 +202,7 @@ class FlowDriver:
         self.current: str | None = None
         self.retries = 0
         self.finished = False
+        self.silences = 0            # core-022: art arda sessizlik sayısı (gerçek bir cevap gelince sıfırlanır)
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.outcome: str | None = None
         self.answers: list[dict] = []
@@ -220,7 +252,7 @@ class FlowDriver:
         if step["kind"] == "OpenText":
             return {"intent": "answer", "value": utterance.strip()}, None
         t0 = time.perf_counter()
-        res = self.llm.complete(build_messages(step, self.text_of(step["key"]), utterance), 120, 0.0)
+        res = self.llm.complete(build_messages(step, self.text_of(step["key"]), utterance, self.score_policy), 120, 0.0)
         obj, _ = parse_output(res.text)
         return obj, round(time.perf_counter() - t0, 3)
 
@@ -239,6 +271,7 @@ class FlowDriver:
         reply = reply if reply is not None else Reply()
         if self.finished or self.current is None:
             return reply
+        self.silences = 0
         key = self.current
         step = self.steps[key]
         if self.coerce:
@@ -247,6 +280,10 @@ class FlowDriver:
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,
                              "valid": ok})
+        if intent == "answer" and step["kind"] == "Score" and self.score_policy == "clarify" and utterance.strip():
+            clarified = self._clarify_score(step, utterance, reply)
+            if clarified is not None:
+                return clarified
         if intent == "answer":
             return self._accept(step, utterance, value, reply)
         if intent == "repeat":
@@ -265,6 +302,29 @@ class FlowDriver:
             return reply
         return self._retry(step, reply)
 
+    def _clarify_score(self, step: dict, utterance: str, reply: Reply) -> Reply | None:
+        """Puan politikası 'clarify' (core-021): puan yalnızca müşterinin SÖYLEDİĞİ tek sayıdan gelir. Sayı yoksa ya da aralık/ondalık
+        söylediyse netleştirme sorusu sorulur (en fazla MAX_RETRIES, sonra cevapsız sayılır). Tek geçerli sayı varsa kabul edilir."""
+        lo = 0 if step["code"] == "Q12" else step["min"]
+        nums = extract_numbers(utterance)
+        valid = sorted({int(n) for n in nums if n == int(n) and lo <= n <= step["max"]})
+        if len(valid) == 1:
+            reply.events[-1].update({"value": valid[0]})
+            return self._accept(step, utterance, valid[0], reply)
+        reply.events[-1].update({"intent": "clarify", "value": None, "valid": False})
+        if self.retries >= MAX_RETRIES:      # iki netleştirmeden sonra hâlâ tek sayı yok: uydurma puan kaydetme, cevapsız geç
+            return self._accept(step, utterance, None, reply, unanswered=True)
+        self.retries += 1
+        q = self.text_of(step["key"])
+        if len(valid) >= 2:
+            a, b = valid[0], valid[1]
+            reply.utterances.append(f"Yalnız tek bir puan alabiliyorum. {_NUM_PARTICLE[a].capitalize()}, {_NUM_PARTICLE[b]}? Hangisini söylersiniz?")
+        elif nums and not valid:
+            reply.utterances.append(f"Puanı {lo} ile {step['max']} arasında tam sayı olarak söyler misiniz? " + q)
+        else:
+            reply.utterances.append(f"Puan olarak {lo} ile {step['max']} arasında bir sayı söyler misiniz? Örneğin sekiz. " + q)
+        return reply
+
     def _retry(self, step: dict, reply: Reply) -> Reply:
         key = step["key"]
         if self.retries < MAX_RETRIES:
@@ -282,11 +342,27 @@ class FlowDriver:
             return reply
         if step["kind"] in ("Score", "Duration", "OpenText", "CheckIn"):
             return self._accept(step, "", None, reply, unanswered=True)
+        return self._fallback_close(reply)
+
+    def _fallback_close(self, reply: Reply) -> Reply:
         reply.utterances.append(FALLBACK_CLOSE)
         reply.events.append({"type": "node", "key": "sistem_sonlandirdi", "code": None, "title": "Sistem sonlandırdı",
                              "kind": "Terminal", "group": "Erken Kapanış", "spoken": FALLBACK_CLOSE, "terminal": True})
         self._finish("sistem_sonlandirdi", reply)
         return reply
+
+    def silence(self) -> Reply:
+        """Müşteriden ses gelmedi (core-022). İlk seferde soru tekrar edilir; ikincide senaryodaki sessiz hat kapanışı (yoksa genel kapanış)."""
+        reply = Reply()
+        if self.finished or self.current is None:
+            return reply
+        self.silences += 1
+        if self.silences == 1:
+            reply.utterances.append("Sizi duyamadım, sesiniz geliyor mu? " + self.text_of(self.current))
+            return reply
+        if "kapanis_sessiz" in self.steps:
+            return self._exit("kapanis_sessiz", reply)
+        return self._fallback_close(reply)
 
     def _exit(self, target: str, reply: Reply) -> Reply:
         self._advance(target, reply)

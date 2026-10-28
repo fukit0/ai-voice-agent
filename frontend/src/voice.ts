@@ -24,7 +24,8 @@ export type VoiceHooks = {
   onLevels?: (mic: number, agent: number) => void; // 0..1
 };
 
-export type VoiceOptions = { scenario?: string; phoneFilter?: boolean; values?: Record<string, string>; record?: boolean;
+export type ScorePolicy = "clarify" | "free";
+export type VoiceOptions = { scenario?: string; scorePolicy?: ScorePolicy; phoneFilter?: boolean; values?: Record<string, string>; record?: boolean;
                              vad?: { db?: number; auto?: boolean; barge_frames?: number; barge_margin_db?: number } };
 export type VadSettingsCmd = { db?: number; auto?: boolean; barge_frames?: number; barge_margin_db?: number };
 export type VoiceHandle = { sessionId: string; close: () => Promise<void>; setPhoneFilter: (on: boolean) => void;
@@ -125,7 +126,7 @@ export async function startVoice(profile: string, hooks: VoiceHooks, options: Vo
       body: JSON.stringify({
         sdp: pc.localDescription!.sdp, type: pc.localDescription!.type, profile,
         scenario: options.scenario || null, phone_filter: !!options.phoneFilter, values: options.values ?? null,
-        record: !!options.record, vad: options.vad ?? null,
+        record: !!options.record, vad: options.vad ?? null, score_policy: options.scorePolicy ?? "clarify",
       }),
     });
     if (!res.ok) {
