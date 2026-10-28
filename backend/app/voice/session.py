@@ -22,6 +22,7 @@ from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
 from . import sttguard
+from .flow import prompt_info
 from .silence import SilenceGuard
 from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
 
@@ -401,7 +402,8 @@ class VoiceSession:
             "id": self.sid, "profile": self.profile_id, "started_at": self.started_at.isoformat(timespec="seconds"),
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
-                                                    "path": self.flow.path, "answers": self.flow.answers},
+                                                    "path": self.flow.path, "answers": self.flow.answers,
+                                                    "prompt": prompt_info()},
             "phone_filter": self.phone_filter, "vad": self.vad.settings()}, ensure_ascii=False, indent=2),
             encoding="utf-8")
         return path

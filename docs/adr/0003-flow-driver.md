@@ -8,7 +8,7 @@ Statement adımları ardışık okunur, soruda durulur. Açık uçlu (OpenText) 
 
 ## Gerekçe
 - Plan: "akışı deterministik flow motoru yönetir, LLM yalnızca düğüm içinde konuşur ve cevabı yapılandırır". Denetlenebilir, aynı girdi aynı dal.
-- Sağlayıcıdan bağımsız (tüm profillerde `LLMProvider.complete`), eval-llm ölçümleri doğrudan geçerli (L2 %97, A1 %97, L5 %100).
+- Sağlayıcıdan bağımsız (tüm profillerde `LLMProvider.complete`), eval-llm ölçümleri (L2 %97, A1 %97, L5 %100) ayrı bir prompt ve ayrı bir şemayla alındığı için üretim istemi için DOĞRUDAN geçerli değildir; üretim istemi core-012 (ADR 0008) ile ayrıca ölçülür.
 - Kesin tip doğrulama: '9' metni sayı sayılmaz; geçersiz çıktı "anlaşılamadı" gibi işlenir.
 
 ## Davranış kuralları

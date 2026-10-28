@@ -263,3 +263,8 @@ agents do not update it automatically.
 ## Session 029 - realtime kapanisi, siradaki is core-012 (2026-10-28)
 - 126f5d20c82a ve 5e921568e5e9 (A2) kontrol edildi: sabit ses verbatim 1,0 (33 tur), ama dogru dal olcutu gecmedi (yanlis dal, uydurma deger, %34 gecersiz bildirim, transkript gecikmesi). Karar: realtime'a daha fazla zaman ayrilmaz; core-024 dusuk oncelik (not_started), core-011 PASSING (sapmalar notta), ADR 0007 Ek 2.
 - Siradaki: core-012 (cascade LLM prompt olcumu ve dondurma).
+
+## Session 030 - core-012 uygulamasi (2026-10-28)
+- Yapildi: prompt_eval.py (uretim promptunu olcer), 114 ornekli donmus veri seti, 4 prompt surumu (config/prompts), oturum loguna prompt surum/hash, scripts/eval_prompt.py, ADR 0008 (+ADR 0003 duzeltmesi). 379 test gecti (yeni 6).
+- core-012 BLOCKED: gercek L2/A1 olcumu Mac'te yapilmali. Komut: ./.venv/bin/python scripts/eval_prompt.py L2 A1 (once --limit 20 --repeats 1). Sonuca gore aktif surum secilir ve dondurulur.
+- Realtime: core-011 passing (fc8dd58), core-024 dusuk oncelik.

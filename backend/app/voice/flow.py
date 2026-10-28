@@ -8,9 +8,12 @@ Sessiz hat (kapanis_sessiz) ve ses katmanı olayları henüz bağlı değil (aç
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .. import scenario as S
@@ -157,7 +160,41 @@ def extract_numbers(text: str) -> list[float]:
     return out
 
 
-def build_messages(step: dict, question: str, utterance: str, score_policy: str = "free") -> list[dict]:
+BASE_VERSION = "1"        # build_messages taban metni değişirse artırılır (prompt hash'ine girer)
+PROMPT_CONFIG = Path(__file__).resolve().parents[3] / "config" / "prompts" / "cascade-parser.json"
+
+
+def _prompt_config() -> dict:
+    return json.loads(PROMPT_CONFIG.read_text(encoding="utf-8"))
+
+
+def prompt_variant(name: str | None = None) -> tuple[str, dict]:
+    """(sürüm adı, çözülmüş varyant). `extends` birden çok varyantı birleştirir. name=None -> config'teki aktif sürüm."""
+    cfg = _prompt_config()
+    name = name or cfg["active"]
+    spec = cfg["variants"].get(name)
+    if spec is None:
+        raise ValueError(f"bilinmeyen prompt sürümü: {name}")
+    if "extends" in spec:
+        merged: dict = {"rules": [], "fewshot": [], "delimit": False}
+        for base in spec["extends"]:
+            b = cfg["variants"][base]
+            merged["rules"] += b.get("rules", [])
+            merged["fewshot"] += b.get("fewshot", [])
+            merged["delimit"] = merged["delimit"] or b.get("delimit", False)
+        return name, merged
+    return name, spec
+
+
+def prompt_info(name: str | None = None) -> dict:
+    """Oturum loguna yazılan sürüm kimliği: {version, hash}. Hash taban sürümü + çözülmüş varyant içeriğinden hesaplanır."""
+    name, spec = prompt_variant(name)
+    body = json.dumps({"base": BASE_VERSION, "spec": {k: spec.get(k) for k in ("rules", "fewshot", "delimit")}}, sort_keys=True, ensure_ascii=False)
+    return {"version": name, "hash": hashlib.sha256(body.encode("utf-8")).hexdigest()[:12]}
+
+
+def build_messages(step: dict, question: str, utterance: str, score_policy: str = "free", variant: str | None = None) -> list[dict]:
+    _, spec = prompt_variant(variant)
     intents = "\n".join(f"- {k}: {v}" for k, v in INTENTS.items())
     system = (
         "Sen bir sesli anket ajanının cevap ayrıştırıcısısın. Müşteri telefonda konuştu; cümlesi konuşma "
@@ -174,10 +211,14 @@ def build_messages(step: dict, question: str, utterance: str, score_policy: str 
                    "ver. Aralık söylediyse ('yedi sekiz arası', '5-6') da intent=unclear ver.")
     if step.get("llmHint"):   # adıma özel yorum kuralı (senaryo yazarı verir; örn. KVKK sorusu dinleme tercihidir, ret değil)
         system += "\nBu soruya özel kural: " + step["llmHint"]
+    if spec.get("rules"):
+        system += "\nEk kurallar:\n" + "\n".join(f"- {r}" for r in spec["rules"])
+    if spec.get("fewshot"):
+        system += "\nÖrnekler:\n" + "\n".join(f"- {e}" for e in spec["fewshot"])
     user = f"Soru: {question}"
     if step["kind"] == "Choice":
         user += "\nSeçenekler: " + ", ".join(f"{c['value']} = {c['label']}" for c in step["choices"])
-    user += f"\nMüşteri: {utterance}"
+    user += f"\nMüşteri: <musteri>{utterance}</musteri>" if spec.get("delimit") else f"\nMüşteri: {utterance}"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 

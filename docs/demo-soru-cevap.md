@@ -137,3 +137,7 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Gördüğümüz:** Sabit sesle metin sapması çözüldü (33 turda birebir), ama modelin anlaması düzelmedi: bir aramada 29 cevap bildiriminin 10'u geçersizdi, bir müşteri reddi "devam" sayıldı, model müşterinin söylemediği bir metni cevap diye bildirdi.
 - **Karar:** Diğer modellere göre başarısı düşük olduğu için realtime'a ek zaman ayrılmıyor; üretim yönü cascade. Realtime, hız ve doğal ses için üst sınır referansı olarak kalıyor.
 - **Sınır (saklanmaz):** Örneklem küçük (A2 ~8, A3 ~3 canlı arama, tek kişi, ev ortamı); sayılar yön göstergesi.
+
+## S22. "Cevap ayrıştırma istemini nasıl ölçüyoruz ve dondurduk mu?" (2026-10-28)
+- **Yaptık:** Ölçüm artık ajanın gerçekten kullandığı istemi çalıştırıyor (eskiden ayrı bir test istemiydi, ADR 0003'ün "ölçüm geçerli" iddiasını düzelttik). 114 örnek, altı soru tipi, injection ve gürültü altkümeleri; beklenen değerler model çıktısı görülmeden yazılıp mühürlendi (hash). Dört istem sürümü (mevcut, few-shot, tipe özel kurallar + ayraç, ikisi birden) aynı sette karşılaştırılacak.
+- **Sınır (saklanmaz):** Ölçüm sonucu henüz yok; bulutta yerel model koşamadığımız için L2/A1 koşusu Mac'te yapılacak. Veri seti metin bazlı (gerçek STT çıktısı değil) ve tek yazarlı.
