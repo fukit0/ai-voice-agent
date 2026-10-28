@@ -277,3 +277,7 @@ agents do not update it automatically.
 ## Session 032 - core-012 holdout olcumu (2026-10-28)
 - Holdout: L2 v5 %91,1 (en iyi), A1 %81,4; hedef saglanmadi. A1 bos ciktilarin kok nedeni bulundu (Haiku dusunme + max_tokens=120) ve duzeltildi (thinking disabled, yeniden deneme); uretim ajanini da etkileyen gercek hata. 385 test gecti.
 - core-012 BLOCKED: karar bekliyor (ADR 0008 Olcum 2 sonu): A1 yeniden olcum / deterministik on-filtre / sapma notuyla kapanis.
+
+## Session 033 - core-012 on-filtre (2026-10-28)
+- negative_yesno_fix + mask_schema_words eklendi (kademeli hat), 387 test gecti. Holdout ham ciktilari yeniden puanlandi: L2 v5 %94,9. Maskeleme icin yeni kosu gerekiyor.
+- core-012 BLOCKED. Komutlar: eval_prompt.py L2 A1 --variants v5 --dataset config/eval/prompt-holdout.json ; eval_prompt.py L2 A1 --variants v5

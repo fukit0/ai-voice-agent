@@ -76,7 +76,9 @@ def score(sample: dict, text: str, error: str | None = None) -> dict:
     # clarify politikası (core-021): model sayı uydurursa/aralık verirse akış netleştirme sorar -> davranış 'unclear' ile aynıdır
     clarified = understood.get("intent") == "clarify"
     valid = bool(understood.get("valid")) or clarified
-    intent_ok = bool(obj) and (obj.get("intent") == exp["intent"] or (clarified and exp["intent"] == "unclear"))
+    # akışın GERÇEKTE kullandığı intent (negatif evet/hayır düzeltmesi sonrası); akış anlamadıysa modelin ham intent'i
+    eff_intent = understood.get("intent") if understood.get("valid") else (obj or {}).get("intent")
+    intent_ok = bool(obj) and (eff_intent == exp["intent"] or (clarified and exp["intent"] == "unclear"))
     value_ok = (exp["intent"] != "answer") or (valid and _value_ok(exp, understood.get("value")))
     branch_ok = got_branch is not None and got_branch == want_branch
     return {"id": sample["id"], "scenario": sample["scenario"], "step": sample["step"], "subset": sample["subset"],

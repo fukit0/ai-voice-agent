@@ -3,7 +3,7 @@
 
 Neden: puanlayıcı hatası düzeltilince (örn. clarify politikası davranışı 'unclear' ile aynı olan örnekler yanlış sayılıyordu) eski koşuyu
 tekrar harcamadan doğru sayıya ulaşmak. Orijinal dosya değişmez; <ad>-rescored.json yazılır.
-Kullanım: ./.venv/bin/python scripts/rescore_prompt_eval.py evidence/eval-prompt-20261028-190340.json
+Kullanım: ./.venv/bin/python scripts/rescore_prompt_eval.py evidence/eval-prompt-20261028-193504.json config/eval/prompt-holdout.json
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def main(argv: list[str]) -> int:
 
     src = Path(argv[0])
     data = json.loads(src.read_text(encoding="utf-8"))
-    dataset = P.load_dataset()
+    dataset = P.load_dataset(Path(argv[1]) if len(argv) > 1 else None)
     by_id = {s["id"]: s for s in dataset["samples"]}
     for res in data["results"]:
         if res.get("status") != "ok":

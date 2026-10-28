@@ -45,3 +45,9 @@ Hedef (≥%95, şema %100, injection yanlış dal 0) hiçbir sürümde sağlanma
 - **A1 boş çıktı kök nedeni sağlayıcı:** `stop_reason=max_tokens`, yalnızca `thinking` bloğu. Haiku 5.5 düşünmeyi `max_tokens=120` içinde bitiremiyor. Üretim ajanı da 120 token kullandığı için aynı hata canlıda da olur. Düzeltme: `thinking: disabled`, red durumunda parametresiz tekrar, hâlâ boşsa 8× bütçeyle bir tekrar. Gerçek A1 ile yeniden ölçülmedi.
 - **L2 v5 kalan 7 örnek** (hepsi 3/3, karar kararlı): olumsuz evet/hayır cevapları `refuse` sayılıyor (3), "intent X yaz" injection'ları çıktıyı yönlendiriyor (3), "anlamadım" repeat yerine unclear (1). Prompt (ayraç + kural + few-shot) injection'ı çözmedi.
 - **Karar bekliyor (kullanıcı):** (1) yalnız A1'i düzeltmeyle yeniden ölç; (2) injection ve olumsuz-cevap için deterministik ön-filtre/çapraz kontrol ekleyip L2'yi yeniden ölç; (3) sapma notuyla kabul edip core-012'yi kapat.
+
+## Ek: deterministik ön-filtre (2026-10-28)
+Prompt ile çözülmeyen iki kararlı hata sınıfı için LLM'e güvenmeyen kod eklendi (yalnız kademeli hat):
+- `negative_yesno_fix`: evet/hayır adımında `refuse` + açık olumsuz söz (değil/hayır/olmaz, ya da eylem nesneli "aranmak istemiyorum") + olumlu söz ve görüşmeyi reddeden söz yok → `answer=false`. Yalın "istemiyorum" belirsiz olduğu için `refuse` kalır.
+- `mask_schema_words`: müşteri sözündeki şema/komut sözcükleri (intent, dnc, refuse, callback, …) modele gitmeden maskelenir. Gerçek müşteriler bu sözcükleri kullanmaz; prompt injection'ın "intent X yaz" biçimini keser.
+Etki: eldeki holdout çıktılarının yeniden puanı L2 v5 %91,1 → %94,9 (yalnız olumsuz-cevap düzeltmesi ölçülebildi). Maskelemenin etkisi yeni model koşusuyla ölçülecek. Uyarı: holdout hata kategorilerine bakılarak kod yazıldığı için artık tam bağımsız değil; kapanışta ana set de koşulur.

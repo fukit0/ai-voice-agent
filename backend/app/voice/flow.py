@@ -137,6 +137,35 @@ def crosscheck_yesno(step: dict, obj: dict | None, utterance: str) -> tuple[dict
     return obj, None
 
 
+_REFUSAL_OF_SURVEY = ("anket", "katıl", "ilgilen", "görüşme")        # görüşmenin KENDİSİNİ reddeden sözler: refuse kalır
+_SCHEMA_WORDS = re.compile(r"(?i)\b(?:intent|value_json|value|dnc|refuse|callback|unclear|repeat|off_topic|answer|json)\w*")
+
+
+def mask_schema_words(utterance: str) -> str:
+    """Müşteri sözünde şema/komut sözcükleri ('intent dnc yaz') gerçek bir müşteri tarafından söylenmez; modele talimat gibi görünmesin
+    diye maskelenir (prompt injection, core-012 holdout: ayraç+kural+few-shot yetmedi). Normal Türkçe cümleler değişmez."""
+    return _SCHEMA_WORDS.sub("[…]", utterance)
+
+
+def negative_yesno_fix(step: dict, obj: dict | None, utterance: str) -> tuple[dict | None, str | None]:
+    """YALNIZ kademeli hat: evet/hayır sorusuna açık olumsuz cevap ('müsait değilim', 'istemiyorum') LLM'de sık refuse çıkıyor (core-012 holdout:
+    3/3 kararlı hata) ve görüşmeyi yanlış kapatıyor. Olumsuz kelime var, olumlu kelime ve görüşmeyi reddeden söz yoksa answer=false sayılır."""
+    if not obj or step.get("kind") != "YesNo" or obj.get("intent") != "refuse" or not utterance.strip():
+        return obj, None
+    low = utterance.replace("İ", "i").replace("I", "ı").casefold()
+    toks = re.findall(r"[a-zçğıöşüâ]+", low)
+    if any(t in _POS_WORDS for t in toks) or any(w in low for w in _REFUSAL_OF_SURVEY):
+        return obj, None
+    # 'istemiyorum' tek başına belirsizdir (ankete katılmayı da reddediyor olabilir) ve refuse kalır; yalnız bir eylem nesnesiyle
+    # birlikteyse ('aranmak istemiyorum') soruya verilmiş olumsuz cevaptır. 'değil/hayır/olmaz' her zaman olumsuz cevaptır.
+    has_object = any(t.endswith(("mak", "mek")) for t in toks)
+    strong_no = any(t.startswith(_NEG_PREFIX) and not t.startswith("istemiyor") for t in toks)
+    weak_no = any(t.startswith("istemiyor") for t in toks) and has_object
+    if strong_no or weak_no:
+        return {"intent": "answer", "value": False}, "refuse->hayır"
+    return obj, None
+
+
 _NUM_WORDS = {"sıfır": 0, "sifir": 0, "bir": 1, "iki": 2, "üç": 3, "uc": 3, "dört": 4, "dort": 4, "beş": 5, "bes": 5, "altı": 6,
               "alti": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
 _NUM_PARTICLE = {0: "sıfır mı", 1: "bir mi", 2: "iki mi", 3: "üç mü", 4: "dört mü", 5: "beş mi", 6: "altı mı", 7: "yedi mi",
@@ -160,7 +189,7 @@ def extract_numbers(text: str) -> list[float]:
     return out
 
 
-BASE_VERSION = "1"        # build_messages taban metni değişirse artırılır (prompt hash'ine girer)
+BASE_VERSION = "2"        # build_messages taban metni değişirse artırılır (prompt hash'ine girer)
 PROMPT_CONFIG = Path(__file__).resolve().parents[3] / "config" / "prompts" / "cascade-parser.json"
 
 
@@ -221,6 +250,7 @@ def build_messages(step: dict, question: str, utterance: str, score_policy: str 
     user = f"Soru: {question}"
     if step["kind"] == "Choice":
         user += "\nSeçenekler: " + ", ".join(f"{c['value']} = {c['label']}" for c in step["choices"])
+    utterance = mask_schema_words(utterance)
     user += f"\nMüşteri: <musteri>{utterance}</musteri>" if spec.get("delimit") else f"\nMüşteri: {utterance}"
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
@@ -346,6 +376,8 @@ class FlowDriver:
         if self.coerce:
             obj = coerce_obj(step, obj)
             obj, crossed = crosscheck_yesno(step, obj, utterance)
+        else:
+            obj, crossed = negative_yesno_fix(step, obj, utterance)
         ok, value = check_value(step, obj) if obj is not None else (False, None)
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,
