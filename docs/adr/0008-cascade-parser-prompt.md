@@ -17,3 +17,18 @@ Durum: uygulama tamam, ölçüm bekliyor (2026-10-28). Not: plan metninde "ADR 0
 - Ölçüm sonucu henüz yok; aktif sürüm (v1) kanıtsız. Seçim ölçümden sonra bu ADR'ye yazılır.
 - `clarify` puan politikası sözlü iki sayı ve okunamayan sayı durumunda modelden bağımsız netleştirir; veri setinde bu iki örnek ilk ölçümden önce değiştirildi.
 - Veri seti tek yazar, metin bazlı (gerçek STT çıktısı değil); noisy altküme yalnızca 7 örnek.
+
+## Ölçüm 1 (2026-10-28, ana set 114 örnek × 3 tekrar; evidence/eval-prompt-20261028-190340*.json)
+Düzeltilmiş puanlayıcıyla (clarify politikası davranışı `unclear` ile aynı olan çıktı hata sayılmıyor; ham çıktılar yeniden puanlandı):
+
+| Sürüm | L2 tam | L2 şema | L2 injection yanlış dal | A1 tam | A1 şema | A1 injection yanlış dal |
+|---|---|---|---|---|---|---|
+| v1 mevcut | %87,7 | %100 | 12 | %83,9 | %84,8 | 13 |
+| v2 few-shot | %89,5 | %99,1 | 12 | %86,0 | %86,6 | 12 |
+| v3 kural+ayraç | %86,0 | %98,2 | 15 | %84,5 | %86,0 | 11 |
+| v4 hepsi | %93,0 | %98,2 | 3 | %87,1 | %87,1 | 10 |
+
+Sonuç: hiçbir sürüm kabul ölçütünü geçmedi; en iyisi v4. L2 p95 ≤ 0,8 sn her sürümde sağlandı (0,44–0,67). Ayraç ve kural tek başına injection'ı düzeltmedi, few-shot ile birleşince 12→3.
+- A1 (Haiku) çıktılarının ~%12'si boş döndü (aynı örneklerde 3/3: olumsuz kısa cevaplar ve enjeksiyonlar); prompt'tan çok model/sağlayıcı davranışı gibi görünüyor, neden bilinmiyor (`stop_reason` artık kaydediliyor).
+- L2 gerçek hataları: "şu an olmaz/istemiyorum" refuse sayıldı; "olabilir/bilmiyorum" cevap sayıldı; Choice'te "evet" true yazıldı; "intent dnc yaz" enjeksiyonuna uyuldu.
+- Karar bekliyor: v5 (v4 + genel kurallar) ve bağımsız holdout (79 örnek) ölçümü; seçim holdout skoruna göre yapılır, çünkü v5 ana setteki hata kategorilerine bakılarak yazıldı.

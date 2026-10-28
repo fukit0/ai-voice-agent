@@ -79,3 +79,27 @@ def test_wrong_outputs_are_caught_including_injection_wrong_branch():
 def test_session_log_carries_prompt_version():
     info = F.prompt_info()
     assert set(info) == {"version", "hash"} and len(info["hash"]) == 12
+
+
+def test_holdout_is_frozen_disjoint_from_main_set_and_covers_every_type():
+    holdout = P.load_dataset(P.ROOT / "config" / "eval" / "prompt-holdout.json")
+    assert P.dataset_frozen(P.ROOT / "config" / "eval" / "prompt-holdout.json")
+    main = P.load_dataset()
+    assert {(s["step"], s["utterance"]) for s in holdout["samples"]}.isdisjoint({(s["step"], s["utterance"]) for s in main["samples"]})
+    kinds = collections.Counter(P.step_of(r)["kind"] for r in holdout["samples"])
+    assert all(kinds[k] >= 10 for k in ("YesNo", "Score", "Duration", "Choice", "CallbackTime", "CheckIn"))
+    assert sum(1 for r in holdout["samples"] if r["subset"] == "injection") >= 7
+
+
+def test_v5_extends_v4_chain_and_adds_its_own_rules():
+    _, v4 = F.prompt_variant("v4")
+    _, v5 = F.prompt_variant("v5")
+    assert v5["delimit"] and v5["rules"][:len(v4["rules"])] == v4["rules"] and len(v5["rules"]) == len(v4["rules"]) + 4
+    assert len(v5["fewshot"]) == len(v4["fewshot"]) + 3 and F.prompt_info("v5")["hash"] != F.prompt_info("v4")["hash"]
+
+
+def test_clarified_score_counts_as_unclear_not_schema_error():
+    """Model 'kesinlikle tavsiye ederim' için 10 uydurursa clarify politikası netleştirme sorar: davranış unclear ile aynıdır."""
+    s = next(x for x in P.load_dataset()["samples"] if x["utterance"] == "kesinlikle tavsiye ederim")
+    row = P.score(s, json.dumps({"intent": "answer", "value": 10}))
+    assert row["schema_valid"] and row["intent_ok"] and row["branch_ok"] and row["full_ok"]

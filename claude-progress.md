@@ -268,3 +268,8 @@ agents do not update it automatically.
 - Yapildi: prompt_eval.py (uretim promptunu olcer), 114 ornekli donmus veri seti, 4 prompt surumu (config/prompts), oturum loguna prompt surum/hash, scripts/eval_prompt.py, ADR 0008 (+ADR 0003 duzeltmesi). 379 test gecti (yeni 6).
 - core-012 BLOCKED: gercek L2/A1 olcumu Mac'te yapilmali. Komut: ./.venv/bin/python scripts/eval_prompt.py L2 A1 (once --limit 20 --repeats 1). Sonuca gore aktif surum secilir ve dondurulur.
 - Realtime: core-011 passing (fc8dd58), core-024 dusuk oncelik.
+
+## Session 031 - core-012 olcum 1 (2026-10-28)
+- Kullanici iki kanit verdi. Tam kosuda hicbir surum hedefi gecmedi (L2 en iyi v4 %93,0; A1 en iyi v4 %87,1). Puanlayici hatasi (clarify) duzeltilip yeniden puanlandi. A1'de ~%12 bos cikti.
+- v5 + 79 orneklik donmus holdout eklendi; scripts/rescore_prompt_eval.py; saglayici stop_reason kaydi. 382 test gecti.
+- core-012 BLOCKED: kalan komut: ./.venv/bin/python scripts/eval_prompt.py L2 A1 --variants v4 v5 --dataset config/eval/prompt-holdout.json

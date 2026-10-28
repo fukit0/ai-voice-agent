@@ -141,3 +141,8 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 ## S22. "Cevap ayrıştırma istemini nasıl ölçüyoruz ve dondurduk mu?" (2026-10-28)
 - **Yaptık:** Ölçüm artık ajanın gerçekten kullandığı istemi çalıştırıyor (eskiden ayrı bir test istemiydi, ADR 0003'ün "ölçüm geçerli" iddiasını düzelttik). 114 örnek, altı soru tipi, injection ve gürültü altkümeleri; beklenen değerler model çıktısı görülmeden yazılıp mühürlendi (hash). Dört istem sürümü (mevcut, few-shot, tipe özel kurallar + ayraç, ikisi birden) aynı sette karşılaştırılacak.
 - **Sınır (saklanmaz):** Ölçüm sonucu henüz yok; bulutta yerel model koşamadığımız için L2/A1 koşusu Mac'te yapılacak. Veri seti metin bazlı (gerçek STT çıktısı değil) ve tek yazarlı.
+
+## S23. "Cevap ayrıştırma istemi ne kadar doğru çalışıyor?" (2026-10-28)
+- **Ölçtük (114 örnek × 3 tekrar, gerçek anket/welcome adımları):** yerel L2 en iyi sürümle %93, bulut A1 %87. Hedefimiz %95; henüz tutmadı. Gecikme L2'de hedefin içinde (p95 ≈ 0,5 sn).
+- **En büyük kazanç:** müşteri sözüne gömülü talimata (prompt injection) uyma: örnek + kural + ayraç birleşince yanlış dal 12'den 3'e indi.
+- **Sınırlar (saklanmaz):** (1) A1'in yaklaşık %12 cevabı boş döndü, nedeni araştırılıyor; (2) ilk ölçümde puanlayıcıda bir hata bulup düzelttik, ham çıktılardan yeniden puanladık; (3) yeni v5 sürümünü ana sete bakarak yazdık, bu yüzden karar için ayrı, önceden görülmemiş bir holdout seti kullanıyoruz; (4) veri seti metin bazlı ve tek yazarlı.

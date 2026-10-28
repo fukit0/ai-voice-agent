@@ -27,9 +27,10 @@ def load_dataset(path: Path | None = None) -> dict:
     return json.loads((path or DATASET_PATH).read_text(encoding="utf-8"))
 
 
-def dataset_frozen() -> bool:
-    """Veri seti dosyası dondurulmuş hash ile aynı mı (beklenen değerler sonradan değiştirilmemiş mi)."""
-    return hashlib.sha256(DATASET_PATH.read_bytes()).hexdigest() == HASH_PATH.read_text().strip()
+def dataset_frozen(path: Path | None = None) -> bool:
+    """Veri seti dosyası dondurulmuş hash ile aynı mı (beklenen değerler sonradan değiştirilmemiş mi). Hash aynı adlı .sha256 dosyasındadır."""
+    path = path or DATASET_PATH
+    return hashlib.sha256(path.read_bytes()).hexdigest() == path.with_suffix(".sha256").read_text().strip()
 
 
 def _driver(scenario_key: str, step_key: str) -> FlowDriver:
@@ -72,8 +73,10 @@ def score(sample: dict, text: str, error: str | None = None) -> dict:
         exp_obj["value"] = "bekleniyor"                  # CallbackTime: dal hesabı için geçerli bir metin yeterli
     want_branch, _ = _branch(sample, exp_obj)
     got_branch, understood = _branch(sample, obj) if obj is not None else (None, {})
-    valid = bool(understood.get("valid"))
-    intent_ok = bool(obj) and obj.get("intent") == exp["intent"]
+    # clarify politikası (core-021): model sayı uydurursa/aralık verirse akış netleştirme sorar -> davranış 'unclear' ile aynıdır
+    clarified = understood.get("intent") == "clarify"
+    valid = bool(understood.get("valid")) or clarified
+    intent_ok = bool(obj) and (obj.get("intent") == exp["intent"] or (clarified and exp["intent"] == "unclear"))
     value_ok = (exp["intent"] != "answer") or (valid and _value_ok(exp, understood.get("value")))
     branch_ok = got_branch is not None and got_branch == want_branch
     return {"id": sample["id"], "scenario": sample["scenario"], "step": sample["step"], "subset": sample["subset"],
@@ -111,6 +114,8 @@ def run(provider: Any, dataset: dict, variant: str | None = None, repeats: int =
             else:
                 row = score(sample, res.text)
                 row["seconds"] = round(res.seconds, 3)
+            row["output_tokens"] = getattr(res, "output_tokens", None)
+            row["extra"] = getattr(res, "extra", {})
             row["rep"] = rep
             rows.append(row)
     return {"rows": rows, "summary": summarize(rows)}

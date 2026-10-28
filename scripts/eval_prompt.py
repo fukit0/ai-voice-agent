@@ -28,7 +28,8 @@ def main(argv: list[str] | None = None) -> int:
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("profiles", nargs="+")
-    ap.add_argument("--variants", nargs="+", default=["v1", "v2", "v3", "v4"])
+    ap.add_argument("--variants", nargs="+", default=["v1", "v2", "v3", "v4", "v5"])
+    ap.add_argument("--dataset", type=Path, default=None, help="veri seti (varsayılan config/eval/prompt-samples.json; karar için config/eval/prompt-holdout.json)")
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--out", type=Path, default=None)
@@ -36,8 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     load_dotenv()
-    dataset = P.load_dataset()
-    if not P.dataset_frozen():
+    dataset = P.load_dataset(args.dataset)
+    if not P.dataset_frozen(args.dataset):
         print("UYARI: prompt-samples.json dondurulmuş hash ile uyuşmuyor (beklenen değerler değişmiş!)", file=sys.stderr)
     profiles, results, seen = load_profiles(), [], set()
     for pid in args.profiles:
@@ -84,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     stamp = datetime.now(timezone.utc)
     path = args.out or ROOT / "evidence" / f"eval-prompt-{stamp:%Y%m%d-%H%M%S}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"created_at": stamp.isoformat(timespec="seconds"), "dataset_frozen": P.dataset_frozen(),
+    path.write_text(json.dumps({"created_at": stamp.isoformat(timespec="seconds"), "dataset": str(args.dataset or P.DATASET_PATH), "dataset_frozen": P.dataset_frozen(args.dataset),
                                 "n_samples": len(dataset["samples"][:args.limit]), "repeats": args.repeats, "results": results},
                                ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nKanıt: {path}")

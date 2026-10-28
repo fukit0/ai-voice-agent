@@ -77,8 +77,9 @@ class AnthropicLLM(LLMProvider):
             raise
         body = res.json()
         text = "".join(b.get("text", "") for b in body.get("content", []) if b.get("type") == "text")
-        return LLMResult(text=text.strip(), seconds=time.perf_counter() - t0, provider=self.kind,
-                         model=self.model, output_tokens=body.get("usage", {}).get("output_tokens"))
+        extra = {"stop_reason": body.get("stop_reason"), "blocks": [b.get("type") for b in body.get("content", [])]}
+        return LLMResult(text=text.strip(), seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
+                         output_tokens=body.get("usage", {}).get("output_tokens"), extra=extra)
 
 
 class ElevenLabsTTS(TTSProvider):

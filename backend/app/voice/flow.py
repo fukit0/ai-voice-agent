@@ -178,10 +178,13 @@ def prompt_variant(name: str | None = None) -> tuple[str, dict]:
     if "extends" in spec:
         merged: dict = {"rules": [], "fewshot": [], "delimit": False}
         for base in spec["extends"]:
-            b = cfg["variants"][base]
+            _, b = prompt_variant(base)                 # zincirleme extends (v5 -> v4 -> v2+v3)
             merged["rules"] += b.get("rules", [])
             merged["fewshot"] += b.get("fewshot", [])
             merged["delimit"] = merged["delimit"] or b.get("delimit", False)
+        merged["rules"] += spec.get("rules", [])         # varyantın kendi ek kuralları/örnekleri
+        merged["fewshot"] += spec.get("fewshot", [])
+        merged["delimit"] = merged["delimit"] or spec.get("delimit", False)
         return name, merged
     return name, spec
 
