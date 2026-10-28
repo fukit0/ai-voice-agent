@@ -22,7 +22,7 @@ SPEECH_URL = "https://api.openai.com/v1/audio/speech"
 DEFAULT_MODEL = "gpt-4o-mini-tts"
 DEFAULT_VOICE = "marin"
 SAMPLE_RATE = 24000                                   # response_format=pcm: 24 kHz, 16 bit, mono
-DEFAULT_STEPS = ("acilis", "guvenlik_scripti")        # sözleşme/KVKK/kayıt bilgilendirmesi içeren sabit adımlar
+DEFAULT_STEPS = ("acilis", "guvenlik_scripti", "giris")   # sözleşme/KVKK/kayıt bilgilendirmesi içeren sabit adımlar (welcome: acilis, guvenlik_scripti; anket: giris)
 STYLE = "Sıcak, doğal ve anlaşılır bir Türkçe telefon konuşması tonu. Metni değiştirmeden, kelimesi kelimesine oku."
 
 

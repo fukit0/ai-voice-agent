@@ -1132,7 +1132,7 @@
         "backend/tests/test_fixed_audio.py (5 test)",
         "Bulut: pytest 357, vitest 43, tsc temiz, Playwright 12/12 (2026-10-28)."
       ],
-      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Sebep: AYNEN SOYLE olasiliksal modelde garanti degil; uretimde hukuki metin icin kabul edilemez. agent_said/verbatim olcumu core-017'de eklendi, ilk gercek olcum bu feature'in girdisi. | 2026-10-28 UYGULAMA: voice/fixedaudio.py: acilis ve guvenlik_scripti adimlari (varsayilan; profil realtime.fixed_audio.steps ile degisir, fixed_audio:false kapatir) OpenAI /v1/audio/speech (gpt-4o-mini-tts, ses marin, pcm 24 kHz) ile uretilir, data/fixed-audio/ altinda metin+model+ses hash'iyle onbelleklenir; model bu adimlarda konusmaz. Uretim hatasinda modele geri duser ve fixed_audio_fallback olayi + oturum sayaci yazar. Soz kesmede kalan ses atilir. CANLI DOGRULANMADI: gercek ses/ton tutarliligi, '10 aramada STT benzerligi >= 0,98' olcumu ve gecikme karsilastirmasi kullanici aramalarini bekliyor; ADR yazilmadi. Sinirlar: adim metni tek basina soylenmeli (onunde onay cumlesi varsa model soyler); ilk uretim onbellek bos oldugu icin ilk aramada gecikir (warm() ile isitilabilir, henuz otomatik degil)."
+      "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). Sebep: AYNEN SOYLE olasiliksal modelde garanti degil; uretimde hukuki metin icin kabul edilemez. agent_said/verbatim olcumu core-017'de eklendi, ilk gercek olcum bu feature'in girdisi. | 2026-10-28 UYGULAMA: voice/fixedaudio.py: acilis ve guvenlik_scripti adimlari (varsayilan; profil realtime.fixed_audio.steps ile degisir, fixed_audio:false kapatir) OpenAI /v1/audio/speech (gpt-4o-mini-tts, ses marin, pcm 24 kHz) ile uretilir, data/fixed-audio/ altinda metin+model+ses hash'iyle onbelleklenir; model bu adimlarda konusmaz. Uretim hatasinda modele geri duser ve fixed_audio_fallback olayi + oturum sayaci yazar. Soz kesmede kalan ses atilir. CANLI DOGRULANMADI: gercek ses/ton tutarliligi, '10 aramada STT benzerligi >= 0,98' olcumu ve gecikme karsilastirmasi kullanici aramalarini bekliyor; ADR yazilmadi. Sinirlar: adim metni tek basina soylenmeli (onunde onay cumlesi varsa model soyler); ilk uretim onbellek bos oldugu icin ilk aramada gecikir (warm() ile isitilabilir, henuz otomatik degil). | 2026-10-28 CANLI BULGU: A2 oturumu d227e6c2553e'de sabit ses calismadi cunku anket 'giris' adimi varsayilan listede degildi (yalniz welcome adlari); 'giris' eklendi (test_fixed_audio). Yeniden canli deneme gerekli."
     },
     {
       "id": "core-020",
@@ -1219,6 +1219,57 @@
         "backend/app/voice/realtime_report.py"
       ],
       "notes": "Kaynak: kullanici canli test geri bildirimi 2026-10-28 + Opus 5.5 analizi (43 oturum, 4 WAV). 8 A3 oturumunun hepsinde tool_calls=0 idi; kok neden speech_stopped uretilmemesi + cagrinin sessizce atilmasi (core-017'de duzeltildi, canli dogrulanmadi). | 2026-10-28 UYGULAMA: Rapor araci hazir: A2/A3 oturum JSON'larindan fonksiyon cagrisi orani, gecersiz cagri, anket tamamlama (outcome=tamamlandi), yabanci/Turkce olmayan transkript orani (heuristik) ve hatali oturum sayisi. CANLI ARAMA YAPILMADI: core-017 A3 cagri kapisi duzeltmesi canli dogrulanmadan 5 arama anlamsiz; Gemini giris transkripsiyonu dil ayari dogrulanmadi (sinir olarak yazilacak)."
+    },
+    {
+      "id": "core-024",
+      "priority": 64,
+      "area": "voice-runtime",
+      "title": "A2: model okunacak metni değiştirmesin (bağlam kirlenmesi)",
+      "user_visible_behavior": "Ajan, akışın verdiği metni söyler; cevap doğru soruya bağlanır.",
+      "verification": [
+        "10 A2 aramasında verbatim ≥ 0,95 her tur; metin-farklı turda cevap yanlış soruya bağlanmaz.",
+        "Seçenekler: konuşma bağlamsız (out-of-band) response, sabit TTS'in tüm sabit sorulara genişletilmesi, sapma algılanınca soruyu yeniden söyleme; ölçülüp ADR."
+      ],
+      "notes": "Kaynak: kullanıcı canlı testi, A2 oturumu d227e6c2553e (2026-10-28). Tur 3'te model 'Görüşme yapmak için müsait misiniz?' yerine KVKK sorusunu yeniden yorumladı (verbatim 0,148); müşteri 'Dinlemek istemiyorum' dedi, akış bunu müsaitlik=hayır saydı ve randevuya gitti. İlk önlem: anket 'giris' adımı sabit-ses listesine eklendi (core-019); genel çözüm bu feature.",
+      "plan_ref": "F1.2 / F6 (canlı test bulgusu)",
+      "phase": "faz-1",
+      "moscow": "must",
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "core-025",
+      "priority": 65,
+      "area": "tts",
+      "title": "A1: ElevenLabs TTS kalitesi ve hızı (Türkçe tonlama)",
+      "user_visible_behavior": "A1'de ajan sesi akıcı ve doğal tonlanır; ilk ses < 2 sn.",
+      "verification": [
+        "eleven_flash_v2_5 / eleven_turbo_v2_5 / eleven_multilingual_v2 aynı metinle dinleme + gecikme karşılaştırması (en az 10 cümle).",
+        "Seçim ADR'ye yazılır."
+      ],
+      "notes": "Kaynak: kullanıcı canlı testi, A1 oturumu 574e3e4d81b3: 'konuşma çok bozuluyor ve yavaş, tonlama ani çıkıp iniyor'. Oturum ölçümü: ilk ses 2,4–3,9 sn (STT ~1–1,8 + LLM ~1–1,8 + TTS). Flash modeli hız için seçilmişti; Türkçe kalitesi ölçülmedi.",
+      "plan_ref": "F1.2 / F6 (canlı test bulgusu)",
+      "phase": "faz-1",
+      "moscow": "must",
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "core-026",
+      "priority": 66,
+      "area": "voice-runtime",
+      "title": "A3: söz kesme ve yabancı yazı transkriptleri",
+      "user_visible_behavior": "A3'te söz kesme güvenilir çalışır; giriş transkripti Türkçe kalır.",
+      "verification": [
+        "5 A3 aramasında barge-in kesme süresi ve yanlış kesme sayısı; yabancı/Türkçe olmayan transkript oranı (scripts/realtime_report.py).",
+        "Gemini giriş transkripsiyonu için dil ipucu seçeneği doğrulanır ya da sınır yazılır."
+      ],
+      "notes": "Kaynak: kullanıcı canlı testi, A3 oturumu 47e1691a1c69: söz kesme zayıf; transkriptte '목동매는', 'schwer', 'locos', 'Chumphon'. Oturumda barge_ins 6, dropped 4. Uygulanan hafifletme: realtime oturumda sttguard (yabancı yazı/halüsinasyon/tekrar döngüsü) transkripti kayda ve bağlama almaz; Latin yazılı yabancı kelimeler (schwer, locos) yakalanmaz. Gemini sunucu VAD'ı (START_OF_ACTIVITY_INTERRUPTS) ile yerel söz kesme çakışması incelenmedi.",
+      "plan_ref": "F1.2 / F6 (canlı test bulgusu)",
+      "phase": "faz-1",
+      "moscow": "must",
+      "status": "not_started",
+      "evidence": []
     }
   ]
 }

@@ -29,7 +29,7 @@ import numpy as np
 
 from .. import stt_runs
 from ..providers.audio import resample
-from . import phone
+from . import phone, sttguard
 from .flow import INTENTS, answer_rule
 from .session import END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
 from .silence import SilenceGuard
@@ -725,9 +725,18 @@ class RealtimeVoiceSession:
         if t == "audio":
             self._on_audio(ev["pcm"])
         elif t == "user_text":
-            self._last_user = ev["text"].strip()
-            if self._last_user:
-                self._say("user", self._last_user)
+            text = ev["text"].strip()
+            ok, reason = sttguard.check(text) if text else (True, None)
+            if not ok and reason in ("foreign_script", "hallucination_phrase", "repetition_loop"):
+                # canlı test (A3): giriş transkriptinde 목동매는 / schwer gibi yabancı yazı; cevap bağlamına ve kayda girmez
+                self.stats["stt_rejected"] = self.stats.get("stt_rejected", 0) + 1
+                self.emit({"type": "stt_rejected", "reason": reason, "text": text})
+                self._last_user = ""
+                self._say("user", f"[transkript güvenilmez: {reason}]")
+            else:
+                self._last_user = text
+                if self._last_user:
+                    self._say("user", self._last_user)
         elif t == "speech_stopped":
             if self._expect != "speak" and self.state == "listening":   # ajan konuşurken/çalarken gelen ses cevap sayılmaz
                 self._expect, self._got_tool = "answer", False

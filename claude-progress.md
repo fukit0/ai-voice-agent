@@ -228,3 +228,9 @@ agents do not update it automatically.
 - Kullanici 56 klip kaydetti (scripts/make_stt_manifest.py + record_stt_clips.sh) ve scripts/stt_eval.py'yi L2/L3/A1 icin calistirdi: evidence/core-020-stt-eval.json.
 - Bulgu: Deepgram en iyi; Whisper tabanli L2/L3 oksuruge metin uyduruyor, geçit yetmiyor; BuzzASR tekrar dongusu. Eklendi: sttguard repetition_loop kurali; stt_eval yanlis-ret tanimi duzeltildi (gurultuye bos donus dogru). ADR 0006 yazildi. core-020 PASSING (sapma: duz large-v3 olculmedi).
 - Dogrulama (bulut): pytest 362. Kalan: core-018/019 (A2 5 arama; ilk A2 oturumunda sabit ses calismadi - backend yeniden baslatilmamis olabilir), core-021 (llm-eval), core-023 (A3 5 arama) BLOCKED.
+
+## Session 023 - son fix sonrasi canli oturumlarin incelenmesi (2026-10-28)
+- Kullanici geri bildirimi: A1 TTS bozuk/yavas; A2 okudugu ile akis farkli, cevap yanlis soruya bagli (d227e6c2553e); A3 soz kesme zayif + yabanci kelimeler (47e1691a1c69); L2/L3 (3377b67086f0, 83e8400e8ed4) sorunsuz bildirildi.
+- A2 kok neden: anket 'giris' adimi sabit-ses listesinde degildi (model KVKK metnini yorumladi, verbatim 0,148, akis musaitlik=hayir). Duzeltme: 'giris' eklendi. A3: realtime oturumda sttguard yabanci yazi transkriptini kayda almaz.
+- Yeni feature'lar: core-024 (A2 metin sapmasi genel cozum), core-025 (A1 TTS kalite/hiz), core-026 (A3 soz kesme + transkript dili). Hepsi not_started.
+- pytest 363. Ilk A2 oturumunda yeni kod calisiyordu (silences sayaci var) ama fixed_audio_turns yoktu: nedeni yukaridaki liste eksigi. Yeniden A2 denemesi gerekli.

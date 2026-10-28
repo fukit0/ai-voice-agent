@@ -110,3 +110,20 @@ def test_barge_in_during_fixed_audio_discards_the_rest(tmp_path, monkeypatch):
         assert "fixed_audio_turns" not in s.stats                  # kalan ses atıldı, tur tamamlanmış sayılmadı
         await s.close()
     asyncio.run(main())
+
+
+def test_default_fixed_steps_cover_the_survey_intro_and_realtime_drops_foreign_transcripts(tmp_path, monkeypatch):
+    """Canlı A2 oturumu d227e6c2553e: anket 'giris' adımı sabit listede değildi; model metni değiştirdi. A3 47e1691a1c69: yabancı yazı transkripti."""
+    assert FixedAudio().applies("giris") and FixedAudio().applies("acilis") and FixedAudio().applies("guvenlik_scripti")
+
+    async def main():
+        s, backend, out, events = build(tmp_path, monkeypatch, fake_speech)
+        await s.start()
+        await settle_rt(s, lambda: s.turns)
+        await s._on_event({"type": "user_text", "text": "목동매는"})
+        await s._on_event({"type": "user_text", "text": "evet"})
+        assert s.stats["stt_rejected"] == 1 and s._last_user == "evet"
+        assert any(e["type"] == "stt_rejected" and e["reason"] == "foreign_script" for e in events)
+        assert not any("목동" in x["text"] for x in s.transcript)
+        await s.close()
+    asyncio.run(main())

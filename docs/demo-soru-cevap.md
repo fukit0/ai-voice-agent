@@ -112,3 +112,8 @@ Bulunanlar: öksürük/boğaz temizleme STT'de "merhaba, teşekkür" gibi metne 
 - **Eksik olan veri:** ≥ 50 gerçek klip ("on", "evet", rakamlar, "okay", öksürük) ve A2/A3 için ≥ 5'er canlı arama. Araçlar sahte verilerle birim testlidir; **model karşılaştırma tablosu ve geçit eşikleri henüz veriyle belirlenmedi** (şu anki 0,5 / -1,0 / 2,4 sezgiseldir).
 
 S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, oksuruk/gurultuyu neredeyse hic yazmiyor (0,11). Yerel Whisper turbo WER 0,62, BuzzASR 2,01; ikisi de oksuruge metin uyduruyor ("Izlediginiz icin tesekkur ederim", "Hihihi...") ve STT gecidi bunlarin yalnizca %26-35'ini yakaliyor. Demoda soylenecek: yerel STT'nin zayif noktasi oksuruk/gurultu; cozum giris tarafinda (konusma olasiligi modeli, core-016) ve bulut STT secenegi. Sinir: tek konusmaci, sessiz oda, duz large-v3 olculmedi. Karar: ADR 0006.
+
+## S17. "Canlı testte A1/A2/A3 ile ne gördük?" (2026-10-28)
+- **A2:** Model bir adımda okunacak soruyu değiştirdi, müşteri farklı soruya cevap verdi ve akış yanlış dala gitti (verbatim 0,148). Önlem: sabit metinler önceden üretilmiş sesle çalınır (anket girişi listeye eklendi). Genel çözüm core-024'te; sınır: serbest soru cümleleri hâlâ model tarafından söyleniyor.
+- **A3:** Söz kesme zayıf; giriş transkriptine yabancı yazı karışıyor (Gemini'de dil ipucu yok). Yabancı yazı/halüsinasyon transkripti artık kayda alınmıyor; Latin harfli yabancı kelimeler yakalanmıyor. core-026.
+- **A1:** ElevenLabs flash modeli hızlı ama Türkçe tonlaması zayıf; ilk ses 2,4–3,9 sn. Model karşılaştırması core-025.
