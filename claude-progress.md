@@ -247,3 +247,5 @@ agents do not update it automatically.
 ## Session 026 - core-019 ve core-021 kapanisi (2026-10-28)
 - Kullanici A2 aramasi 832a49d28511 (giris sabit ses verbatim 1,0; tekrar-sorma 1,0) ve eval-llm-20261028-095926.json (L2 29/30, A1 29/30, ayni tek hata) sagladi. core-019 ve core-021 PASSING (sapmalar notlarda: kucuk orneklem, L3 dahil degil, tekrar-sorma yolu belirsiz).
 - core-018..023 hepsi passing. Acik: core-016, core-017 (canli dogrulama), core-024/025/026, core-011 kapanisi, core-012 beklemede.
+
+- (Session 026 duzeltme) core-019 tekrar-sorma dogrulanmadigi icin BLOCKED'a geri alindi; core-021 passing (L3 LLM'i L2 ile ayni, ayri kosu gereksiz).
