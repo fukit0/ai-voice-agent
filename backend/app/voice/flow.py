@@ -20,7 +20,7 @@ from ..trnorm import number_to_words
 MAX_RETRIES = 2
 INTENTS = {
     "answer": "Soruya cevap verdi (value dolu).",
-    "repeat": "Soruyu duymadı / tekrar istiyor.",
+    "repeat": "Soruyu duymadı / tekrar istiyor. Yalnızca hitap ya da hat kontrolü ('alo', 'efendim', 'sesim geliyor mu') cevap değil, repeat'tir.",
     "refuse": "Görüşmeye/ankete katılmayı açıkça reddediyor. Sorulan şeye 'istemiyorum' demek (örn. aydınlatma metnini dinlemek "
               "istememek) refuse DEĞİLDİR; soruya verilmiş cevaptır.",
     "unclear": "Bilmiyor / belirsiz; cevap çıkarılamıyor. Konuşma tanıma hatasından gelen anlamsız ya da cümleye benzemeyen "
@@ -64,6 +64,50 @@ def value_rule(step: dict) -> str:
         return ("true: müşterinin sormak/öğrenmek istediği bir şey var (soru sordu); "
                 "false: sorusu yok, onayladı ya da devam etmek istiyor (tamam, anladım, yok, devam)")
     return "metin"
+
+
+def answer_rule(step: dict) -> str:
+    """Realtime modele giden cevap kuralı: value kuralı + seçenek etiketleri + adıma özel ipucu (cascade'deki build_messages ile
+    aynı bilgi; canlı testte model yalnız anahtarları görünce 'dinlemek isterim'i geçerli değere çeviremedi)."""
+    rule = value_rule(step)
+    if step["kind"] == "Choice":
+        rule += ". Anlamları: " + "; ".join(f"{c['value']} = {c['label']}" for c in step["choices"])
+    if step.get("llmHint"):
+        rule += ". Özel kural: " + step["llmHint"]
+    return rule
+
+
+def _norm_word(s: str) -> str:
+    return "".join(ch for ch in s.casefold().strip() if ch.isalnum() or ch.isspace()).strip()
+
+
+def coerce_obj(step: dict, obj: dict | None) -> dict | None:
+    """YALNIZ realtime ses yolunda: modelin bildirdiği değeri anlamı korunarak beklenen tipe yaklaştırır (bool/etiket/sayı metni).
+    Cascade'deki katı check_value değişmez. Belirsizse nesne olduğu gibi döner ve check_value reddeder."""
+    if not obj or obj.get("intent") != "answer":
+        return obj
+    v, kind = obj.get("value"), step["kind"]
+    new = v
+    if kind in ("YesNo", "CheckIn") and isinstance(v, str):
+        w = _norm_word(v)
+        if w in ("true", "evet", "var", "hatırlıyorum", "yes"):
+            new = True
+        elif w in ("false", "hayır", "yok", "hatırlamıyorum", "no"):
+            new = False
+    elif kind == "Choice":
+        keys = {c["value"] for c in step["choices"]}
+        if isinstance(v, str) and v not in keys:
+            for c in step["choices"]:
+                if _norm_word(v) in (_norm_word(c["label"]), _norm_word(c["value"])):
+                    new = c["value"]
+        elif isinstance(v, bool) and len(step["choices"]) == 2:
+            want = "evet" if v else "hayır"
+            hit = [c for c in step["choices"] if _norm_word(c["label"]).startswith(want)]
+            if len(hit) == 1:
+                new = hit[0]["value"]
+    elif kind in ("Score", "Duration") and isinstance(v, str) and v.strip().lstrip("-").isdigit():
+        new = int(v.strip())
+    return {**obj, "value": new} if new is not v else obj
 
 
 def build_messages(step: dict, question: str, utterance: str) -> list[dict]:
@@ -127,6 +171,7 @@ class FlowDriver:
         self.current: str | None = None
         self.retries = 0
         self.finished = False
+        self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.outcome: str | None = None
         self.answers: list[dict] = []
         self.path: list[str] = []
@@ -196,6 +241,8 @@ class FlowDriver:
             return reply
         key = self.current
         step = self.steps[key]
+        if self.coerce:
+            obj = coerce_obj(step, obj)
         ok, value = check_value(step, obj) if obj is not None else (False, None)
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,

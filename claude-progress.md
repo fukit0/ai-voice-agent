@@ -206,3 +206,9 @@ agents do not update it automatically.
 ## Session 019 - core-015 dogrulandi (2026-10-27)
 - Kullanici Mac'te gercek mikrofonla denedi: 'esik calisiyor'. core-015 PASSING (kanit: kullanici beyani; sayisal gercek-gurultu olcumu yok).
 - Geri bildirim: esigi gecen her ses (oksuruk) ajani hala boluyor -> yeni ozellik core-016 (akilli soz kesme, not_started). Bu oturumda uygulanmadi (tek aktif ozellik kurali).
+
+## Session 020 - canli test bulgulari: Opus analizi + hizli duzeltmeler (2026-10-28)
+- Kullanici 15+ gozlem bildirdi (STT: bogaz temizleme/Cince/Rusca/'on'; A2: Cancellation failed, 'dinlemek isterim', tam anlayamadim dongusu, 10 sn ses yok; A3 dinlemede kaliyor; L2 bozuk transkript). Opus 5.5 analizi 43 oturum + 4 WAV uzerinden kok nedenleri cikardi.
+- Hizli duzeltmeler uygulandi (core-017, bulut: pytest 321, Playwright 12/12; CANLI DOGRULANMADI -> core-017 blocked): STT gecidi, VAD min_ms 160, Gemini cagri kapisi, A2 yari-dupleks + interrupt_response=False + cancel yalniz aktifken, realtime cevap kurali + yumusak donusum, gozlemlenebilirlik alanlari.
+- Yeni feature'lar: core-018 (A2 yerel tur yonetimi), core-019 (sabit metin TTS), core-020 (STT olcum seti + gecit esikleri), core-021 (puan politikasi, URUN KARARI), core-022 (sessiz hat), core-023 (A3 yeniden degerlendirme). Akilli soz kesme (oksuruk) core-016'da.
+- Not: ornek aramalar (core-011) core-017 duzeltmeleri canli dogrulandiktan sonra yapilmali; aksi halde A3/A2 olcumleri anlamsiz.

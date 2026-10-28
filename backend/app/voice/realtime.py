@@ -29,7 +29,7 @@ import numpy as np
 from .. import stt_runs
 from ..providers.audio import resample
 from . import phone
-from .flow import INTENTS, value_rule
+from .flow import INTENTS, answer_rule
 from .session import END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
 from .vad import FRAME, SAMPLE_RATE, Endpointer
 
@@ -176,6 +176,7 @@ class OpenAIRealtime(_WsBackend):
         super().__init__(model)
         self._seen_calls: set[str] = set()
         self.threshold: float | None = None   # core-015: server_vad.threshold (0-1); None = sunucu varsayılanı
+        self._active = False                  # aktif (üretilen) yanıt var mı: yoksa response.cancel "Cancellation failed" hatası verir
 
     @staticmethod
     def threshold_for_db(db: float) -> float:
@@ -190,7 +191,7 @@ class OpenAIRealtime(_WsBackend):
         if self.ws is not None and self.threshold is not None:
             await self._send({"type": "session.update", "session": {"type": "realtime", "audio": {"input": {
                 "turn_detection": {"type": "server_vad", "threshold": self.threshold, "create_response": False,
-                                   "interrupt_response": True, "silence_duration_ms": 500}}}}})
+                                   "interrupt_response": False, "silence_duration_ms": 500}}}}})
 
     async def connect(self, instructions: str) -> None:
         import websockets
@@ -201,8 +202,9 @@ class OpenAIRealtime(_WsBackend):
             "type": "realtime", "model": self.model, "instructions": instructions, "output_modalities": ["audio"],
             "audio": {
                 "input": {"format": {"type": "audio/pcm", "rate": 24000},
-                          "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr"},
-                          "turn_detection": {"type": "server_vad", "create_response": False, "interrupt_response": True,
+                          "transcription": {"model": "gpt-4o-mini-transcribe", "language": "tr",
+                                           "prompt": "Türkçe telefon anketi. Sık geçen kelimeler: alo, efendim, evet, hayır, müsaitim, dinlemek isterim, devam, hatırlıyorum, on."},
+                          "turn_detection": {"type": "server_vad", "create_response": False, "interrupt_response": False,
                                              "silence_duration_ms": 500,
                                              **({"threshold": self.threshold} if self.threshold is not None else {})}},
                 "output": {"format": {"type": "audio/pcm", "rate": 24000}, "voice": "marin"}},
@@ -231,7 +233,8 @@ class OpenAIRealtime(_WsBackend):
             "output_modalities": ["audio"], "instructions": speak_instruction(text), "tool_choice": "none"}})
 
     async def interrupt(self) -> None:
-        await self._send({"type": "response.cancel"})
+        if self._active:     # aktif yanıt yokken response.cancel "Cancellation failed: no active response found" hatası verir
+            await self._send({"type": "response.cancel"})
 
     async def inject_user_text(self, text: str) -> None:
         await self._send({"type": "conversation.item.create", "item": {
@@ -256,10 +259,18 @@ class OpenAIRealtime(_WsBackend):
                 return []
             self._seen_calls.add(cid)
             return [{"type": "tool_call", "id": cid, "name": msg.get("name", ""), "args": msg.get("arguments", "")}]
+        if t == "response.created":
+            self._active = True
+            return []
         if t == "response.done":
+            self._active = False
             return [{"type": "response_done"}]
         if t == "error":
-            return [{"type": "error", "message": (msg.get("error") or {}).get("message", "OpenAI Realtime hatası")}]
+            err = msg.get("error") or {}
+            message = err.get("message", "OpenAI Realtime hatası")
+            if err.get("code") == "response_cancel_not_active" or "no active response" in message:
+                return []    # zararsız yarış: yanıt biz iptal etmeden bitmişti
+            return [{"type": "error", "message": message}]
         return []
 
 
@@ -450,6 +461,9 @@ class RealtimeVoiceSession:
         self._first_audio: float | None = None
         self._turn_no = 0
         self._closed = False
+        self.flow.coerce = True                 # ses yolunda değer yumuşak dönüştürülür (flow.coerce_obj)
+        self._last_spoken = ""
+        self.errors: list[str] = []
         out.set_on_drained(self._on_drained)
 
     # -- durum
@@ -496,9 +510,10 @@ class RealtimeVoiceSession:
             return
         rule = None
         if not self.flow.finished and self.flow.current is not None:
-            rule = value_rule(self.flow.steps[self.flow.current])
+            rule = answer_rule(self.flow.steps[self.flow.current])
         self.backend.set_answer_rule(rule)
         self._say("agent", text)
+        self._last_spoken = text
         self._expect = "speak"
         self._first_audio = None
         self._drop_audio = False
@@ -554,7 +569,10 @@ class RealtimeVoiceSession:
         while len(self._buf) >= FRAME:
             frame, self._buf = self._buf[:FRAME], self._buf[FRAME:]
             self._on_frame(frame)
-            self._send_q.put_nowait(to_int16(resample(frame, SAMPLE_RATE, self.backend.in_rate)).tobytes())
+            # yarı-dupleks: ajan konuşurken/düşünürken sunucuya sessizlik gider. Hoparlör yankısı ve oda gürültüsü sunucu VAD'ını
+            # tetikleyip sahte tur/"tam anlayamadım" döngüsü üretiyordu; söz kesmeyi zaten yerel VAD yapar (kesince frames akmaya başlar).
+            out = frame if self.state == "listening" else np.zeros_like(frame)
+            self._send_q.put_nowait(to_int16(resample(out, SAMPLE_RATE, self.backend.in_rate)).tobytes())
 
     def _on_frame(self, frame: np.ndarray) -> None:
         self.stats["frames_in"] += 1
@@ -574,7 +592,7 @@ class RealtimeVoiceSession:
             if kind == "end" and self.state == "listening":
                 self.stats["utterances"] += 1
                 self._t_end = time.perf_counter()
-            else:
+            elif kind == "drop":
                 self.stats["dropped"] += 1
 
     def _barge_in(self) -> None:
@@ -586,6 +604,12 @@ class RealtimeVoiceSession:
         self.stats["barge_cut_ms"].append(cut_ms)
         self.emit({"type": "barge_in", "cut_ms": cut_ms})
         self._set_state("listening")
+        if self._expect == "speak":          # kesilen konuşma turu biter; müşterinin cevabı sunucu VAD olayıyla alınır
+            self._expect = "idle"
+            if self._rec:
+                self.turns.append(self._rec)
+                self.emit({"type": "turn", **self._rec})
+                self._rec = {}
         asyncio.get_running_loop().create_task(self.backend.interrupt())
 
     async def _sender(self) -> None:
@@ -618,11 +642,14 @@ class RealtimeVoiceSession:
             if self._last_user:
                 self._say("user", self._last_user)
         elif t == "speech_stopped":
-            if self._expect != "speak":      # ajan konuşurken gelen kısa ses cevap sayılmaz
+            if self._expect != "speak" and self.state == "listening":   # ajan konuşurken/çalarken gelen ses cevap sayılmaz
                 self._expect, self._got_tool = "answer", False
                 self._set_state("thinking")
                 if self.backend.auto_answer:
                     await self.backend.request_answer()
+        elif t == "agent_text":
+            # modelin gerçekte söylediği (transkript): sadakat ölçümü. Transkripte biz verdiğimiz metni yazıyoruz; sapma burada görünür.
+            self._rec["agent_said"] = (self._rec.get("agent_said", "") + " " + ev["text"]).strip()
         elif t == "tool_call":
             await self._on_tool_call(ev)
         elif t == "response_done":
@@ -631,6 +658,7 @@ class RealtimeVoiceSession:
             self.out.flush()
             self._drop_audio = True
         elif t == "error":
+            self.errors.append(ev["message"])
             self.emit({"type": "error", "message": ev["message"]})
 
     def _on_audio(self, pcm_bytes: bytes) -> None:
@@ -650,15 +678,30 @@ class RealtimeVoiceSession:
         self.stats["agent_seconds_out"] = round(self.stats["agent_seconds_out"] + len(pcm) / OUT_RATE, 2)
         self.out.push(pcm)
 
+    async def _ack(self, ev: dict) -> None:
+        """Her fonksiyon çağrısı cevaplanır: Gemini toolResponse gelmeyince tur kapanmaz ve dinlemede kalır."""
+        try:
+            await self.backend.tool_result(ev.get("id", ""), ev.get("name") or TOOL_NAME)
+        except Exception:  # noqa: BLE001
+            pass
+
     async def _on_tool_call(self, ev: dict) -> None:
-        if ev.get("name") != TOOL_NAME or self.flow.finished or self._expect != "answer":
+        if ev.get("name") != TOOL_NAME or self.flow.finished:
+            await self._ack(ev)
             return
+        if self._expect != "answer":
+            if self.backend.auto_answer or self._expect == "speak":
+                await self._ack(ev)            # ajan konuşurken ya da sunucu VAD'li hatta beklenmeyen çağrı: yok sayılır
+                return
+            # Gemini: sunucu konuşma bitişi olayı vermez; çağrının kendisi cevap turudur
+            self._expect, self._got_tool = "answer", False
+            self._set_state("thinking")
         self._got_tool = True
         self.stats["tool_calls"] += 1
         self._t_tool = time.perf_counter()
         obj = parse_tool_args(ev.get("args"))
         self._turn_no += 1
-        self._rec = {"turn": self._turn_no, "realtime": True}
+        self._rec = {"turn": self._turn_no, "realtime": True, "tool_args": ev.get("args")}
         if self._t_end is not None:
             self._rec["answer_s"] = round(self._t_tool - self._t_end, 3)
         try:
@@ -692,6 +735,10 @@ class RealtimeVoiceSession:
             self.out.mark_end()
             if self._first_audio is None:
                 self._set_state("listening")
+            if self._rec and self._rec.get("agent_said") and self._last_spoken:
+                import difflib
+                norm = lambda s: " ".join("".join(ch for ch in s.casefold() if ch.isalnum() or ch.isspace()).split())  # noqa: E731
+                self._rec["verbatim"] = round(difflib.SequenceMatcher(None, norm(self._last_spoken), norm(self._rec["agent_said"])).ratio(), 3)
             if self._rec:
                 self.turns.append(self._rec)
                 self.emit({"type": "turn", **self._rec})
@@ -721,5 +768,5 @@ class RealtimeVoiceSession:
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome, "path": self.flow.path,
                      "answers": self.flow.answers},
-            "phone_filter": self.phone_filter, "vad": self.vad.settings()}, ensure_ascii=False, indent=2), encoding="utf-8")
+            "phone_filter": self.phone_filter, "vad": self.vad.settings(), "errors": self.errors}, ensure_ascii=False, indent=2), encoding="utf-8")
         return path

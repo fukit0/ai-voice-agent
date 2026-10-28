@@ -53,10 +53,19 @@ class MlxWhisperSTT(STTProvider):
         extra = {"initial_prompt": prompt} if prompt else {}
         t0 = time.perf_counter()
         with self._lock:
-            out = mlx_whisper.transcribe(audio16, path_or_hf_repo=self.model, language=language,
-                                         verbose=None, condition_on_previous_text=False, **extra)
+            # temperature=0.0: sıcaklık geri düşmesi (fallback) kapalı; canlı testte kod karışımında 5 kat yavaşlayıp
+            # halüsinasyon ("vermenção") üretti. Profil seçeneği `temperature` ile geri açılabilir.
+            out = mlx_whisper.transcribe(audio16, path_or_hf_repo=self.model, language=language, verbose=None,
+                                         condition_on_previous_text=False,
+                                         temperature=self.options.get("temperature", 0.0), **extra)
+        segs = out.get("segments") or []
+        metrics = {}
+        if segs:
+            metrics = {"avg_logprob": min(float(s.get("avg_logprob", 0.0)) for s in segs),
+                       "compression_ratio": max(float(s.get("compression_ratio", 0.0)) for s in segs),
+                       "no_speech_prob": max(float(s.get("no_speech_prob", 0.0)) for s in segs)}
         return STTResult(text=out.get("text", "").strip(), seconds=time.perf_counter() - t0,
-                         provider=self.kind, model=self.model)
+                         provider=self.kind, model=self.model, extra=metrics)
 
     def is_loaded(self):
         try:

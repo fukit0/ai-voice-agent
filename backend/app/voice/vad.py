@@ -25,7 +25,7 @@ def level_db(frame: np.ndarray) -> float:
 class Endpointer:
     """Çerçeve besler; ("start", None), ("end", utterance), ("drop", None) olayları üretir."""
 
-    def __init__(self, start_ms=60, end_ms=600, min_ms=300, max_s=15.0, preroll_ms=200,
+    def __init__(self, start_ms=60, end_ms=600, min_ms=160, max_s=15.0, preroll_ms=200,
                  floor_db=-45.0, margin_db=12.0):
         self.start_frames = max(1, start_ms // 20)
         self.end_frames = max(1, end_ms // 20)

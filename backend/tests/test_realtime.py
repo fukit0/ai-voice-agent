@@ -58,6 +58,7 @@ def test_openai_requests_function_only_answer_then_exact_speech(monkeypatch):
         await b.request_answer()
         await b.tool_result("c1", "report_answer")
         await b.speak("Merhaba Ahmet Bey.", "0-10 arası tam sayı")
+        b.parse({"type": "response.created"})      # yanıt üretiliyor: iptal gönderilir
         await b.interrupt()
         await b.send_audio(b"\x00\x01")
     asyncio.run(go())
@@ -178,7 +179,7 @@ def test_function_call_drives_flow_and_latency_is_end_to_end(tmp_path, monkeypat
 
 
 def test_unreliable_function_calls_are_reasked_not_accepted(tmp_path, monkeypatch):
-    bad = [{"intent": "answer", "value_json": "\"evet\""},      # YesNo için metin: yanlış tip
+    bad = [{"intent": "answer", "value_json": "\"belki\""},      # YesNo için çözümlenemeyen metin: yanlış tip ("evet" artık dönüştürülür)
            None,                                                # model fonksiyon çağırmadı
            {"intent": "answer", "value_json": "true"}]          # üçüncüde düzgün
     async def main():
@@ -331,3 +332,55 @@ def test_realtime_set_vad_applies_locally_and_reports_server_mapping(tmp_path, m
         ev = [e for e in events if e["type"] == "vad_settings"][-1]
         assert oa.threshold == OpenAIRealtime.threshold_for_db(-32) and "server_vad.threshold" in ev["server_side"]
     asyncio.run(main())
+
+
+def test_openai_cancel_only_when_response_active_and_not_active_error_is_swallowed():
+    """Canlı hata: 'Cancellation failed: no active response found'. Yanıt bittikten sonra söz kesme iptal göndermemeli."""
+    b = _backend(OpenAIRealtime, None)
+
+    async def go():
+        await b.interrupt()                                    # hiç yanıt yok
+        b.parse({"type": "response.created"})
+        b.parse({"type": "response.done"})
+        await b.interrupt()                                    # yanıt bitti
+        b.parse({"type": "response.created"})
+        await b.interrupt()                                    # aktif: gönderilir
+    asyncio.run(go())
+    assert [m["type"] for m in b.ws.msgs] == ["response.cancel"]
+    assert b.parse({"type": "error", "error": {"code": "response_cancel_not_active",
+                                               "message": "Cancellation failed: no active response found"}}) == []
+    assert b.parse({"type": "error", "error": {"message": "başka hata"}}) == [{"type": "error", "message": "başka hata"}]
+
+
+def test_openai_server_vad_does_not_interrupt_on_its_own():
+    """Söz kesmeyi yerel VAD yapar; sunucu VAD'ı hoparlör yankısında yanıtı iptal etmesin (canlı: 10 sn ses gelmedi)."""
+    b = _backend(OpenAIRealtime, None)
+    b.threshold = 0.6
+    asyncio.run(b.apply_sensitivity())
+    td = b.ws.msgs[0]["session"]["audio"]["input"]["turn_detection"]
+    assert td["interrupt_response"] is False and td["threshold"] == 0.6
+
+
+def test_realtime_soft_coercion_accepts_spoken_yes_and_choice_labels_but_not_garbage():
+    """Canlı bulgu: 'Hatırlıyorum'/'dinlemek isterim' ses yolunda reddediliyordu. Realtime yolunda değer anlamı korunarak dönüştürülür."""
+    from backend.app.voice.flow import answer_rule, coerce_obj
+    sm = S.step_map(S.get("anket"))
+    yn = next(st for st in sm.values() if st["kind"] == "YesNo")
+    giris = sm["giris"]
+    for v in ("evet", "Evet.", "hatırlıyorum", "true"):
+        assert coerce_obj(yn, {"intent": "answer", "value": v})["value"] is True
+    assert coerce_obj(yn, {"intent": "answer", "value": "hayır"})["value"] is False
+    assert coerce_obj(yn, {"intent": "answer", "value": "belki"})["value"] == "belki"      # çözümlenemez: check_value reddeder
+    assert coerce_obj(giris, {"intent": "answer", "value": True})["value"] == "dinle"     # Evet, dinlemek istedi
+    assert coerce_obj(giris, {"intent": "answer", "value": False})["value"] == "devam"
+    assert coerce_obj(giris, {"intent": "answer", "value": "Evet, dinlemek istedi"})["value"] == "dinle"
+    assert coerce_obj(giris, {"intent": "refuse", "value": None}) == {"intent": "refuse", "value": None}
+    rule = answer_rule(giris)
+    assert "dinle = Evet, dinlemek istedi" in rule and "devam = Hayır, dinlemek istemedi" in rule and "Özel kural" in rule
+
+
+def test_cascade_check_value_stays_strict():
+    """Yumuşak dönüştürme yalnız realtime yolunda: cascade'de metin 'evet' hâlâ geçersiz."""
+    from backend.app.voice.flow import check_value
+    yn = next(st for st in S.step_map(S.get("anket")).values() if st["kind"] == "YesNo")
+    assert check_value(yn, {"intent": "answer", "value": "evet"})[0] is False

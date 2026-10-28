@@ -21,6 +21,7 @@ from .. import stt_runs, trnorm
 from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
+from . import sttguard
 from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
 
 OUT_RATE = 48000
@@ -230,6 +231,18 @@ class VoiceSession:
             if not text:
                 self._set_state("listening")
                 return
+            ok, reason = sttguard.check(text, stt_res.extra)
+            rec["stt_conf"] = stt_res.extra.get("confidence") if stt_res.extra else None
+            if not ok:
+                # güvenilmez transkript (yabancı yazı, halüsinasyon, düşük güven): cevap sayılmaz, akış tekrar sorar
+                rec["stt_rejected"] = reason
+                self.stats["stt_rejected"] = self.stats.get("stt_rejected", 0) + 1
+                self.emit({"type": "stt_rejected", "text": text, "reason": reason})
+                if self.flow is not None:
+                    await self._flow_turn(text, turn, t_end, rec, reject=True)
+                else:
+                    self._set_state("listening")
+                return
             if looks_incomplete(text) and len(audio) / SAMPLE_RATE < MAX_HOLD_AUDIO_S:
                 self._hold(audio, text, rec, t_end)       # yarım cümle: devam etmesini bekle
                 return
@@ -290,8 +303,11 @@ class VoiceSession:
             if turn == self._turn_id:
                 self._set_state("listening")
 
-    async def _flow_turn(self, text: str, turn: int, t_end: float, rec: dict) -> None:
-        reply = await asyncio.to_thread(self.flow.handle, text)
+    async def _flow_turn(self, text: str, turn: int, t_end: float, rec: dict, reject: bool = False) -> None:
+        if reject:    # STT geçidi: LLM'e gitmeden "anlaşılmadı" (metin cevap olarak kaydedilmez)
+            reply = self.flow.handle_structured({"intent": "unclear", "value": None}, "")
+        else:
+            reply = await asyncio.to_thread(self.flow.handle, text)
         if reply.llm_s is not None:
             rec["llm_s"] = reply.llm_s
             record_call(self.profile_id, "llm", self.llm, reply.llm_s, ok=True, warm=True, chars=len(text), source="voice")
