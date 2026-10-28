@@ -254,3 +254,8 @@ agents do not update it automatically.
 - Bulgu: sabit ses 4 turda calisti (fixed_audio_turns=4, verbatim 1,0; onekli tekrar-sorma dahil) ama akis 'giris'ten cikmadi: model arac argumanini {"answer":"devam","value_json":"devam"} verdi (intent yok) -> 'anlasilmadi' -> giris metni yeniden okundu.
 - Duzeltme: realtime.parse_tool_args, 'answer' degeri INTENTS anahtari degilse onu cevap degeri sayar (intent="answer"). Yeni test; pytest 366 gecti. Mac'e aktarildi (realtime.py, test_realtime.py).
 - core-019 PASSING (tekrar-sorma sabit sesle canli dogrulandi; 10 arama STT benzerligi olcutu yapilmadi, sapma notta). Canli yeniden deneme: A2'de 'Evet/devam' cevabinin artik ilerledigi dogrulanmali (core-024).
+
+## Session 028 - core-024 kodlamasi (2026-10-28)
+- Yapildi: tum sabit sorular sabit sesle (DEFAULT_STEPS '*'), cevap sonrasi musteri ses ogelerinin baglamdan silinmesi (conversation.item.delete), cevap istegine soru metni, YesNo transkript capraz kontrolu (flow.crosscheck_yesno), speech_deviation olayi. test_core024.py 7 test; toplam 373 gecti.
+- Dogrulanmadi: canli A2. core-024 NOT_STARTED kalir; kapanis icin 10 A2 aramasi (verbatim >=0,95 her turda; 'Musaitim' ve 'Dinlemek istemiyorum' dogru dala gitmeli).
+- Bilinen risk: dinamik metinli sabit turlarda ilk uretim gecikmesi; onbellek isitma henuz otomatik degil.

@@ -128,3 +128,7 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Sebep:** Model, cevabı bildirdiği araçta alan adını yanlış kullandı ("answer" yazdı, "intent" atladı); akış bunu anlaşılmadı sayıp girişi yeniden okudu. Ses tarafı sorunsuzdu (KVKK metni her tekrarda birebir).
 - **Çözüm:** Araç çıktısı toleranslı okunuyor (alan adı karışsa da değer cevap sayılır); test eklendi.
 - **Sınır (saklanmaz):** Bu, modelin şemaya uymamasının bir belirtisi; kök sorun (model beklenen biçimden sapıyor) core-024'te açık. Cascade'de bu risk yok çünkü LLM serbest araç çağırmıyor, akışı kod yürütüyor.
+
+## S20. "A2'de modelin soruyu değiştirmesini nasıl engelledik?" (2026-10-28)
+- **Yaptık:** Tüm sabit sorular önceden üretilmiş sesle çalınır (model yalnızca dinler); her cevaptan sonra müşterinin eski sesi modelin bağlamından silinir; "Müsaitim" gibi açık evet/hayır cevapları modelin bildirimiyle çelişirse transkripte göre düzeltilir; sapma olay olarak kaydedilir.
+- **Sınır (saklanmaz):** Canlı doğrulama (10 arama) henüz yapılmadı. Ad/puan içeren cümleler ilk kullanımda ses üretimi bekler (1-8 sn). Çapraz kontrol yalnız açık evet/hayır kelimelerinde çalışır; puan ve seçim adımları korumasız. Kök sorun (model tutarsızlığı) çözülmedi, hafifletildi; üretim yönü hâlâ cascade.

@@ -110,6 +110,30 @@ def coerce_obj(step: dict, obj: dict | None) -> dict | None:
     return {**obj, "value": new} if new is not v else obj
 
 
+_POS_WORDS = {"evet", "müsaitim", "olur", "tamam", "buyurun", "tabii", "tabi", "elbette", "uygunum"}
+_NEG_PREFIX = ("hayır", "hayir", "değil", "degil", "istemiyor", "olmaz", "müsaitdeğil")
+
+
+def crosscheck_yesno(step: dict, obj: dict | None, utterance: str) -> tuple[dict | None, str | None]:
+    """core-024, YALNIZ realtime ses yolu: modelin evet/hayır bildirimi müşterinin SÖYLEDİĞİ metinle çelişiyorsa (ör. 'Müsaitim' -> refuse,
+    bağlamda kalan eski 'Dinlemek istemiyorum' sesi yüzünden) açık kelimeler baz alınarak düzeltilir. Belirsiz/çelişik cümlede dokunulmaz.
+    Dönüş: (nesne, düzeltme açıklaması | None)."""
+    if not obj or step.get("kind") != "YesNo" or not utterance.strip():
+        return obj, None
+    toks = re.findall(r"[a-zçğıöşüâ]+", utterance.replace("İ", "i").replace("I", "ı").casefold())
+    pos = any(t in _POS_WORDS for t in toks)
+    neg = any(t.startswith(_NEG_PREFIX) for t in toks)
+    if pos == neg:
+        return obj, None
+    want = pos
+    intent, val = obj.get("intent"), obj.get("value")
+    if intent in ("refuse", "unclear") and want:
+        return {"intent": "answer", "value": True}, f"{intent}->evet"
+    if intent == "answer" and isinstance(val, bool) and val != want:
+        return {"intent": "answer", "value": want}, f"{'evet' if val else 'hayır'}->{'evet' if want else 'hayır'}"
+    return obj, None
+
+
 _NUM_WORDS = {"sıfır": 0, "sifir": 0, "bir": 1, "iki": 2, "üç": 3, "uc": 3, "dört": 4, "dort": 4, "beş": 5, "bes": 5, "altı": 6,
               "alti": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
 _NUM_PARTICLE = {0: "sıfır mı", 1: "bir mi", 2: "iki mi", 3: "üç mü", 4: "dört mü", 5: "beş mi", 6: "altı mı", 7: "yedi mi",
@@ -274,12 +298,16 @@ class FlowDriver:
         self.silences = 0
         key = self.current
         step = self.steps[key]
+        crossed = None
         if self.coerce:
             obj = coerce_obj(step, obj)
+            obj, crossed = crosscheck_yesno(step, obj, utterance)
         ok, value = check_value(step, obj) if obj is not None else (False, None)
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,
                              "valid": ok})
+        if crossed:
+            reply.events.append({"type": "crosscheck", "step": key, "fix": crossed, "text": utterance})
         if intent == "answer" and step["kind"] == "Score" and self.score_policy == "clarify" and utterance.strip():
             clarified = self._clarify_score(step, utterance, reply)
             if clarified is not None:

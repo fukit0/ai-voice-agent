@@ -22,7 +22,7 @@ SPEECH_URL = "https://api.openai.com/v1/audio/speech"
 DEFAULT_MODEL = "gpt-4o-mini-tts"
 DEFAULT_VOICE = "marin"
 SAMPLE_RATE = 24000                                   # response_format=pcm: 24 kHz, 16 bit, mono
-DEFAULT_STEPS = ("acilis", "guvenlik_scripti", "giris")   # sözleşme/KVKK/kayıt bilgilendirmesi içeren sabit adımlar (welcome: acilis, guvenlik_scripti; anket: giris)
+DEFAULT_STEPS = ("*",)   # core-024: TÜM sabit sorular önceden üretilmiş sesle (model soruyu yeniden yorumlamasın); profilde `steps: [...]` ile daraltılır
 STYLE = "Sıcak, doğal ve anlaşılır bir Türkçe telefon konuşması tonu. Metni değiştirmeden, kelimesi kelimesine oku."
 
 
@@ -68,7 +68,7 @@ class FixedAudio:
                    voice=opt.get("voice", DEFAULT_VOICE), **kw)
 
     def applies(self, step_key: str | None) -> bool:
-        return step_key in self.steps
+        return step_key is not None and ("*" in self.steps or step_key in self.steps)
 
     def _dir(self) -> Path:
         return self.cache_dir or stt_runs.data_dir() / "fixed-audio"

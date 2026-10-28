@@ -24,3 +24,7 @@ Tarih: 2026-10-28 · Özellikler: core-018, core-019, core-023 (core-011 girdisi
 - Örneklem küçük (A2 4, A3 2 arama), tek konuşmacı, evde ortam gürültüsü; istatistiksel sonuç değil, tutarlı kalitatif bulgu.
 - Sabit sesin tekrar-sorma (önekli metin) düzeltmesi canlı doğrulanmadı (aramalar düzeltmeden önce yapıldı).
 - Karar kullanıcı gözlemine dayanır ("modeller çok kötü"); sayısal anlama doğruluğu ölçülmedi.
+
+## Ek (2026-10-28, core-024): A2 sapma önlemleri
+Seçenekler: (a) out-of-band response, (b) sabit TTS'in tüm sabit sorulara genişletilmesi, (c) sapmada yeniden söyleme. Seçilen: (b) + bağlam temizliği + YesNo transkript çapraz kontrolü; (a) denenmedi (API desteği ve gecikme ölçülmedi), (c) gereksiz: sabit ses verbatim 1,0, model yalnız TTS hatasında konuşur ve sapma `speech_deviation` olayıyla izlenir.
+Gerekçe: sapmanın kaynağı modelin soruyu yeniden yorumlaması ve eski müşteri seslerinin bağlamda kalmasıydı (d227e6c2553e, eaee33b00412); ikisi de modeli sorudan ve eski sesten uzak tutarak ele alındı. Kapsam: yalnız A2 PoC, üretim adayı değil. Doğrulama bekliyor: 10 canlı A2 araması. Maliyet: dinamik metinli turlarda ilk TTS üretimi gecikmesi.
