@@ -214,9 +214,13 @@ class EmaTTS(TTSProvider):
         super().__init__(model or "ema-lightning", **options)
         self._engine = None
 
-    def synthesize(self, text, language="tr", speed=1.0):
+    def synthesize(self, text, language="tr", speed=1.0, tone=None):
         from ema_lightning import EMA
 
+        from .. import tone_voice
+
+        if tone:   # EMA tek ses: ton yalnız hıza yansır (ADR 0010)
+            speed = speed * tone_voice.params(self.kind, self.model, tone).get("speed", 1.0)
         with self._lock:
             if self._engine is None:
                 self._engine = EMA()
@@ -243,9 +247,18 @@ class ChatterboxTTS(TTSProvider):
         super().__init__(model or "chatterbox-multilingual", **options)
         self._tts = None
 
-    def synthesize(self, text, language="tr", speed=1.0):   # Chatterbox: hız parametresi bağlı değil (yok sayılır)
+    def synthesize(self, text, language="tr", speed=1.0, tone=None):   # hız yok sayılır; ton -> exaggeration/cfg_weight/temperature
         import torch
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+
+        from .. import tone_voice
+
+        gen_kw = {k: v for k, v in tone_voice.params(self.kind, self.model, tone).items()
+                  if k in ("exaggeration", "cfg_weight", "temperature")}
+        if self.options.get("audio_prompt_path"):   # referans klip sesin tarzını da taşır (isteğe bağlı)
+            gen_kw["audio_prompt_path"] = self.options["audio_prompt_path"]
+        if self.options.get("seed") is not None:
+            torch.manual_seed(int(self.options["seed"]))
 
         with self._lock:
             if self._tts is None:
@@ -253,7 +266,7 @@ class ChatterboxTTS(TTSProvider):
                 # cihaz string olmalı: kütüphane "mps"/"cpu" karşılaştırmasıyla CPU'ya map ediyor
                 self._tts = ChatterboxMultilingualTTS.from_pretrained(device=device)
             t0 = time.perf_counter()
-            wav = self._tts.generate(text, language_id=self.options.get("language", language))
+            wav = self._tts.generate(text, language_id=self.options.get("language", language), **gen_kw)
             audio = wav.squeeze().detach().cpu().numpy().astype(np.float32)
         return TTSResult(audio=audio, sample_rate=int(self._tts.sr), seconds=time.perf_counter() - t0,
                          provider=self.kind, model=self.model)

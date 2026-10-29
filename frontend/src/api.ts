@@ -268,3 +268,20 @@ export const savePersona = (p: PersonaFields) => personaCall<PersonaView>("/api/
 export const resetPersona = () => personaCall<PersonaView>("/api/persona/reset", "POST");
 export const previewPersona = (p: PersonaFields) => personaCall<PersonaPreview & { prompt_stats?: PersonaStats }>("/api/persona/preview", "POST", p);
 export const fetchPersonaReport = () => personaCall<PersonaReport>("/api/persona/report");
+
+// ---- Ton -> ses (ADR 0010) ----
+export type ToneInfo = { tones: { id: string; label: string; llm: string }[]; demo_text: string };
+export type ToneAcoustics = {
+  seconds?: number; words_per_sec?: number; pitch_median_hz?: number; pitch_std_semitones?: number; loudness_std_db?: number;
+};
+export type ToneClip = {
+  tone: string; label: string; id: string; url: string; seconds: number; applied: Record<string, number | string>;
+  acoustics: ToneAcoustics;
+};
+export type ToneDemoResult = {
+  profile: string; provider: string; model: string | null; seed: number | null; tag_model: boolean; takes_tone: boolean;
+  text: string; clips: ToneClip[];
+};
+export const fetchTones = () => personaCall<ToneInfo>("/api/persona/tones");
+export const runToneDemo = (body: { profile: string; text: string; model?: string | null; seed?: number | null; tones?: string[] }) =>
+  personaCall<ToneDemoResult>("/api/persona/tone-demo", "POST", body);

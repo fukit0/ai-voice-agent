@@ -109,3 +109,11 @@ textarea { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--lin
 .persona-problems { margin: 4px 0; padding-left: 18px; font-size: 13px; }
 .persona-prompt { white-space: pre-wrap; font-size: 13px; line-height: 1.5; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 @media (max-width: 800px) { .persona-layout { grid-template-columns: 1fr; } }
+
+/* Ton demosu (ADR 0010) */
+.tone-demo { margin-top: 1.5rem; }
+.tone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
+.tone-card { border: 1px solid var(--border, #d0d5dd); border-radius: 8px; padding: 0.75rem; }
+.tone-card h4 { margin: 0 0 0.5rem; }
+.tone-card audio { width: 100%; }
+.tone-metrics { list-style: none; margin: 0.25rem 0 0; padding: 0; font-size: 0.85rem; }

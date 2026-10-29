@@ -111,7 +111,7 @@ class RtcVoiceConnection:
             if persona is not None:   # core-005: serbest sohbet istemi ve açılış cümlesi persona'dan
                 from .. import persona as persona_mod
                 kw = {"persona": persona_mod.system_prompt(persona), "greeting": persona_mod.greeting(persona),
-                      "tts_speed": float(persona.get("speed", 1.0))}
+                      "tts_speed": float(persona.get("speed", 1.0)), "tts_tone": persona.get("tone")}
             self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send, flow=flow,
                                         phone_filter=phone_filter, **kw)
         self._reader: asyncio.Task | None = None

@@ -77,8 +77,10 @@ def to_int16(audio: np.ndarray) -> np.ndarray:
 class VoiceSession:
     def __init__(self, sid: str, profile_id: str, stt, llm, tts, out, send_event: Callable[[dict], None],
                  endpointer: Endpointer | None = None, persona: str = PERSONA, greeting: str = GREETING,
-                 flow=None, phone_filter: bool = False, tts_speed: float = 1.0):
+                 flow=None, phone_filter: bool = False, tts_speed: float = 1.0, tts_tone: str | None = None):
         self.tts_speed = tts_speed   # core-005: persona konuşma hızı (TTS destekliyorsa)
+        import inspect   # ton yalnız `tone` parametresini tanıyan TTS'e iletilir (test sahteleri ve eski sağlayıcılar bozulmaz)
+        self.tts_tone = tts_tone if tts_tone and "tone" in inspect.signature(tts.synthesize).parameters else None
         self.sid, self.profile_id = sid, profile_id
         self.stt, self.llm, self.tts, self.out = stt, llm, tts, out
         self.emit = send_event
@@ -353,7 +355,8 @@ class VoiceSession:
                 spoken = trnorm.normalize(sentence)
                 t0 = time.perf_counter()
                 extra = (self.tts_speed,) if self.tts_speed != 1.0 else ()   # hız yalnız değişmişse iletilir
-                res = await asyncio.to_thread(self.tts.synthesize, spoken, "tr", *extra)
+                kw = {"tone": self.tts_tone} if self.tts_tone else {}
+                res = await asyncio.to_thread(lambda: self.tts.synthesize(spoken, "tr", *extra, **kw))
                 dt = time.perf_counter() - t0
                 tts_total += dt
                 record_call(self.profile_id, "tts", self.tts, dt, ok=True, warm=True, chars=len(spoken), source="voice")

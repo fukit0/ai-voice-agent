@@ -130,5 +130,5 @@ class TTSProvider(Provider):
     def warmup_call(self):
         return self.synthesize("Merhaba, hazırım.")
 
-    def synthesize(self, text: str, language: str = "tr", speed: float = 1.0) -> TTSResult:   # speed: 1.0 = normal; desteklemeyen sağlayıcı yok sayar
+    def synthesize(self, text: str, language: str = "tr", speed: float = 1.0, tone: str | None = None) -> TTSResult:   # speed: 1.0 = normal; desteklemeyen sağlayıcı yok sayar
         raise NotImplementedError

@@ -3,8 +3,11 @@ import {
   fetchPersona, fetchPersonaReport, previewPersona, resetPersona, savePersona,
   type PersonaFields, type PersonaReport, type PersonaView,
 } from "../api";
+import { ToneDemo } from "./ToneDemo";
 
-const TONE_LABEL: Record<string, string> = { samimi: "Samimi (sıcak, rahat)", resmi: "Resmî (ölçülü, kibar)" };
+const TONE_LABEL: Record<string, string> = {
+  samimi: "Samimi (sıcak, rahat)", resmi: "Resmî (ölçülü, kibar)", enerjik: "Enerjik (canlı, neşeli)", sakin: "Sakin (yumuşak, telaşsız)",
+};
 const ADDRESS_LABEL: Record<string, string> = {
   bey_hanim: "Ad + Bey/Hanım (Ahmet Bey)", ad: "Yalnız ad (Ahmet)", siz: "Ad kullanma, 'siz' de",
 };
@@ -69,8 +72,9 @@ export function PersonaPage() {
         her cevaptan sonra söylenir; istem serbest sohbette kullanılır. Gerçek aramalarda cümle uzunluğu aşağıdaki raporla denetlenir.
       </p>
       <p className="meta" data-testid="persona-voice-note">
-        <b>Not:</b> Persona <b>ne söylendiğini</b> değiştirir (ad, söz seçimi, cümle uzunluğu); <b>sesin tınısını, hızını ve duygusunu</b> değiştirmez.
-        Ses tınısı profildeki TTS modelinden gelir (EMA'da tek ses; ses seçimi Faz 2, scn-010). <b>Konuşma hızı</b> ise buradan ayarlanır.
+        <b>Not:</b> Ton hem <b>söz üslubunu</b> hem de <b>sesin söyleyişini</b> etkiler; ama ne kadar etkileyeceği TTS sağlayıcısına bağlıdır.
+        EMA tek ses olduğu için yalnız hız değişir; Chatterbox ifade gücünü, ElevenLabs kararlılık/hızı (v3 ve v4 modellerinde ses etiketlerini) kullanır.
+        Aşağıdaki <b>ton demosu</b> aynı cümleyi dört tonda yan yana dinletir.
       </p>
       {msg && <p className={msg.kind === "ok" ? "status status-ok" : "error"} role="status">{msg.text}</p>}
       {form && view && (
@@ -78,7 +82,7 @@ export function PersonaPage() {
           <form className="persona-form" onSubmit={(e) => { e.preventDefault(); void save(); }} aria-label="Persona girişi">
             <label htmlFor="p-name"><b>Ajanın adı</b></label>
             <input id="p-name" value={form.name} onChange={(e) => set("name", e.target.value)} />
-            <label htmlFor="p-tone"><b>Ton (söz üslubu)</b> <span className="meta">ses tınısını değiştirmez</span></label>
+            <label htmlFor="p-tone"><b>Ton (söz üslubu)</b> <span className="meta">söz üslubu + söyleyiş</span></label>
             <select id="p-tone" value={form.tone} onChange={(e) => set("tone", e.target.value)}>
               {view.options.tone.map((t) => <option key={t} value={t}>{TONE_LABEL[t] ?? t}</option>)}
             </select>
@@ -129,6 +133,8 @@ export function PersonaPage() {
           </aside>
         </div>
       )}
+
+      <ToneDemo />
 
       <h3 className="sub">Cümle uzunluğu raporu (kayıtlı aramalar)</h3>
       <p className="meta">Playground'da yapılan aramaların ajan cümleleri; sınır ve yasak kalıplara göre. Gerçek arama yoksa boş görünür.</p>

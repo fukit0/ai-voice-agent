@@ -1,0 +1,52 @@
+{
+  "params": {
+    "ema": {
+      "default": {
+        "samimi":  {"speed": 1.0},
+        "resmi":   {"speed": 0.95},
+        "enerjik": {"speed": 1.15},
+        "sakin":   {"speed": 0.88}
+      }
+    },
+    "chatterbox": {
+      "default": {
+        "samimi":  {"exaggeration": 0.55, "cfg_weight": 0.45, "temperature": 0.8},
+        "resmi":   {"exaggeration": 0.30, "cfg_weight": 0.60, "temperature": 0.6},
+        "enerjik": {"exaggeration": 0.90, "cfg_weight": 0.30, "temperature": 0.9},
+        "sakin":   {"exaggeration": 0.30, "cfg_weight": 0.50, "temperature": 0.6}
+      }
+    },
+    "elevenlabs": {
+      "default": {
+        "samimi":  {"stability": 0.45, "similarity_boost": 0.75, "style": 0.25, "speed": 1.0},
+        "resmi":   {"stability": 0.80, "similarity_boost": 0.75, "style": 0.0,  "speed": 0.95},
+        "enerjik": {"stability": 0.25, "similarity_boost": 0.75, "style": 0.6,  "speed": 1.12},
+        "sakin":   {"stability": 0.70, "similarity_boost": 0.75, "style": 0.1,  "speed": 0.88}
+      },
+      "eleven_flash_v2_5": {
+        "samimi":  {"stability": 0.45, "similarity_boost": 0.75, "speed": 1.0},
+        "resmi":   {"stability": 0.85, "similarity_boost": 0.75, "speed": 0.95},
+        "enerjik": {"stability": 0.20, "similarity_boost": 0.75, "speed": 1.15},
+        "sakin":   {"stability": 0.75, "similarity_boost": 0.75, "speed": 0.88}
+      },
+      "eleven_v4_turbo": {
+        "samimi":  {"tag": "[warmly]",  "stability": 0.45, "speed": 1.0},
+        "resmi":   {"tag": "[serious]", "stability": 0.80, "speed": 0.95},
+        "enerjik": {"tag": "[excited]", "stability": 0.25, "speed": 1.12},
+        "sakin":   {"tag": "[calm]",    "stability": 0.70, "speed": 0.88}
+      },
+      "eleven_v4": {
+        "samimi":  {"tag": "[warmly]"},
+        "resmi":   {"tag": "[serious]"},
+        "enerjik": {"tag": "[excited]"},
+        "sakin":   {"tag": "[calm]"}
+      },
+      "eleven_v3": {
+        "samimi":  {"tag": "[warmly]",  "stability": 0.5},
+        "resmi":   {"tag": "[serious]", "stability": 1.0},
+        "enerjik": {"tag": "[excited]", "stability": 0.0},
+        "sakin":   {"tag": "[calm]",    "stability": 1.0}
+      }
+    }
+  }
+}

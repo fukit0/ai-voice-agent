@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[2]
 TONES = {
     "samimi": "sıcak, samimi ama saygılı, doğal ve rahat konuşan",
     "resmi": "kibar, ölçülü ve resmî ama soğuk olmayan bir üslupla konuşan",
+    "enerjik": "canlı, neşeli ve enerjik, heyecanını sesinden hissettiren ama abartmayan",
+    "sakin": "yumuşak, sakin ve telaşsız, müşteriyi rahatlatan bir üslupla konuşan",
 }
 ADDRESS = {
     "bey_hanim": "Müşteriye 'Ahmet Bey' / 'Ayşe Hanım' gibi ad ve Bey/Hanım ile hitap et.",

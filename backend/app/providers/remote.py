@@ -103,13 +103,30 @@ class ElevenLabsTTS(TTSProvider):
     required_env = ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID")
     SAMPLE_RATE = 24000
 
-    def synthesize(self, text, language="tr", speed=1.0):
+    def synthesize(self, text, language="tr", speed=1.0, tone=None):
+        from .. import tone_voice
+
         t0 = time.perf_counter()
-        body = {"text": text, "model_id": self.model or "eleven_flash_v2_5", "language_code": language}
-        if speed != 1.0:   # ElevenLabs voice_settings.speed kabul aralığı 0.7-1.2
-            body["voice_settings"] = {"speed": min(1.2, max(0.7, speed))}
+        model = self.model or "eleven_flash_v2_5"
+        body = {"text": text, "model_id": model}
+        if "multilingual_v2" not in model:   # language_code multilingual_v2'de desteklenmiyor
+            body["language_code"] = language
+        tp = tone_voice.params(self.kind, model, tone)   # ton -> voice_settings (+ v3/v4'te ses etiketi); ton yoksa {}
+        vs = {k: tp[k] for k in ("stability", "similarity_boost", "style", "use_speaker_boost") if k in tp}
+        eff = tp.get("speed", 1.0) * speed   # ton hızı persona hızıyla çarpılır
+        if eff != 1.0:   # ElevenLabs voice_settings.speed kabul aralığı 0.7-1.2
+            vs["speed"] = round(min(1.2, max(0.7, eff)), 3)
+        if vs:
+            body["voice_settings"] = vs
+        if tp.get("tag") and tone_voice.uses_tags(model):
+            body["text"] = f"{tp['tag']} {text}"
+        if self.options.get("seed") is not None:   # A/B karşılaştırmada tekrarlanabilirlik (best-effort)
+            body["seed"] = int(self.options["seed"])
+        # Ton başına ayrı ses (Voice Library/Voice Design): ELEVENLABS_VOICE_ID_ENERJIK vb. tanımlıysa o kullanılır.
+        # voice_settings'ten çok daha belirgin fark verir; tanımlı değilse tek ses + ayar kullanılır.
+        voice = (tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}")) or os.environ["ELEVENLABS_VOICE_ID"]
         res = _post(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{os.environ['ELEVENLABS_VOICE_ID']}",
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
             params={"output_format": f"pcm_{self.SAMPLE_RATE}"},
             headers={"xi-api-key": os.environ["ELEVENLABS_API_KEY"]},
             json=body,

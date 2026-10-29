@@ -299,3 +299,10 @@ agents do not update it automatically.
 - Yapildi: persona modulu (config/persona.json + data/persona.json), API (/api/persona, preview, reset, report), 'Persona' ekrani, serbest sohbet istemi/acilis, {ASISTAN}, kademeli hatta onay sozu, cumle uzunlugu raporu. 402 backend + 46 frontend test gecti; ekran tarayicida gorulup denendi.
 - Dogrulanmadi: gercek L2 hatta 5 test aramasi ve transkript incelemesi (verification 1-2). core-005 BLOCKED bu yuzden.
 - Sirada: Mac'te uygulamayi yeniden baslat (frontend/dist guncel), /persona'dan kaydet, Playground'da 5 arama yap, 'Cumle uzunlugu raporu'ndan Raporu getir, sonuclari bana ver.
+
+## Session 038 - core-005 ton -> ses (2026-10-30)
+- Kullanici hedefi: farkli tonlar demoda sasirtmali; ElevenLabs dogrula, Flash v2.5 yetmezse hangi model arastir (Opus ile).
+- Yapildi: tone_voice.py + config/tone-voice.json (saglayici/model/ton -> parametre), TTS `synthesize(..., tone=)` (EMA hiz; Chatterbox exaggeration/cfg_weight/temperature; ElevenLabs stability/style/speed, v3/v4 ses etiketi, ton basina ses kimligi, seed), persona tonlari enerjik/sakin, VoiceSession tts_tone, API /api/persona/tones + /tone-demo, Persona ekraninda Ton demosu, scripts/verify_elevenlabs_tones.py. 426 backend (1 skip: torch yok) + 50 frontend test gecti.
+- Arastirma (ADR 0010): ses etiketi yalniz v3/v4/v4 Turbo; Flash v2.5 yalniz stability+hiz+ses secimi; Multilingual v2 style ekler; en guclu kaldirac ayri ses (Voice Library / Voice Design).
+- DOGRULANMADI: ElevenLabs (bulut proxy/anahtar yok) — modeller arasi gercek ton farki, Turkce etiket kalitesi, v4 Turbo gecikmesi; Chatterbox ton testi (torch yok). Sayilar baslangic tahmini.
+- Sirada (kullanici, Mac): `python scripts/verify_elevenlabs_tones.py`, klipleri dinle; Persona > Ton demosu'nu ElevenLabs profilinde dene; sonucu bana ver, tablo kalibre edilsin.
