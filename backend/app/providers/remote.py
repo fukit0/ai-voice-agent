@@ -103,13 +103,16 @@ class ElevenLabsTTS(TTSProvider):
     required_env = ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID")
     SAMPLE_RATE = 24000
 
-    def synthesize(self, text, language="tr"):
+    def synthesize(self, text, language="tr", speed=1.0):
         t0 = time.perf_counter()
+        body = {"text": text, "model_id": self.model or "eleven_flash_v2_5", "language_code": language}
+        if speed != 1.0:   # ElevenLabs voice_settings.speed kabul aralığı 0.7-1.2
+            body["voice_settings"] = {"speed": min(1.2, max(0.7, speed))}
         res = _post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{os.environ['ELEVENLABS_VOICE_ID']}",
             params={"output_format": f"pcm_{self.SAMPLE_RATE}"},
             headers={"xi-api-key": os.environ["ELEVENLABS_API_KEY"]},
-            json={"text": text, "model_id": self.model or "eleven_flash_v2_5", "language_code": language},
+            json=body,
         )
         audio = np.frombuffer(res.content, dtype="<i2").astype(np.float32) / 32768.0
         return TTSResult(audio=audio, sample_rate=self.SAMPLE_RATE, seconds=time.perf_counter() - t0,

@@ -95,3 +95,50 @@ def test_sentence_stats_and_report_flag_violations(data):
         encoding="utf-8")
     rep = client.get("/api/persona/report").json()
     assert len(rep["sessions"]) == 1 and rep["sessions"][0]["sentences"] == 1 and rep["total"]["avg_words_per_sentence"] == 3.0
+
+
+def test_speed_validation_and_default():
+    assert P.defaults()["speed"] == 1.0 and P.validate(valid()) == []
+    for bad in (0.5, 1.5, "hızlı", True):
+        assert P.validate(valid(speed=bad)), bad
+    assert P.validate(valid(speed=1.2)) == []
+
+
+def test_ema_passes_speed_to_engine(monkeypatch):
+    import sys
+    import types
+
+    import numpy as np
+
+    from backend.app.providers.local import EmaTTS
+    seen = {}
+
+    class Engine:
+        def say(self, text, speed=1.0, seed=None, sample_rate=48000, path=None):
+            seen.update(text=text, speed=speed, sr=sample_rate)
+            return types.SimpleNamespace(audio=np.zeros(240, dtype=np.float32))
+
+    monkeypatch.setitem(sys.modules, "ema_lightning", types.SimpleNamespace(EMA=Engine))
+    EmaTTS().synthesize("merhaba", "tr", 1.2)
+    assert seen == {"text": "merhaba", "speed": 1.2, "sr": 24000}
+    EmaTTS().synthesize("merhaba")
+    assert seen["speed"] == 1.0
+
+
+def test_elevenlabs_sends_speed_only_when_changed(monkeypatch):
+    from backend.app.providers import remote
+    from backend.app.providers.remote import ElevenLabsTTS
+    sent = []
+
+    class Res:
+        content = b"\x00\x00" * 100
+
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID", "v")
+    monkeypatch.setattr(remote, "_post", lambda url, **kw: sent.append(kw["json"]) or Res())
+    t = ElevenLabsTTS()
+    t.synthesize("a")
+    t.synthesize("b", "tr", 1.1)
+    t.synthesize("c", "tr", 2.0)
+    assert "voice_settings" not in sent[0]
+    assert sent[1]["voice_settings"] == {"speed": 1.1} and sent[2]["voice_settings"] == {"speed": 1.2}   # sınırlanır

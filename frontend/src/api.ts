@@ -235,7 +235,7 @@ export const previewScenarioText = (key: string, text: string) =>
 
 // ---- Persona (core-005) ----------------------------------------------------------------------------------
 export type PersonaFields = {
-  name: string; tone: string; address: string; max_sentences: number; max_words_per_sentence: number;
+  name: string; tone: string; address: string; max_sentences: number; max_words_per_sentence: number; speed: number;
   acknowledgements: string[]; avoid_phrases: string[]; extra_rules: string;
 };
 export type PersonaStats = {

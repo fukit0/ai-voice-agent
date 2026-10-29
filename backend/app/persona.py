@@ -29,6 +29,7 @@ DEFAULT: dict = {
     "address": "bey_hanim",
     "max_sentences": 2,
     "max_words_per_sentence": 14,
+    "speed": 1.0,
     "acknowledgements": ["Anladım.", "Teşekkür ederim.", "Peki, tamamdır.", "Not aldım."],
     "avoid_phrases": ["Sayın müşterimiz", "bilgilerinize sunarız", "tarafımızdan"],
     "extra_rules": "",
@@ -71,6 +72,9 @@ def validate(p: dict) -> list[str]:
         v = p.get(k)
         if not isinstance(v, list) or not all(isinstance(x, str) and x.strip() for x in v) or len(v) > 12:
             errs.append(f"{k}: en çok 12 boş olmayan metin listesi olmalı.")
+    sp = p.get("speed", 1.0)
+    if isinstance(sp, bool) or not isinstance(sp, (int, float)) or not 0.7 <= sp <= 1.3:
+        errs.append("Konuşma hızı 0,7-1,3 arasında olmalı (1,0 = normal).")
     if len(str(p.get("extra_rules", ""))) > 600:
         errs.append("Ek kurallar en çok 600 karakter olabilir.")
     limit = p.get("max_words_per_sentence")

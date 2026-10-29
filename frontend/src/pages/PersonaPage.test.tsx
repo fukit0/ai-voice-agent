@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PersonaPage } from "./PersonaPage";
 
 const BASE = {
-  name: "Elif", tone: "samimi", address: "bey_hanim", max_sentences: 2, max_words_per_sentence: 14,
+  name: "Elif", tone: "samimi", address: "bey_hanim", max_sentences: 2, max_words_per_sentence: 14, speed: 1,
   acknowledgements: ["Anladım.", "Not aldım."], avoid_phrases: ["Sayın müşterimiz"], extra_rules: "",
 };
 const STATS = { utterances: 3, sentences: 3, avg_words_per_sentence: 6, max_words: 12, over_limit: [], over_limit_rate: 0, avoid_hits: [] };
@@ -67,5 +67,17 @@ describe("Persona ekranı (core-005)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Raporu getir" }));
     expect(await screen.findByTestId("persona-report-empty")).toBeInTheDocument();
     expect(calls.some((c) => c.url.startsWith("/api/persona/report"))).toBe(true);
+  });
+});
+
+describe("Persona konuşma hızı", () => {
+  it("hız kaydırıcısı değeri kaydeder", async () => {
+    const calls = mockApi();
+    render(<PersonaPage />);
+    const speed = await screen.findByLabelText(/Konuşma hızı/);
+    fireEvent.change(speed, { target: { value: "1.2" } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Kaydet" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Kaydet" }));
+    await waitFor(() => expect(calls.find((c) => c.method === "PUT")!.body.speed).toBe(1.2));
   });
 });

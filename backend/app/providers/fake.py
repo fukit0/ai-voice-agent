@@ -51,7 +51,7 @@ class FakeLLM(LLMProvider):
 class FakeTTS(TTSProvider):
     kind = "fake_tts"
 
-    def synthesize(self, text, language="tr"):
+    def synthesize(self, text, language="tr", speed=1.0):
         rate = 24000
         seconds = min(3.0, 0.08 * max(len(text), 1))
         t = np.arange(int(rate * seconds)) / rate

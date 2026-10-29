@@ -15,6 +15,7 @@ class PersonaBody(BaseModel):
     address: str
     max_sentences: int
     max_words_per_sentence: int
+    speed: float = 1.0
     acknowledgements: list[str]
     avoid_phrases: list[str]
     extra_rules: str = ""

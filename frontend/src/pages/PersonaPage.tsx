@@ -70,7 +70,7 @@ export function PersonaPage() {
       </p>
       <p className="meta" data-testid="persona-voice-note">
         <b>Not:</b> Persona <b>ne söylendiğini</b> değiştirir (ad, söz seçimi, cümle uzunluğu); <b>sesin tınısını, hızını ve duygusunu</b> değiştirmez.
-        Ses, profildeki TTS modelinden gelir (EMA'da tek ses; ses seçimi ve hız ayarı Faz 2, scn-010).
+        Ses tınısı profildeki TTS modelinden gelir (EMA'da tek ses; ses seçimi Faz 2, scn-010). <b>Konuşma hızı</b> ise buradan ayarlanır.
       </p>
       {msg && <p className={msg.kind === "ok" ? "status status-ok" : "error"} role="status">{msg.text}</p>}
       {form && view && (
@@ -98,6 +98,10 @@ export function PersonaPage() {
                   onChange={(e) => set("max_words_per_sentence", Number(e.target.value))} />
               </div>
             </div>
+            <label htmlFor="p-speed"><b>Konuşma hızı</b> <span className="meta">1,0 = normal · {form.speed.toFixed(2)}</span></label>
+            <input id="p-speed" type="range" min={0.7} max={1.3} step={0.05} value={form.speed}
+              onChange={(e) => set("speed", Number(e.target.value))} />
+            <p className="meta">Hız EMA'da uygulanır (ElevenLabs'te 0,7–1,2); Chatterbox yok sayar. Bir sonraki arama bu hızla açılır.</p>
             <label htmlFor="p-acks"><b>Doğal onay sözleri</b> <span className="meta">her satıra bir tane</span></label>
             <textarea id="p-acks" rows={4} value={acks} onChange={(e) => setAcks(e.target.value)} />
             <label htmlFor="p-avoid"><b>Kullanılmayacak kalıplar</b> <span className="meta">her satıra bir tane</span></label>

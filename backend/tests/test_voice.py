@@ -184,6 +184,26 @@ def test_trnorm_is_applied_before_tts(tmp_path, monkeypatch):
     assert spoken == ["Fiyat bir milyon iki yüz elli bin lira."]
 
 
+def test_persona_speed_reaches_tts_only_when_changed(tmp_path, monkeypatch):
+    """core-005: persona konuşma hızı TTS'e iletilir; 1.0 ise eski çağrı biçimi korunur."""
+    calls = []
+
+    class SpyTTS(FakeTTS):
+        def synthesize(self, text, language="tr", speed=1.0):
+            calls.append(speed)
+            return super().synthesize(text, language)
+
+    async def main(speed):
+        s, out, _ = make_session(tmp_path, monkeypatch)
+        s.tts = SpyTTS("m")
+        s.tts_speed = speed
+        await s.start()
+        await settle(s)
+    asyncio.run(main(1.2))
+    asyncio.run(main(1.0))
+    assert calls[0] == 1.2 and calls[-1] == 1.0
+
+
 def test_barge_in_flushes_agent_audio_and_listens(tmp_path, monkeypatch):
     async def main():
         s, out, events = make_session(tmp_path, monkeypatch)

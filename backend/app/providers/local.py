@@ -214,14 +214,14 @@ class EmaTTS(TTSProvider):
         super().__init__(model or "ema-lightning", **options)
         self._engine = None
 
-    def synthesize(self, text, language="tr"):
+    def synthesize(self, text, language="tr", speed=1.0):
         from ema_lightning import EMA
 
         with self._lock:
             if self._engine is None:
                 self._engine = EMA()
             t0 = time.perf_counter()
-            speech = self._engine.say(text, sample_rate=24000)
+            speech = self._engine.say(text, speed=speed, sample_rate=24000)   # EMA.say(text, speed=1.0, seed=None, sample_rate, path)
         return TTSResult(audio=np.asarray(speech.audio, dtype=np.float32), sample_rate=24000,
                          seconds=time.perf_counter() - t0, provider=self.kind, model=self.model)
 
@@ -243,7 +243,7 @@ class ChatterboxTTS(TTSProvider):
         super().__init__(model or "chatterbox-multilingual", **options)
         self._tts = None
 
-    def synthesize(self, text, language="tr"):
+    def synthesize(self, text, language="tr", speed=1.0):   # Chatterbox: hız parametresi bağlı değil (yok sayılır)
         import torch
         from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 
