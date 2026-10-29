@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .. import persona as persona_mod
 from .. import scenario as S
 from ..llm_eval import parse_output
 from ..trnorm import number_to_words
@@ -304,9 +305,11 @@ def check_value(step: dict, obj: dict) -> tuple[bool, Any]:
 class FlowDriver:
     SCORE_POLICIES = ("clarify", "free")
 
-    def __init__(self, scenario: dict, llm, values: dict[str, str] | None = None, score_policy: str = "clarify"):
+    def __init__(self, scenario: dict, llm, values: dict[str, str] | None = None, score_policy: str = "clarify",
+                 persona: dict | None = None):
         if score_policy not in self.SCORE_POLICIES:
             raise ValueError(f"bilinmeyen puan politikası: {score_policy}")
+        self.persona = persona   # core-005: doğal onay sözleri (yalnız kademeli hat; None = onay yok)
         self.score_policy = score_policy   # clarify: sözlü/aralıklı puan netleştirilir; free: model karar verir (eski davranış)
         self.sc = scenario
         self.steps = S.step_map(scenario)
@@ -502,5 +505,11 @@ class FlowDriver:
         if step["kind"] == "CheckIn" and value is True:
             # PoC'de serbest soruları yanıtlayan bilgi bankası yok (Faz 2): soru kaydedilir, bilgilendirme sürer.
             reply.utterances.append(QUESTION_NOTED)
-        self._advance(S.next_step(step, value if not unanswered else None), reply)
+        nxt = S.next_step(step, value if not unanswered else None)
+        if (self.persona and not self.coerce and not unanswered and self.steps[nxt]["kind"] != "Terminal"
+                and step["kind"] != "CheckIn"):
+            ack = persona_mod.ack(self.persona, len(self.answers) - 1)   # core-005: 'Anladım.' gibi doğal onay
+            if ack:
+                reply.utterances.append(ack)
+        self._advance(nxt, reply)
         return reply

@@ -294,3 +294,8 @@ agents do not update it automatically.
 ## Session 036 - core-012 olcum 4 (2026-10-29)
 - injection_guard sonrasi L2 v5 ana set: tam %99,1, sema %100, injection yanlis dal 0, p95 0,53 sn (evidence/eval-prompt-20261029-185426.json). Holdout (olcum 3) da gecmisti. Tek kalan: A1 sema %100 / gecikme sapmasi.
 - core-012 BLOCKED: kullanici A1 sapmasini kabul ederse v5 dondurulup passing yapilir.
+
+## Session 037 - core-005 persona (2026-10-29)
+- Yapildi: persona modulu (config/persona.json + data/persona.json), API (/api/persona, preview, reset, report), 'Persona' ekrani, serbest sohbet istemi/acilis, {ASISTAN}, kademeli hatta onay sozu, cumle uzunlugu raporu. 402 backend + 46 frontend test gecti; ekran tarayicida gorulup denendi.
+- Dogrulanmadi: gercek L2 hatta 5 test aramasi ve transkript incelemesi (verification 1-2). core-005 BLOCKED bu yuzden.
+- Sirada: Mac'te uygulamayi yeniden baslat (frontend/dist guncel), /persona'dan kaydet, Playground'da 5 arama yap, 'Cumle uzunlugu raporu'ndan Raporu getir, sonuclari bana ver.

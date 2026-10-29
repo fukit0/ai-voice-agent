@@ -193,3 +193,9 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - Yalın "istemiyorum" cümlesini bilerek "belirsiz" bırakıyoruz: neyi istemediği anlaşılmıyor (aranmayı mı, ankete katılmayı mı).
 
 **Tek cümlelik özet:** Ajanın müşteriyi anlama yeteneğini 193 cümleyle, her biri 3 kez, çıtayı önceden yazarak ölçtük; ilk sonuç yetersizdi, gerçek hatalar bulup düzelttik ve yerel model artık tüm çıtaları geçiyor; bulut modelinin bağlantı sorunları ve gerçek ses testi ise açık işlerimiz.
+
+## S28. "Ajanın adını, tonunu ve konuşma tarzını nereden değiştirebiliriz?" (core-005, 2026-10-29)
+- **Bugün çalışıyor:** Menüde **Persona** ekranı var. Ajanın adını, tonunu (samimi/resmî), hitap tarzını, cümle uzunluğu sınırını (en çok kaç cümle, cümle başına kaç kelime), doğal onay sözlerini ("Anladım.", "Not aldım.") ve kullanılmayacak kalıpları yazarsınız; açılış cümlesi ve ajanın talimat metni yazdıkça yanlarında güncellenir. Kaydedince bir sonraki arama bu persona ile açılır.
+- **Ne değişir:** ajanın kendini tanıttığı ad ({ASISTAN}), açılış cümlesi, serbest sohbetteki tavır ve kademeli hatta her cevaptan sonra söylenen onay sözü. Anketin soruları ve yasal metinler değişmez, bilerek sabit.
+- **Ölçüm:** 'Cümle uzunluğu raporu' kayıtlı aramalarda cümle başına ortalama kelimeyi, sınırı aşan cümleleri ve yasak kalıp kullanımını gösterir.
+- **Sınırlar (saklanmaz):** (1) Gerçek hatta 5 test aramasının transkript incelemesi henüz yapılmadı; ekran ve kod test edildi, davranış gerçek sesle doğrulanmadı. (2) Onay sözleri hazır listeden sırayla gelir, ajan kendi üretmez (kontrol ve tutarlılık için). (3) Gerçek zamanlı (realtime) hatta onay sözü uygulanmaz. (4) Hitap tarzı serbest sohbet talimatına girer; anketteki "Ahmet Bey" gibi hitap aramayı başlatırken verilen değerdir. (5) Ses tınısı ayrı ayar (S1), bu ekrandan değişmez.

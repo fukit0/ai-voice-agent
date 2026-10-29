@@ -95,7 +95,7 @@ class AgentAudioTrack(MediaStreamTrack):
 
 class RtcVoiceConnection:
     def __init__(self, profile_id: str, stt, llm, tts, flow=None, phone_filter: bool = False, realtime_backend=None,
-                 record: bool = False):
+                 record: bool = False, persona: dict | None = None):
         self.sid = uuid.uuid4().hex[:12]
         self.recorder = StereoRecorder() if record else None   # core-013: varsayılan kapalı (gizlilik)
         self.pc = RTCPeerConnection()
@@ -107,8 +107,12 @@ class RtcVoiceConnection:
             self.session = RealtimeVoiceSession(self.sid, profile_id, realtime_backend, self.track, self._send, flow,
                                                 phone_filter=phone_filter)
         else:
+            kw = {}
+            if persona is not None:   # core-005: serbest sohbet istemi ve açılış cümlesi persona'dan
+                from .. import persona as persona_mod
+                kw = {"persona": persona_mod.system_prompt(persona), "greeting": persona_mod.greeting(persona)}
             self.session = VoiceSession(self.sid, profile_id, stt, llm, tts, self.track, self._send, flow=flow,
-                                        phone_filter=phone_filter)
+                                        phone_filter=phone_filter, **kw)
         self._reader: asyncio.Task | None = None
         self.closed = False
         self.pc.addTrack(self.track)

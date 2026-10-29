@@ -416,13 +416,18 @@
       "moscow": "must",
       "title": "Persona promptu",
       "user_visible_behavior": "Ajan kısa cümleler, doğal onaylar ve uygun hitapla konuşur.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "5 test aramasının transkripti persona kurallarına göre gözden geçirilir.",
         "Cümle başına ortalama kelime sayısı raporlanır."
       ],
-      "evidence": [],
-      "notes": "KISMEN (2026-10-26 envanter): flow.py'de kısa cevap kuralı ve HITAP değişkeni var; serbest sohbet PERSONA'sı session.py'de. Ayrı persona promptu çalışması, 5 aramalık transkript incelemesi ve cümle başı kelime raporu yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
+      "evidence": [
+        "backend/app/persona.py, backend/app/api_persona.py, config/persona.json",
+        "backend/tests/test_persona.py (14 test); toplam 402 backend, 46 frontend test gecti",
+        "frontend/src/pages/PersonaPage.tsx (+test): 'Persona' ekrani (/persona), tarayicida gorsel kontrol yapildi (ad, ton, hitap, kelime siniri, onay sozleri, canli istem onizlemesi, kaydet/sifirla)",
+        "docs/adr/0009-persona.md"
+      ],
+      "notes": "2026-10-29 UYGULANDI (kullanici istegi: ekranda persona girisi, demoda gosterilecek): persona alanlari ad/ton/hitap/en cok cumle/cumle basina en cok kelime/onay sozleri/yasak kaliplar/ek kurallar. Etki: (1) serbest sohbet istemi ve acilis cumlesi, (2) senaryodaki {ASISTAN}, (3) kademeli hatta cevaptan sonra onay sozu (realtime hatta uygulanmaz), (4) GET /api/persona/report: kayitli aramalarda cumle basina ortalama kelime, sinir asan cumle, yasak kalip. KALAN (passing icin): verification maddesi 1-2: Playground'da gercek L2 hatta 5 test aramasi yapilip transkriptler persona kurallarina gore gozden gecirilecek ve rapor ekraninda ortalama kelime sayisi kaydedilecek (kanit dosyasi evidence/core-005-*.md). Bu aramalar yapilmadi; ekran ve kod dogrulandi, davranis gercek model/sesle dogrulanmadi. SINIR: varsayilan ad 'Ayse' (eski serbest sohbet selamlamasi ve test_voice ile uyumlu); hitap tarzi yalniz serbest sohbet istemine girer, senaryodaki {HITAP} degeri aramayi baslatirken verilen degerdir; onay sozleri sabit listeden sirayla secilir (LLM uretmez)."
     },
     {
       "id": "core-006",

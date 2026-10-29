@@ -232,3 +232,38 @@ export const previewScenarioText = (key: string, text: string) =>
   fetch(`/api/scenarios/${key}/preview`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }),
   }).then((r) => json<{ spoken: string; chars: number; unknown_placeholders: string[] }>(r));
+
+// ---- Persona (core-005) ----------------------------------------------------------------------------------
+export type PersonaFields = {
+  name: string; tone: string; address: string; max_sentences: number; max_words_per_sentence: number;
+  acknowledgements: string[]; avoid_phrases: string[]; extra_rules: string;
+};
+export type PersonaStats = {
+  utterances: number; sentences: number; avg_words_per_sentence: number | null; max_words: number | null;
+  over_limit: { text: string; words: number }[]; over_limit_rate: number | null; avoid_hits: string[];
+};
+export type PersonaView = {
+  persona: PersonaFields; defaults: PersonaFields; options: { tone: string[]; address: string[] };
+  prompt: string; greeting: string; preview_ack: (string | null)[]; prompt_stats: PersonaStats;
+};
+export type PersonaPreview = { problems: string[] } & Partial<PersonaView>;
+export type PersonaReport = {
+  persona: PersonaFields;
+  sessions: (PersonaStats & { id: string; profile: string | null; started_at: string | null })[];
+  total: PersonaStats | null;
+};
+
+async function personaCall<T>(url: string, method = "GET", body?: unknown): Promise<T> {
+  const res = await fetch(url, body === undefined ? { method } : { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) {
+    let text = `HTTP ${res.status}`;
+    try { const j = await res.json(); text = j.detail?.message ?? j.detail ?? text; } catch { /* gövde yok */ }
+    throw new Error(String(text));
+  }
+  return res.json();
+}
+export const fetchPersona = () => personaCall<PersonaView>("/api/persona");
+export const savePersona = (p: PersonaFields) => personaCall<PersonaView>("/api/persona", "PUT", p);
+export const resetPersona = () => personaCall<PersonaView>("/api/persona/reset", "POST");
+export const previewPersona = (p: PersonaFields) => personaCall<PersonaPreview & { prompt_stats?: PersonaStats }>("/api/persona/preview", "POST", p);
+export const fetchPersonaReport = () => personaCall<PersonaReport>("/api/persona/report");

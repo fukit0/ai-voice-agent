@@ -104,12 +104,12 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Lab iskeleti", () => {
-  it("menüde yedi ekranı gösterir", () => {
+  it("menüde sekiz ekranı gösterir", () => {
     mockApi();
     renderAt("/");
     const nav = screen.getByRole("navigation", { name: "Lab ekranları" });
     for (const s of SCREENS) expect(within(nav).getByRole("link", { name: s.label })).toBeInTheDocument();
-    expect(SCREENS).toHaveLength(7);
+    expect(SCREENS).toHaveLength(8);
   });
 
   it("kök yolu ilk ekrana yönlendirir", () => {

@@ -1,0 +1,97 @@
+"""core-005: persona — doğrulama, istem üretimi, API, kademeli hatta onay sözü, cümle uzunluğu raporu."""
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+
+from backend.app import persona as P
+from backend.app import scenario as S
+from backend.app.main import app
+from backend.app.voice.flow import FlowDriver
+
+client = TestClient(app)
+
+
+@pytest.fixture()
+def data(tmp_path, monkeypatch):
+    monkeypatch.setenv("SVA_DATA_DIR", str(tmp_path))
+    return tmp_path
+
+
+def valid(**kw):
+    return {**P.defaults(), **kw}
+
+
+def test_default_persona_is_valid_and_prompt_reflects_fields(data):
+    p = P.load()
+    assert P.validate(p) == []
+    text = P.system_prompt(valid(name="Ayşe", tone="resmi", address="siz", max_words_per_sentence=10, extra_rules="Asla tartışma."))
+    assert "Ayşe adlı" in text and "resmî" in text and "en çok 10 kelime" in text and "yalnızca 'siz'" in text
+    assert "Asla tartışma." in text and "Sayın müşterimiz" in text            # yasak kalıplar istemde
+    assert P.greeting(valid(name="Ayşe")).startswith("Merhaba, ben Ayşe.")
+
+
+@pytest.mark.parametrize("bad", [
+    {"name": ""}, {"name": "A1"}, {"tone": "kaba"}, {"address": "x"}, {"max_words_per_sentence": 2},
+    {"max_sentences": 9}, {"acknowledgements": [" "]}, {"acknowledgements": ["bir iki üç dört beş altı yedi sekiz dokuz on on bir on iki on üç on dört on beş"]},
+    {"extra_rules": "x" * 601},
+])
+def test_validate_rejects_bad_values(bad):
+    assert P.validate(valid(**bad)), bad
+
+
+def test_api_get_put_reset_roundtrip(data):
+    got = client.get("/api/persona").json()
+    assert got["persona"]["name"] == "Ayşe" and "Ayşe adlı" in got["prompt"]
+    body = {**got["persona"], "name": "Zeynep", "acknowledgements": ["Tamamdır."]}
+    saved = client.put("/api/persona", json=body).json()
+    assert saved["persona"]["name"] == "Zeynep" and saved["greeting"].startswith("Merhaba, ben Zeynep")
+    assert json.loads((data / "persona.json").read_text(encoding="utf-8"))["name"] == "Zeynep"
+    assert client.get("/api/persona").json()["persona"]["name"] == "Zeynep"          # kalıcı
+    bad = client.put("/api/persona", json={**body, "name": "1"})
+    assert bad.status_code == 422 and bad.json()["detail"]["problems"]
+    assert client.post("/api/persona/reset").json()["persona"]["name"] == "Ayşe"
+    assert not (data / "persona.json").exists()
+    prev = client.post("/api/persona/preview", json={**body, "tone": "resmi"}).json()
+    assert prev["problems"] == [] and "resmî" in prev["prompt"]
+    assert client.post("/api/persona/preview", json={**body, "name": ""}).json()["problems"]
+
+
+class _LLM:   # her cevabı answer olarak döndürür
+    def complete(self, messages, *a, **k):
+        from backend.app.providers.base import LLMResult
+        return LLMResult(text='{"intent":"answer","value":true}', seconds=0.0)
+
+
+def test_ack_is_spoken_before_next_question_only_when_persona_given(data):
+    sc = S.get("anket")
+    for persona, expect in ((None, False), (valid(acknowledgements=["Anladım."]), True)):
+        fd = FlowDriver(sc, _LLM(), persona=persona)
+        fd.start()
+        rep = fd.handle_structured({"intent": "answer", "value": "devam"}, "devam")
+        assert (rep.utterances[0] == "Anladım.") is expect, rep.utterances
+        assert len(rep.utterances) >= 1
+    fd = FlowDriver(sc, _LLM(), persona=valid(acknowledgements=["Anladım."]))
+    fd.start()
+    fd.coerce = True   # realtime yolu: onay sözü eklenmez
+    assert "Anladım." not in fd.handle_structured({"intent": "answer", "value": "devam"}, "devam").utterances
+
+
+def test_ack_rotates_and_empty_list_means_none():
+    p = valid(acknowledgements=["A.", "B."])
+    assert [P.ack(p, i) for i in range(4)] == ["A.", "B.", "A.", "B."]
+    assert P.ack(valid(acknowledgements=[]), 0) is None
+
+
+def test_sentence_stats_and_report_flag_violations(data):
+    p = valid(max_words_per_sentence=6, avoid_phrases=["Sayın müşterimiz"])
+    st = P.sentence_stats(["Merhaba, ben Ayşe. Sayın müşterimiz size çok uzun ve gereksiz bir cümle kuruyorum şimdi."], p)
+    assert st["sentences"] == 2 and st["avg_words_per_sentence"] == 7.0 and st["max_words"] == 11
+    assert len(st["over_limit"]) == 1 and st["avoid_hits"] == ["Sayın müşterimiz"] and st["over_limit_rate"] == 0.5
+    folder = data / "voice-sessions"
+    folder.mkdir()
+    (folder / "abc123abc123.json").write_text(json.dumps({"id": "abc123abc123", "profile": "L2", "started_at": "2026-10-29T20:00:00",
+        "transcript": [{"role": "agent", "text": "Merhaba, ben Ayşe."}, {"role": "user", "text": "çok uzun müşteri cümlesi sayılmaz bu"}]}),
+        encoding="utf-8")
+    rep = client.get("/api/persona/report").json()
+    assert len(rep["sessions"]) == 1 and rep["sessions"][0]["sentences"] == 1 and rep["total"]["avg_words_per_sentence"] == 3.0

@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from . import persona as persona_mod
 from . import stt_runs
 from .api_profiles import _provider
 from .profiles import load_profiles
@@ -80,11 +81,13 @@ async def offer(req: OfferRequest) -> dict:
         from . import scenario as S
         from .voice.flow import FlowDriver
         try:
-            flow = FlowDriver(S.get(req.scenario), llm, req.values, score_policy=req.score_policy)
+            persona = persona_mod.load()   # core-005: ekrandaki persona (ad -> {ASISTAN}, onay sözleri)
+            flow = FlowDriver(S.get(req.scenario), llm, {**persona_mod.scenario_values(persona), **(req.values or {})},
+                              score_policy=req.score_policy, persona=None if realtime else persona)
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
-                              realtime_backend=backend, record=req.record)
+                              realtime_backend=backend, record=req.record, persona=persona_mod.load())
     CONNECTIONS[conn.sid] = conn
     if realtime:
         from .voice.fixedaudio import FixedAudio

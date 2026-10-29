@@ -42,6 +42,14 @@ export const SCREENS: Screen[] = [
       "Anket senaryosunun adımları, okunacak metinler ve cevaba göre akış; metin düzenlenir, okunuşu örnek değerlerle önizlenir.",
   },
   {
+    path: "/persona",
+    label: "Persona",
+    featureId: "core-005",
+    planRef: "F1.5",
+    summary:
+      "Ajanın adı, tonu, hitap tarzı, cümle uzunluğu sınırı ve doğal onay sözleri girilir; oluşan istem canlı görünür, kayıtlı aramalarda cümle başına kelime sayısı raporlanır.",
+  },
+  {
     path: "/playground",
     label: "Playground",
     featureId: "lab-003",
