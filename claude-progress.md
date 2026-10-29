@@ -290,3 +290,7 @@ agents do not update it automatically.
 ## Session 035 - core-012 p030 kurali (2026-10-29)
 - Kullanici 'p030 kural ekle' dedi. flow.injection_guard (kademeli hat): cumle baslangicinda talimat gecersiz kilma komutu varsa unclear. Cevrimdisi: 193 ornekte yalniz p030, p049 etkilenir (ikisi beklenen unclear). 388 test gecti.
 - Dogrulanmadi: gercek L2 ana set kosusu. Komut: ./.venv/bin/python scripts/eval_prompt.py L2 --variants v5 . A1 sema %100 sapmasi icin ayrica feragat gerekir. core-012 BLOCKED.
+
+## Session 036 - core-012 olcum 4 (2026-10-29)
+- injection_guard sonrasi L2 v5 ana set: tam %99,1, sema %100, injection yanlis dal 0, p95 0,53 sn (evidence/eval-prompt-20261029-185426.json). Holdout (olcum 3) da gecmisti. Tek kalan: A1 sema %100 / gecikme sapmasi.
+- core-012 BLOCKED: kullanici A1 sapmasini kabul ederse v5 dondurulup passing yapilir.
