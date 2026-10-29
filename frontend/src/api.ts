@@ -158,8 +158,9 @@ const post = (url: string, body: unknown) =>
 export const fetchTtsModels = () => fetch("/api/tts/models").then((r) => json<TtsModel[]>(r));
 export const fetchTtsSessions = () => fetch("/api/tts/sessions").then((r) => json<TtsSessionSummary[]>(r));
 export const fetchTtsSession = (id: string) => fetch(`/api/tts/sessions/${id}`).then((r) => json<TtsSession>(r));
-export const createTtsSession = (sentences: string[], profiles: string[], phone: boolean, normalizeText = true) =>
-  post("/api/tts/sessions", { sentences, profiles, phone, normalize_text: normalizeText }).then((r) => json<TtsSession>(r));
+export const createTtsSession = (sentences: string[], profiles: string[], phone: boolean, normalizeText = true, personaSpeed = false) =>
+  post("/api/tts/sessions", { sentences, profiles, phone, normalize_text: normalizeText, ...(personaSpeed ? { persona_speed: true } : {}) })
+    .then((r) => json<TtsSession>(r));
 export const previewNormalize = (sentences: string[]) =>
   post("/api/tts/normalize", { sentences }).then((r) => json<NormalizePreview[]>(r));
 export const ttsClipUrl = (sid: string, clip: string) => `/api/tts/sessions/${sid}/clips/${clip}/audio`;

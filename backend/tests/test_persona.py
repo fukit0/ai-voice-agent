@@ -142,3 +142,4 @@ def test_elevenlabs_sends_speed_only_when_changed(monkeypatch):
     t.synthesize("c", "tr", 2.0)
     assert "voice_settings" not in sent[0]
     assert sent[1]["voice_settings"] == {"speed": 1.1} and sent[2]["voice_settings"] == {"speed": 1.2}   # sınırlanır
+

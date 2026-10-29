@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  blindAudioUrl, createTtsSession, fetchTtsModels, fetchTtsSession, fetchTtsSessions, fetchTtsSummary, getWarmup,
+  blindAudioUrl, createTtsSession, fetchPersona, fetchTtsModels, fetchTtsSession, fetchTtsSessions, fetchTtsSummary, getWarmup,
   previewNormalize, rateClip, startListening, startWarmup, ttsClipUrl, ttsRatingsCsvUrl,
   type BlindRating, type BlindView, type NormalizePreview, type TtsModel, type TtsSession, type TtsSessionSummary,
   type TtsSummaryRow,
@@ -57,6 +57,9 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
   const [text, setText] = useState(DEFAULT_SENTENCES);
   const [phone, setPhone] = useState(false);
   const [normalizeText, setNormalizeText] = useState(true);
+  const [personaSpeed, setPersonaSpeed] = useState(false);   // core-005: Persona konuşma hızı (varsayılan kapalı)
+  const [speedValue, setSpeedValue] = useState<number | null>(null);
+  useEffect(() => { fetchPersona().then((v) => setSpeedValue(v.persona.speed)).catch(() => {}); }, []);
   const [preview, setPreview] = useState<NormalizePreview[]>([]);
   const [session, setSession] = useState<TtsSession | null>(null);
   const [summary, setSummary] = useState<TtsSummaryRow[]>([]);
@@ -120,7 +123,7 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
   async function generate() {
     setBusy(true); setError(null); setSummary([]);
     try {
-      const started = await createTtsSession(sentences, chosen.map((m) => m.profile), phone, normalizeText);
+      const started = await createTtsSession(sentences, chosen.map((m) => m.profile), phone, normalizeText, personaSpeed);
       const done = await poll(started.id);
       if (done.state === "failed") setError(done.error ?? "Üretim başarısız.");
       onCreated();
@@ -178,6 +181,11 @@ function Studio({ sessions, onCreated }: { sessions: TtsSessionSummary[]; onCrea
       <label className="check">
         <input type="checkbox" checked={normalizeText} onChange={(e) => setNormalizeText(e.target.checked)} />
         {" "}Metni okunur Türkçeye çevir (sayı, fiyat, tarih, telefon)
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={personaSpeed} onChange={(e) => setPersonaSpeed(e.target.checked)} />
+        {" "}Persona konuşma hızını uygula{speedValue !== null ? ` (${speedValue.toFixed(2)}×)` : ""}
+        <span className="meta"> · yalnız EMA ve ElevenLabs uygular; kör dinleme için kapalı tutun</span>
       </label>
       {normalizeText && (
         <div className="norm-preview" aria-label="Normalize önizleme">

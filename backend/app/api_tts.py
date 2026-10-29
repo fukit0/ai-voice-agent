@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
+from . import persona as persona_mod
 from . import trnorm
 from . import tts_studio as studio
 from .api_profiles import _call, _provider
@@ -68,6 +69,7 @@ class SessionRequest(BaseModel):
     language: str = "tr"
     phone: bool = False  # telefon turu: 300–3400 Hz süzgeç, 8 kHz
     normalize_text: bool = True  # norm-007: sayı, fiyat, tarih, telefon sentezden önce okunur Türkçeye çevrilir
+    persona_speed: bool = False  # core-005: Persona ekranındaki konuşma hızı uygulanır (varsayılan kapalı: kör dinleme aynı koşulda kalır)
 
 
 def _generate(session: dict, pids: list[str]) -> None:
@@ -89,8 +91,9 @@ def _generate(session: dict, pids: list[str]) -> None:
                 try:
                     provider = _provider(profile, "tts")
                     spoken = session["spoken"][idx]  # normalize kapalıysa cümlenin kendisi
+                    extra = (session["speed"],) if session.get("speed", 1.0) != 1.0 else ()   # hız yalnız değişmişse iletilir
                     result, seconds = _call(profile, "tts", provider,
-                                            lambda p=provider, t=spoken: p.synthesize(t, session["language"]))
+                                            lambda p=provider, t=spoken, x=extra: p.synthesize(t, session["language"], *x))
                     audio, rate = result.audio, result.sample_rate
                     first_audio = float(result.extra.get("first_audio_seconds", result.seconds))
                     if session["phone"]:
@@ -153,7 +156,8 @@ def create_session(req: SessionRequest) -> dict:
     if not _busy.acquire(blocking=False):
         raise HTTPException(409, {"error": "studio_busy", "message": "Başka bir üretim sürüyor; bitince tekrar deneyin."})
     spoken = [trnorm.normalize(s) for s in sentences] if req.normalize_text else list(sentences)
-    session = {"id": studio.new_id(), "language": req.language, "phone": req.phone, "sentences": sentences,
+    speed = float(persona_mod.load().get("speed", 1.0)) if req.persona_speed else 1.0
+    session = {"id": studio.new_id(), "language": req.language, "phone": req.phone, "sentences": sentences, "speed": speed,
                "text_normalized": req.normalize_text, "spoken": spoken,
                "profiles": pids, "clips": [], "done": 0, "total": len(sentences) * len(pids), "state": "running",
                "normalize": {"target_rms_dbfs": studio.TARGET_RMS_DBFS}}

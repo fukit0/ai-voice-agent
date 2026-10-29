@@ -67,6 +67,19 @@ describe("TtsPage", () => {
     expect(JSON.parse(post![1].body)).toEqual({ sentences: ["Birinci cümle.", "İkinci cümle."], profiles: ["L2"], phone: false, normalize_text: true });
   });
 
+  it("Persona hızı kutusu varsayılan kapalıdır ve açılınca isteğe persona_speed eklenir (core-005)", async () => {
+    render(<TtsPage />);
+    await screen.findByText("Sıcak");
+    const box = screen.getByLabelText(/Persona konuşma hızını uygula/) as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    fireEvent.click(box);
+    fireEvent.change(screen.getByLabelText("Cümle seti"), { target: { value: "Birinci cümle." } });
+    fireEvent.click(await screen.findByRole("button", { name: /Ses üret \(1 × 1\)/ }));
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => c[0] === "/api/tts/sessions" && c[1]?.method === "POST")).toBe(true));
+    const post = fetchMock.mock.calls.find((c) => c[0] === "/api/tts/sessions" && c[1]?.method === "POST");
+    expect(JSON.parse(post![1].body).persona_speed).toBe(true);
+  });
+
   it("previews how numbers, prices, dates and phones will be spoken (norm-007)", async () => {
     render(<TtsPage />);
     await screen.findByText("Sıcak");

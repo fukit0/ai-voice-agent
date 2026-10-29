@@ -362,3 +362,21 @@ def test_default_is_normalized(env):
     SPOKEN.clear()
     make_session(["Q"], sentences=["Oda sayısı 3+1."])
     assert SPOKEN == ["Oda sayısı üç artı bir."]
+
+
+def test_persona_speed_is_applied_only_when_asked(env, monkeypatch):
+    """core-005: Persona hızı stüdyoya yalnız 'persona_speed' açıkken uygulanır; varsayılan kör dinleme koşulunu bozmaz."""
+    from backend.app import persona
+    persona.save({"speed": 1.2})
+    seen = []
+
+    def spy(self, text, language="tr", speed=1.0):
+        seen.append(speed)
+        return TTSResult(tone(0.5, 0.05), RATE, 0.1, self.kind, self.model)
+
+    monkeypatch.setattr(TtsQuiet, "synthesize", spy)
+    warm("Q")
+    off = make_session(["Q"], sentences=["Merhaba dünya."])
+    on = make_session(["Q"], sentences=["Merhaba dünya."], persona_speed=True)
+    assert off["speed"] == 1.0 and on["speed"] == 1.2
+    assert seen[-2:] == [1.0, 1.2]   # önceki çağrılar ısıtma
