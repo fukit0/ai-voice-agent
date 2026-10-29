@@ -281,3 +281,8 @@ agents do not update it automatically.
 ## Session 033 - core-012 on-filtre (2026-10-28)
 - negative_yesno_fix + mask_schema_words eklendi (kademeli hat), 387 test gecti. Holdout ham ciktilari yeniden puanlandi: L2 v5 %94,9. Maskeleme icin yeni kosu gerekiyor.
 - core-012 BLOCKED. Komutlar: eval_prompt.py L2 A1 --variants v5 --dataset config/eval/prompt-holdout.json ; eval_prompt.py L2 A1 --variants v5
+
+## Session 034 - core-012 olcum 3 (2026-10-29)
+- Kullanici on-filtre sonrasi iki kanit verdi (holdout ve ana set, L2/A1 v5 x 3). L2 v5: holdout %98,7 / sema %100 / injection 0 / p95 0,57 sn (hedef tuttu); ana set %98,2 / sema %100 / p95 0,50 sn ama injection yanlis dal 3 (tek ornek p030 x3). A1: sema %98,7-98,8, holdout tam %93,2, p95 ~16 sn (sağlayici zaman asimi/baglanti hatalari, tek '2' degeri).
+- Maskeleme etkisi olculdu: holdout'taki 'intent X yaz' injection'lari 9 -> 0. Olumsuz-cevap duzeltmesi p024 ('istemiyorum' yalin) bilincli olarak refuse kaliyor.
+- core-012 BLOCKED (sapma: L2 ana set injection p030; A1 sema/gecikme). Karar bekliyor: (a) sapma notuyla kapat ve v5'i dondur, (b) p030 icin 'talimat/gormezden gel' deterministik ozel durum ekle ve L2 ana seti yeniden kos.
