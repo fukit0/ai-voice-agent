@@ -8,7 +8,7 @@ Demoda gelebilecek sorular ve dürüst, kısa cevaplar. Her cevapta "bugün çal
 
 | Ne değişecek | Nereden | Bugün | Faz |
 |---|---|---|---|
-| **Tavır:** hitap, sıcaklık, cümle uzunluğu, onay sözleri | Persona promptu (LLM tarafı) | Henüz yazılmadı (core-005) | Faz 1 |
+| **Tavır:** hitap, sıcaklık, cümle uzunluğu, onay sözleri | **Persona ekranı** (menü: Persona) | **Bugün çalışıyor (core-005):** ad, ton, hitap, cümle sınırı, onay sözleri ekrandan girilir; gerçek hatta 5 arama doğrulaması bekliyor (S28) | Faz 1 |
 | **Ses tınısı:** kim konuşuyor | TTS ses seçimi | ElevenLabs: `ELEVENLABS_VOICE_ID` ile tek ses. EMA ve Chatterbox: varsayılan tek ses | Arayüzden seçim: Faz 2 (scn-010) |
 | **Hız ve vurgu** | TTS parametreleri + metin yazımı (kısa cümle, noktalama) | Bağlı değil | Faz 2 (scn-010) |
 
@@ -200,3 +200,15 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Ölçüm:** 'Cümle uzunluğu raporu' kayıtlı aramalarda cümle başına ortalama kelimeyi, sınırı aşan cümleleri ve yasak kalıp kullanımını gösterir.
 - **Sınırlar (saklanmaz):** (1) Gerçek hatta 5 test aramasının transkript incelemesi henüz yapılmadı; ekran ve kod test edildi, davranış gerçek sesle doğrulanmadı. (2) Onay sözleri hazır listeden sırayla gelir, ajan kendi üretmez (kontrol ve tutarlılık için). (3) Gerçek zamanlı (realtime) hatta onay sözü uygulanmaz. (4) Hitap tarzı serbest sohbet talimatına girer; anketteki "Ahmet Bey" gibi hitap aramayı başlatırken verilen değerdir. (5) Ses tınısı ayrı ayar (S1), bu ekrandan değişmez.
 - **Ek ölçüm (2026-10-29, betikli oturum, gerçek ses yok):** anket senaryosunda cümle başına ortalama 8,3 kelime (13 cümlenin 1'i 14 kelime sınırını aştı); Welcome Call'da ortalama 11,8, cümlelerin %30'u sınırı aştı. **Sınır (saklanmaz):** persona senaryo metnini yeniden yazmaz; uzun bilgilendirme/yasal metinler olduğu gibi okunur. Kısa cümle kuralı serbest sohbet ve onay sözlerinde geçerli, Welcome'ın uzun bölümleri için senaryo metninin kısaltılması gerekir.
+
+## Demo akışı: Persona (core-005) — demoda MUTLAKA gösterilecek (2 dakika)
+1. **Menüden "Persona"yı açın.** "Ajanın kim olduğunu ve nasıl konuştuğunu burada kodsuz belirliyoruz."
+2. **Adı değiştirin** (örn. "Ayşe" → "Zeynep"). Sağdaki **açılış cümlesi** anında "Merhaba, ben Zeynep…" olur; sağ altta **ajana verilen talimat metni** de güncellenir. "Yazdıkça ne konuşacağını görüyoruz."
+3. **Tonu "Resmî"ye çevirin, cümle başına kelime sınırını 10 yapın.** Talimat metni değişir; ekranda "cümle başına ortalama X kelime, sınırı aşan N cümle" görünür.
+4. **Onay sözlerini düzenleyin** ("Anladım." / "Peki, teşekkürler."). Bunlar anket sırasında her cevaptan sonra sırayla söylenir.
+5. **Geçersiz giriş gösterin** (adı boş bırakın): kırmızı uyarı çıkar, Kaydet kapanır. **Kaydet**'e basın.
+6. **Playground'a geçin, kademeli (L2) profille anket başlatın:** ajan yeni adıyla kendini tanıtır ve cevaplardan sonra seçtiğiniz onay sözlerini söyler.
+7. **Persona ekranında "Raporu getir":** yaptığınız aramanın cümle başına ortalama kelime sayısı ve sınırı aşan cümleler listelenir.
+8. **"Varsayılana dön"** ile ilk haline getirin.
+- **Söylenmesi gerekenler (sınırlar):** anketin soruları ve yasal metinler değişmez (bilerek sabit); onay sözleri hazır listeden gelir, ajan üretmez; Welcome Call'ın uzun bilgilendirme metinleri persona sınırından uzun (%30 cümle), bu metinler senaryo ekranından kısaltılır; realtime hatta onay sözü yok; gerçek hatta 5 aramalık doğrulama henüz yapılmadı.
+- **Hazırlık:** demodan önce ekranda ad ve onay sözlerini bir kez kaydedip Playground'da bir arama yapın ki rapor dolu olsun.
