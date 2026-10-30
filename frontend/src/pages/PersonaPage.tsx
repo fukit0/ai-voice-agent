@@ -4,6 +4,7 @@ import {
   type PersonaFields, type PersonaReport, type PersonaView,
 } from "../api";
 import { ToneDemo } from "./ToneDemo";
+import { VoicePicker } from "./VoicePicker";
 
 const TONE_LABEL: Record<string, string> = {
   samimi: "Samimi (sıcak, rahat)", resmi: "Resmî (ölçülü, kibar)", enerjik: "Enerjik (canlı, neşeli)", sakin: "Sakin (yumuşak, telaşsız)",
@@ -134,6 +135,7 @@ export function PersonaPage() {
         </div>
       )}
 
+      <VoicePicker />
       <ToneDemo />
 
       <h3 className="sub">Cümle uzunluğu raporu (kayıtlı aramalar)</h3>

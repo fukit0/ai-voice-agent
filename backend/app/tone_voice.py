@@ -85,20 +85,56 @@ def validate(mapping: dict) -> list[str]:
     return errs
 
 
+def voices() -> dict[str, str]:
+    """Ekrandan atanan ton -> ElevenLabs ses kimliği (boş = genel ses)."""
+    return {t: v for t, v in (load().get("voices") or {}).items() if t in TONE_IDS and v}
+
+
+def set_voices(assign: dict) -> dict:
+    """Ton başına ses ata (boş metin = atamayı kaldır). Kimlik biçimi doğrulanır; diğer ayarlar korunur."""
+    bad = [t for t in assign if t not in TONE_IDS]
+    bad += [f"{t}={v!r}" for t, v in assign.items() if v and not re.fullmatch(r"[A-Za-z0-9]{10,40}", str(v))]
+    if bad:
+        raise ValueError("Geçersiz ton/ses kimliği: " + ", ".join(map(str, bad)))
+    cur = _read_override()
+    merged = {**(cur.get("voices") or {}), **{t: v for t, v in assign.items()}}
+    cur["voices"] = {t: v for t, v in merged.items() if v}
+    _write_override(cur)
+    return load()
+
+
+def _read_override() -> dict:
+    p = _override_path()
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _write_override(doc: dict) -> None:
+    path = _override_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def save(mapping: dict) -> dict:
     errs = validate(mapping)
     if errs:
         raise ValueError(" ".join(errs))
-    path = _override_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"params": mapping.get("params", {})}, ensure_ascii=False, indent=2), encoding="utf-8")
+    cur = _read_override()   # ses atamaları korunur
+    cur["params"] = mapping.get("params", {})
+    _write_override(cur)
     return load()
 
 
 def reset() -> dict:
-    p = _override_path()
-    if p.is_file():
-        p.unlink()
+    """Parametreleri varsayılana döndürür; ekrandan atanan sesler korunur."""
+    cur = _read_override()
+    cur.pop("params", None)
+    if cur:
+        _write_override(cur)
+    elif _override_path().is_file():
+        _override_path().unlink()
     return load()
 
 

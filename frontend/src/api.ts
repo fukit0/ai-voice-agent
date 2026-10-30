@@ -282,6 +282,17 @@ export type ToneDemoResult = {
   profile: string; provider: string; model: string | null; seed: number | null; tag_model: boolean; takes_tone: boolean;
   text: string; clips: ToneClip[];
 };
+export type VoiceRow = {
+  voice_id: string; name: string; description: string; preview_url: string | null; source: "account" | "library";
+  public_owner_id: string | null; tags: string[];
+};
+export type VoiceList = { voices: VoiceRow[]; assigned: Record<string, string> };
+export const fetchVoices = (search = "", library = true) =>
+  personaCall<VoiceList>(`/api/persona/voices?library=${library}${search ? `&search=${encodeURIComponent(search)}` : ""}`);
+export const assignVoices = (voices: Record<string, string>) =>
+  personaCall<{ assigned: Record<string, string> }>("/api/persona/tones/voices", "PUT", { voices });
+export const addLibraryVoice = (v: { public_owner_id: string; voice_id: string; name: string }) =>
+  personaCall<{ voice_id: string }>("/api/persona/voices/add", "POST", v);
 export const fetchTones = () => personaCall<ToneInfo>("/api/persona/tones");
 export const runToneDemo = (body: { profile: string; text: string; model?: string | null; seed?: number | null; tones?: string[] }) =>
   personaCall<ToneDemoResult>("/api/persona/tone-demo", "POST", body);

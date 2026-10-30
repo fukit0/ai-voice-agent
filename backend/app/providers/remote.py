@@ -26,6 +26,18 @@ def _post(url: str, **kwargs):
     return res
 
 
+def _get(url: str, **kwargs):
+    import httpx
+
+    try:
+        res = httpx.get(url, timeout=kwargs.pop("timeout", 30), **kwargs)
+    except Exception as exc:
+        raise ProviderError(f"{url} çağrısı başarısız: {exc}") from exc
+    if res.status_code >= 400:
+        raise ProviderError(f"{url} HTTP {res.status_code}: {res.text[:200]}")
+    return res
+
+
 class DeepgramSTT(STTProvider):
     kind = "deepgram"
     required_env = ("DEEPGRAM_API_KEY",)
@@ -124,7 +136,9 @@ class ElevenLabsTTS(TTSProvider):
             body["seed"] = int(self.options["seed"])
         # Ton başına ayrı ses (Voice Library/Voice Design): ELEVENLABS_VOICE_ID_ENERJIK vb. tanımlıysa o kullanılır.
         # voice_settings'ten çok daha belirgin fark verir; tanımlı değilse tek ses + ayar kullanılır.
-        voice = (tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}")) or os.environ["ELEVENLABS_VOICE_ID"]
+        # Öncelik: ortam değişkeni > ekrandan atanan ton sesi (data/tone-voice.json) > genel ses
+        voice = ((tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}"))
+                 or (tone and tone_voice.voices().get(tone)) or os.environ["ELEVENLABS_VOICE_ID"])
         res = _post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
             params={"output_format": f"pcm_{self.SAMPLE_RATE}"},

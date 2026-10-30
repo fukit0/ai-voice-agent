@@ -84,3 +84,10 @@ Kanıt: `evidence/elevenlabs-tones-20261030-113531/` (16 WAV + report.json). 4 m
 - **Gecikme:** süreler tam klibin REST üretim süresidir (ilk ses baytı değil). v4 Turbo ~1,4 sn, Flash ~0,6 sn, v3 3-4 sn. Canlı hat için akış (streaming) ve ilk ses süresi ayrıca ölçülmeli; v3 canlı hat için uygun değil, v4 Turbo sınırda, tek cümlelik demo klibinde sorun değil.
 - **Karar:** demo ton gösterimi v4 Turbo; canlı hat modeli akışlı gecikme ölçümü sonrası seçilir.
 - **Kalan bilinmeyenler:** Türkçede etiketlerin sesli okunup okunmadığı (kullanıcı dinlemesinde bildirilmedi, açıkça doğrulanmadı), akışlı ilk ses süresi, kalibrasyonun ayar sayıları.
+
+## Ses seçici (2026-10-30, uygulandı; gerçek hesapla DOĞRULANMADI)
+- **Neden:** dinleme sonucu ton farkı model ayarından çok modele ve sese bağlı; ayrı ses atamak en güçlü kaldıraç. ElevenLabs arayüzündeki gibi ses listesi kullanıcı isteğiyle eklendi.
+- **Ne yapar:** Persona ekranında "Ses seçici": hesaptaki sesler + Türkçe kütüphane sesleri (dinleme klibi, etiketler), her ton için ayrı ses atama/kaldırma, kütüphane sesini "Hesabıma ekle". API: `GET /api/persona/voices`, `PUT /api/persona/tones/voices`, `POST /api/persona/voices/add`. API anahtarı yalnız arka uçta kalır.
+- **Öncelik:** `ELEVENLABS_VOICE_ID_<TON>` ortam değişkeni > ekrandan atanan ton sesi (`data/tone-voice.json` > `voices`) > genel `ELEVENLABS_VOICE_ID`. Parametre sıfırlama atanan sesleri silmez.
+- **Güvenlik:** ses/sahip kimlikleri URL yoluna girdiği için yalnız harf/rakam kabul edilir (422 aksi halde).
+- **Doğrulanmayanlar (saklanmaz):** ElevenLabs liste/kütüphane yanıt alanları ve `voices/add` çağrısı belgeye göre yazıldı, sahte HTTP ile test edildi, gerçek hesapla denenmedi; kütüphane sesinin kullanımdan önce hesaba eklenmesi gerekip gerekmediği; kütüphane seslerinin ticari kullanım lisansı (üretim öncesi hukuk/ürün onayı); ses sahibi sesi kütüphaneden çekebilir.

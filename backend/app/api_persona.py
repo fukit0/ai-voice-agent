@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import persona as P
 from . import tone_voice as TV
@@ -100,6 +100,74 @@ def put_tones(body: ToneMapBody) -> dict:
 def reset_tones() -> dict:
     TV.reset()
     return tones()
+
+
+class VoiceAssignBody(BaseModel):
+    voices: dict[str, str]   # ton -> ses kimliği ("" = atamayı kaldır)
+
+
+class VoiceAddBody(BaseModel):
+    public_owner_id: str = Field(pattern=r"^[A-Za-z0-9]{10,80}$")   # URL yoluna girer: yalnız harf/rakam
+    voice_id: str = Field(pattern=r"^[A-Za-z0-9]{10,40}$")
+    name: str = Field(min_length=1, max_length=80)
+
+
+def _eleven_headers() -> dict:
+    import os
+    key = os.environ.get("ELEVENLABS_API_KEY")
+    if not key:
+        raise HTTPException(400, {"error": "provider_not_ready", "message": "ELEVENLABS_API_KEY tanımlı değil."})
+    return {"xi-api-key": key}
+
+
+def _voice_row(v: dict, source: str) -> dict:
+    labels = v.get("labels") or {}
+    return {"voice_id": v.get("voice_id"), "name": v.get("name"), "description": v.get("description") or "",
+            "preview_url": v.get("preview_url"), "source": source, "public_owner_id": v.get("public_owner_id"),
+            "tags": [x for x in (labels.get("gender") or v.get("gender"), labels.get("age") or v.get("age"),
+                                 labels.get("descriptive") or v.get("descriptive"), labels.get("use_case") or v.get("use_case")) if x]}
+
+
+@router.get("/voices")
+def list_voices(search: str = "", library: bool = True) -> dict:
+    """ElevenLabs sesleri: hesaptakiler + (istenirse) Türkçe kütüphane sesleri; dinleme klibi, etiketler ve mevcut ton atamaları."""
+    from .providers import ProviderError
+    from .providers.remote import _get
+    headers, rows = _eleven_headers(), []
+    try:
+        mine = _get("https://api.elevenlabs.io/v2/voices", headers=headers,
+                    params={"page_size": 100, **({"search": search} if search else {})}).json().get("voices", [])
+        rows += [_voice_row(v, "account") for v in mine]
+        if library:
+            shared = _get("https://api.elevenlabs.io/v1/shared-voices", headers=headers,
+                          params={"language": "tr", "page_size": 40, **({"search": search} if search else {})}).json().get("voices", [])
+            have = {r["voice_id"] for r in rows}
+            rows += [_voice_row(v, "library") for v in shared if v.get("voice_id") not in have]
+    except ProviderError as exc:
+        raise HTTPException(502, {"error": "provider_failed", "message": str(exc)}) from exc
+    return {"voices": rows, "assigned": TV.voices()}
+
+
+@router.put("/tones/voices")
+def assign_voices(body: VoiceAssignBody) -> dict:
+    try:
+        TV.set_voices(body.voices)
+    except ValueError as exc:
+        raise HTTPException(422, {"error": "invalid_voice_assignment", "message": str(exc)}) from exc
+    return {"assigned": TV.voices()}
+
+
+@router.post("/voices/add")
+def add_library_voice(body: VoiceAddBody) -> dict:
+    """Kütüphane sesini hesaba ekler (kullanımdan önce gerekebilir; bu çağrı gerçek hesapla doğrulanmadı)."""
+    from .providers import ProviderError
+    from .providers.remote import _post
+    try:
+        res = _post(f"https://api.elevenlabs.io/v1/voices/add/{body.public_owner_id}/{body.voice_id}",
+                    headers=_eleven_headers(), json={"new_name": body.name[:80]})
+    except ProviderError as exc:
+        raise HTTPException(502, {"error": "provider_failed", "message": str(exc)}) from exc
+    return {"voice_id": res.json().get("voice_id", body.voice_id)}
 
 
 @router.post("/tone-demo")

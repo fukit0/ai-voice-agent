@@ -184,6 +184,76 @@ def test_tone_endpoints_and_demo_with_elevenlabs_profile(data, monkeypatch):
     assert client.get("/api/persona/tone-demo/yok.wav").status_code == 404
 
 
+def test_assigned_tone_voice_is_used_after_env_and_before_default(data, monkeypatch):
+    from backend.app.providers import remote
+    urls = []
+
+    class Res:
+        content = b"\x00\x00" * 100
+
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID", "genel")
+    monkeypatch.delenv("ELEVENLABS_VOICE_ID_SAKIN", raising=False)
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID_ENERJIK", "envses")
+    monkeypatch.setattr(remote, "_post", lambda url, **kw: urls.append(url) or Res())
+    r = client.put("/api/persona/tones/voices", json={"voices": {"enerjik": "ekranses12345", "sakin": "sakinses12345"}})
+    assert r.status_code == 200 and r.json()["assigned"] == {"enerjik": "ekranses12345", "sakin": "sakinses12345"}
+    t = remote.ElevenLabsTTS("eleven_v4_turbo")
+    for tone in ("enerjik", "sakin", "resmi"):
+        t.synthesize("a", "tr", 1.0, tone)
+    assert [u.rsplit("/", 1)[1] for u in urls] == ["envses", "sakinses12345", "genel"]
+    # parametre kaydı ve sıfırlama atanan sesleri silmez
+    client.put("/api/persona/tones", json={"params": {"ema": {"default": {"samimi": {"speed": 1.05}}}}})
+    client.post("/api/persona/tones/reset")
+    assert TV.voices()["sakin"] == "sakinses12345"
+    assert client.put("/api/persona/tones/voices", json={"voices": {"sakin": ""}}).json()["assigned"].get("sakin") is None
+
+
+def test_voice_assignment_rejects_bad_ids(data):
+    assert client.put("/api/persona/tones/voices", json={"voices": {"kaba": "abcdefghij12"}}).status_code == 422
+    assert client.put("/api/persona/tones/voices", json={"voices": {"sakin": "../etc"}}).status_code == 422
+
+
+def test_list_voices_merges_account_and_turkish_library(data, monkeypatch):
+    from backend.app.providers import remote
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    seen = []
+
+    class Res:
+        def __init__(self, body): self.body = body
+        def json(self): return self.body
+
+    def fake_get(url, **kw):
+        seen.append((url, kw["params"]))
+        if "shared-voices" in url:
+            return Res({"voices": [{"voice_id": "libses1234567", "public_owner_id": "owner12345678", "name": "Gökçe Deniz",
+                                    "description": "Joyful", "preview_url": "http://x/p.mp3", "gender": "female", "use_case": "conversational"}]})
+        return Res({"voices": [{"voice_id": "hesapses12345", "name": "Benim", "labels": {"gender": "male"}, "preview_url": "http://x/b.mp3"}]})
+
+    monkeypatch.setattr(remote, "_get", fake_get)
+    r = client.get("/api/persona/voices").json()
+    assert [(v["name"], v["source"]) for v in r["voices"]] == [("Benim", "account"), ("Gökçe Deniz", "library")]
+    assert r["voices"][1]["tags"] == ["female", "conversational"] and seen[1][1]["language"] == "tr"
+    assert [v["source"] for v in client.get("/api/persona/voices?library=false").json()["voices"]] == ["account"]
+    monkeypatch.delenv("ELEVENLABS_API_KEY")
+    assert client.get("/api/persona/voices").status_code == 400
+
+
+def test_add_library_voice_validates_ids_and_posts(data, monkeypatch):
+    from backend.app.providers import remote
+    sent = []
+
+    class Res:
+        def json(self): return {"voice_id": "yeniid1234567"}
+
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    monkeypatch.setattr(remote, "_post", lambda url, **kw: sent.append((url, kw["json"])) or Res())
+    ok = client.post("/api/persona/voices/add", json={"public_owner_id": "owner12345678", "voice_id": "libses1234567", "name": "Gökçe"})
+    assert ok.status_code == 200 and sent[0][0].endswith("/voices/add/owner12345678/libses1234567")
+    bad = client.post("/api/persona/voices/add", json={"public_owner_id": "../x", "voice_id": "libses1234567", "name": "a"})
+    assert bad.status_code == 422
+
+
 def test_tone_map_put_validates_and_resets(data):
     bad = client.put("/api/persona/tones", json={"params": {"ema": {"default": {"samimi": {"speed": 9}}}}})
     assert bad.status_code == 422
