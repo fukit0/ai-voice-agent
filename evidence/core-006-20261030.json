@@ -1,0 +1,40 @@
+{
+  "feature": "core-006",
+  "created": "2026-10-30T23:14:47",
+  "uyari": "LLM, STT ve TTS SAHTE/betikli; ses cerceveleri sentetik. Gercek model ve gercek mikrofonla denenmedi.",
+  "madde1_sessizlik": {
+    "olay_sayisi_7_9_sn_sessizlikte (kontrol cumlesi 6. sn'de soylenir, 8 sn'den once)": 1,
+    "olaylar": [
+      {
+        "type": "silence",
+        "count": 1
+      }
+    ],
+    "ajan_sozu": "Sizi duyamadım, sesiniz geliyor mu? Aydınlatma Metni'ni dinlemek ister misiniz? Dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz."
+  },
+  "madde2_musait_degilim": {
+    "llm_niyeti": "refuse (bilerek yanlis)",
+    "sonraki_adim": "randevu",
+    "bitti": false,
+    "ajan_sozu": [
+      "Anlıyorum. Size daha uygun bir zamanda tekrar ulaşabilmemiz için hangi gün ve saat sizin için uygun olur?"
+    ],
+    "olaylar": [
+      {
+        "type": "crosscheck",
+        "step": "q3",
+        "fix": "refuse->callback (müsait değil)",
+        "text": "şu an müsait değilim"
+      }
+    ]
+  },
+  "madde3_bot_musun": {
+    "llm_cagrildi": false,
+    "ajan_sozu": [
+      "Ben sahibinden.com'un dijital asistanıyım; yapay zekâ destekli bir sistemle konuşuyorsunuz, gerçek bir kişi değilim. Dilerseniz anketimize devam edelim.",
+      "Aydınlatma Metni'ni dinlemek ister misiniz? Dinlemek için 1'i, devam etmek için 2'yi tuşlayabilir ya da sözlü olarak yanıtlayabilirsiniz."
+    ],
+    "adim_degismedi": true,
+    "cevap_kaydedildi": 0
+  }
+}

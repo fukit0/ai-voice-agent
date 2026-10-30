@@ -298,3 +298,18 @@ Kısa cevap: Referans arayüzün yapısını (gruplu menü, kart/tablo düzeni, 
 - STT ipucu ("+ ipucu") varyantları WER'e katılmaz: ipucu üretimde yok, karşılaştırmayı şişirir.
 - Ağırlıklar bu tarayıcıda saklanır; kalıcı ekip ayarı değildir. Seçilen yığının kaydı (eval-002) henüz yok.
 - Ekran görüntüleri sentetik veriyle; gerçek Mac verisiyle uçtan uca denenmedi.
+
+## S35. "Müşteri 'bot musun?' derse, sessiz kalırsa ya da 'müsait değilim' derse ajan ne yapar?" (core-006, 2026-10-30)
+
+**Kısa cevap:** Üçünü de akış motoru deterministik ele alır; LLM'in o anki kararına bırakılmaz.
+- **"Bot musun?" / "Yapay zekâ mısın?" / "Gerçek bir insan mısınız?":** Ajan dürüstçe "sahibinden.com'un dijital asistanıyım, yapay zekâ destekli bir sistemle konuşuyorsunuz, gerçek bir kişi değilim" der ve bekleyen soruyu yeniden sorar. Soru cevap sayılmaz; en fazla 3 kez cevaplanır.
+- **Sessizlik:** 6 sn sessizlikte "Sizi duyamadım, sesiniz geliyor mu?" der ve soruyu tekrar eder; ikincisinde nazikçe kapatır. Kısa bir ses denemesi olduysa 3 sn.
+- **"Şu an müsait değilim" / "meşgulüm" / "sonra arayın":** Ret değil, geri arama sayılır; ajan hangi gün ve saat uygun olduğunu sorar. "İlgilenmiyorum", "aramayın" gibi açık ret ret kalır.
+
+**Demoda dürüst olunacak sınırlar (bahane değil, bil):**
+- Kabul ölçütü 8 sn diyordu; biz 6 sn kullanıyoruz (canlı testte 17 sn ölü hat çıktı). Süre bir sabittir, istenirse değişir.
+- Kimlik sorusu için eşleştirme kural tabanlıdır: "bot/robot/yapay zekâ/insan/makine/bilgisayar + mu/mı" kalıpları. Dolaylı sorular ("bu kayıt mı?", "biri mi konuşuyor?") yakalanmaz. Konuşma tanıma "bot"u yanlış yazarsa (ör. "pot musun") tetiklenmez.
+- "Dijital asistan" beyanının resmî metni hukuk kararına bağlı bir açık soru; bugünkü cümle geçici bir PoC metnidir.
+- Realtime profillerde (A2/A3) kimlik sorusunu modelin kendisi prompt kuralıyla cevaplar; garantisi cascade kadar sıkı değil. Sabit cevap yalnız L profillerinde.
+- Gerçek LLM, gerçek STT ve gerçek mikrofonla denenmedi; kanıt sahte modellerle ve sentetik ses çerçeveleriyle (evidence/core-006-20261030.json).
+

@@ -360,3 +360,12 @@ agents do not update it automatically.
 - Açık: gerçek veriyle Mac'te görsel/uçtan uca kontrol; kaynak kullanımı ölçülmüyor (eval-003); lisans tablosu doğrulanmadı; voice e2e 3 eski test (Ayşe/Elif); Mac'te pytest kurulu değil (testler bulutta koşuldu).
 - Sonraki: eval-002 (seçilen yığın kaydı) bu matrisi kullanabilir.
 
+## Session 2026-10-30 (gece 4): core-006 sessizlik / müsait değilim / bot musun (passing, açıklı)
+- Kullanıcı: "sıradaki moscow must feature'ı implemente et" -> öncelik sırasında ilk başlanmamış must: core-006 (core-012/014/005/lab-004/core-016/017 blocked).
+- Bulgu: sessiz hat core-022'de zaten bağlıydı (envanter notu eskiydi); geri arama dalı vardı ama LLM'e bağlıydı; "bot musun" cevabı yoktu (off_topic'e düşüp "anketimize devam edelim" diyordu).
+- Yapılan: `flow.identity_question` + `FlowDriver._identity` (LLM'siz dürüst cevap, bekleyen soru tekrar, en fazla 3), `flow.callback_fix` (müsait değilim -> randevu, açık ret ve geçerli cevap korunur, Evet/Hayır'dan önce çalışır).
+- Kanıt: `backend/tests/test_core006.py` 42 test; backend 533 geçti; `evidence/core-006-20261030.json` (sahte modeller).
+- Sapma: sessizlik 6 sn (kabul 8 sn der), sebep core-022 canlı bulgusu. Demo S35.
+- Açık: gerçek LLM/STT/mikrofonla doğrulama; realtime profillerde kimlik cevabı modele bağlı; dijital asistan beyanının hukuki metni.
+- Sonraki must adayları: eval-001/003/002 (başlanmamış); scn-001.. (Faz 2).
+

@@ -4,7 +4,8 @@
 yapılandırır (eval-llm ile aynı JSON sözleşmesi). Statement adımları ardışık okunur; soru adımında durulur.
 Anlaşılmayan cevap en fazla iki kez farklı biçimde tekrar sorulur; ardından Score/Duration/OpenText için "cevap yok"
 dalı izlenir, Evet/Hayır ve Seçenekli için görüşme 'sistem_sonlandirdi' ile kibarca kapatılır.
-Sessiz hat (kapanis_sessiz) ve ses katmanı olayları henüz bağlı değil (açık madde).
+Sessiz hat (kapanis_sessiz) core-022'de bağlandı (silence.py). core-006: 'bot musun?' türü kimlik soruları LLM'e gitmeden dürüstçe
+cevaplanır (identity_question), 'müsait değilim' türü sözler LLM ret/anlaşılmadı dese bile geri arama dalına gider (callback_fix).
 """
 from __future__ import annotations
 
@@ -203,6 +204,47 @@ def bare_no_fix(step: dict, obj: dict | None, utterance: str) -> tuple[dict | No
     return {"intent": "answer", "value": target}, f"{obj.get('intent')}->{target} (bareNo)"
 
 
+# ---- core-006: kimlik sorusu ve "müsait değilim" korumaları (deterministik; LLM'in kararına bırakılmaz) ----
+IDENTITY_ANSWER = ("Ben sahibinden.com'un dijital asistanıyım; yapay zekâ destekli bir sistemle konuşuyorsunuz, gerçek bir kişi değilim. "
+                   "Dilerseniz anketimize devam edelim.")
+MAX_IDENTITY_ASKS = 3        # aynı görüşmede bu kadar cevaplanır; sonrası normal akışa bırakılır (döngüye girmesin)
+_IDENTITY = re.compile(
+    r"(?<![a-zçğıöşü])(?:bot|robot|makine|bilgisayar|yapay\s+zek[a]\w*|insan|canlı|gerçek\s+(?:bir\s+)?(?:insan|kişi|biri))\s+"
+    r"(m[ıiuü](?:sun|sın|sin|sün)?(?:uz|ız|iz|üz)?|m[ıiuü])(?![a-zçğıöşü])")
+
+
+def _low(utterance: str) -> str:
+    return utterance.replace("İ", "i").replace("I", "ı").casefold().replace("â", "a")
+
+
+def identity_question(utterance: str) -> bool:
+    """'Bot musun?', 'Robot musunuz?', 'Yapay zekâ mısın?', 'Gerçek bir insan mısınız?' gibi müşterinin kimliğimizi sorduğu söz.
+    Soru ekini (mu/mı/mi/mü...) şart koşar: 'robot süpürge' ya da 'insanlar' tetiklemez."""
+    return bool(_IDENTITY.search(_low(utterance)))
+
+
+_CALLBACK_PHRASES = ("müsait değil", "müsaitdeğil", "müsait olmad", "uygun değil", "meşgulüm", "meşguldüm", "şu an konuşamam",
+                     "konuşamıyorum", "toplantıdayım", "yoldayım", "sonra arayın", "sonra ararsınız", "sonra arar", "daha sonra ara",
+                     "başka zaman", "başka bir zaman", "sonra konuşalım")
+
+
+def callback_phrase(utterance: str) -> bool:
+    return any(p in _low(utterance) for p in _CALLBACK_PHRASES)
+
+
+def callback_fix(steps: dict, key: str, obj: dict | None, utterance: str) -> tuple[dict | None, str | None]:
+    """'Şu an müsait değilim' bir ret değildir: LLM bunu refuse/unclear/off_topic saysa da geri arama (randevu) dalına gider.
+    Gerekçe: yanlış 'ret' görüşmeyi geri dönüşsüz kapatır, yanlış 'geri arama' yalnızca bir saat sorusudur. Aramayı/anketi açıkça
+    reddeden söz ('ilgilenmiyorum', 'aramayın') varsa dokunulmaz; geçerli bir cevap (answer) ve randevu adımının kendisi de korunur."""
+    if "randevu" not in steps or key == "randevu" or not utterance.strip() or not obj:
+        return obj, None
+    if obj.get("intent") not in ("refuse", "unclear", "off_topic") or not callback_phrase(utterance):
+        return obj, None
+    if any(w in _low(utterance) for w in _CALL_REFUSAL):
+        return obj, None
+    return {"intent": "callback", "value": None}, f"{obj.get('intent')}->callback (müsait değil)"
+
+
 _NUM_WORDS = {"sıfır": 0, "sifir": 0, "bir": 1, "iki": 2, "üç": 3, "uc": 3, "dört": 4, "dort": 4, "beş": 5, "bes": 5, "altı": 6,
               "alti": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
 _NUM_PARTICLE = {0: "sıfır mı", 1: "bir mi", 2: "iki mi", 3: "üç mü", 4: "dört mü", 5: "beş mi", 6: "altı mı", 7: "yedi mi",
@@ -339,6 +381,7 @@ class FlowDriver:
         self.current: str | None = None
         self.retries = 0
         self.finished = False
+        self.identity_asks = 0       # core-006: cevaplanan kimlik sorusu sayısı
         self.silences = 0            # core-022: art arda sessizlik sayısı (gerçek bir cevap gelince sıfırlanır)
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.outcome: str | None = None
@@ -407,8 +450,19 @@ class FlowDriver:
             return reply
         key = self.current
         step = self.steps[key]
+        if self.identity_asks < MAX_IDENTITY_ASKS and identity_question(utterance):
+            return self._identity(key, utterance, reply)        # LLM çağrılmaz: hem hızlı hem dürüst cevap sabit
         obj, reply.llm_s = self._extract(step, utterance)
         return self.handle_structured(obj, utterance, reply)
+
+    def _identity(self, key: str, utterance: str, reply: Reply) -> Reply:
+        """'Bot musun?' (core-006): insan taklidi yapılmaz. Dürüst cevap + bekleyen soru yeniden sorulur; cevap sayılmaz, deneme hakkı harcanmaz."""
+        self.identity_asks += 1
+        self.silences = 0
+        reply.events.append({"type": "identity", "step": key, "text": utterance, "count": self.identity_asks})
+        reply.utterances.append(IDENTITY_ANSWER)
+        reply.utterances.append(self.retry_of(key))
+        return reply
 
     def handle_structured(self, obj: dict | None, utterance: str, reply: Reply | None = None) -> Reply:
         """Cevap zaten yapılandırılmış geldiyse (realtime modelin fonksiyon çağrısı) LLM çağrılmadan akışı ilerletir.
@@ -419,14 +473,16 @@ class FlowDriver:
         self.silences = 0
         key = self.current
         step = self.steps[key]
-        crossed = None
         if self.coerce:
             obj = coerce_obj(step, obj)
-            obj, crossed = crosscheck_yesno(step, obj, utterance)
-        else:
-            obj, crossed = injection_guard(obj, utterance)
-            if crossed is None:
-                obj, crossed = negative_yesno_fix(step, obj, utterance)
+        obj, crossed = callback_fix(self.steps, key, obj, utterance)     # core-006: önce; Evet/Hayır adımında 'müsait değilim' 'hayır' sayılmasın
+        if crossed is None:
+            if self.coerce:
+                obj, crossed = crosscheck_yesno(step, obj, utterance)
+            else:
+                obj, crossed = injection_guard(obj, utterance)
+                if crossed is None:
+                    obj, crossed = negative_yesno_fix(step, obj, utterance)
         if crossed is None:
             obj, crossed = bare_no_fix(step, obj, utterance)
         ok, value = check_value(step, obj) if obj is not None else (False, None)

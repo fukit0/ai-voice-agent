@@ -445,14 +445,18 @@
       "moscow": "must",
       "title": "Sessizlik, konu dışı cevap ve global durumlar",
       "user_visible_behavior": "Ajan sessizlikte 'Alo, duyabiliyor musunuz?' der; 'müsait değilim' ve 'bot musun?' gibi durumları doğru ve dürüst ele alır.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "8 sn sessizlikte ajan kontrol cümlesi söyler.",
         "'Şu an müsait değilim' geri arama akışına gider.",
         "'Bot musun?' sorusuna dürüst cevap verilir."
       ],
-      "evidence": [],
-      "notes": "KISMEN (2026-10-26 envanter): 'Şu an müsait değilim' -> geri arama/randevu dalı çalışıyor (flow.py callback, test_flow). 8 sn sessizlikte kontrol cümlesi yok (sessiz hat bağlı değil) ve 'Bot musun?' için dürüst cevap kuralı senaryo/flow'da yok (yalnızca serbest sohbet PERSONA'sında var). Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
+      "evidence": [
+        "backend/tests/test_core006.py (42 test)",
+        "evidence/core-006-20261030.json (sahte LLM/STT, sentetik ses; üç doğrulama maddesi)",
+        "backend 533 geçti"
+      ],
+      "notes": "2026-10-30 UYGULAMA: (1) Sessiz hat zaten core-022ile bağlıydı; envanter notu eskiydi. 6 sn sessizlikte 'Sizi duyamadım, sesiniz geliyor mu?' + bekleyen soru tekrar edilir (kabul maddesi 8 sn der; 6 sn daha erken olduğu için karşılanır, SAPMA: sürenin 6 sn kalması canlı testte 17 sn ölü hat bulgusundandır). (2) 'Şu an müsait değilim' (ve meşgulüm, sonra arayın vb.): LLM refuse/unclear/off_topic dese de deterministik koruma (flow.callback_fix) randevu dalına yollar; açık ret ('ilgilenmiyorum', 'aramayın') ve geçerli cevap korunur; Evet/Hayır adımında 'hayır' sayılmaz. (3) 'Bot/robot musun, yapay zekâ mısın, gerçek insan mısın?': LLM çağrılmadan sabit dürüst cevap (dijital asistan, gerçek kişi değil) + bekleyen soru; cevap ve deneme hakkı sayılmaz, en fazla 3 kez. DOĞRULANMADI: gerçek LLM/STT ile (STT 'bot'u yanlış yazabilir), gerçek mikrofonla sessizlik; realtime (A2/A3) profillerde kimlik sorusunu model kendi prompt kuralıyla cevaplar, flow koruması orada yalnız callback_fix için çalışır; dijital asistan beyanının hukuki metni açık soru."
     },
     {
       "id": "core-008",
