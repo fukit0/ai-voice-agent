@@ -17,7 +17,7 @@ const ACOUSTIC_LABEL: Record<string, string> = {
 export function ToneDemo() {
   const [profiles, setProfiles] = useState<ProfileStatus[]>([]);
   const [profile, setProfile] = useState("");
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState("eleven_v4_turbo");   // dinleme sonucu (ADR 0010): ton farkı v4'te duyuluyor, Flash'ta belirgin değil
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
