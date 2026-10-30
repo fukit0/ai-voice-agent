@@ -69,3 +69,18 @@ Kaynaklar: resemble-ai/chatterbox README ve mtl_tts.py; elevenlabs.io/docs (voic
 - **Gözlem (kullanıcı, gerçek dinleme):** ton farkı yalnız **v4** modelinde hissediliyor; Flash v2.5'te belirgin değil. Belge araştırmasındaki beklentiyle (ses etiketi yalnız v3/v4 ailesinde) uyumlu. Sayısal akustik rapor (report.json) henüz paylaşılmadı; tespit dinlemeye dayanıyor.
 - **Karar (demo):** ton gösterimi için ElevenLabs modeli **v4 (Turbo)**; Flash v2.5 ton demosunda kullanılmaz (hızlı ama ton farkı ince). Canlı hatta v4 Turbo gecikmesi ÖLÇÜLMEDİ; ölçülmeden canlı hat varsayılanı değiştirilmez.
 - **Sonraki adım (öneri, onay bekliyor):** ElevenLabs ses seçici (Türkçe ses listesi + dinleme + ton başına ses atama). Ton farkını model dışında sesin kendisi de büyütür (scn-010'u öne çeker). Kütüphane sesinin hesaba eklenmesi gerekip gerekmediği ve ticari lisans kullanımı doğrulanmadı.
+
+## ElevenLabs doğrulama ölçümü (2026-10-30, kullanıcı Mac'inde, `scripts/verify_elevenlabs_tones.py`, seed 1234)
+Kanıt: `evidence/elevenlabs-tones-20261030-113531/` (16 WAV + report.json). 4 model x 4 ton, hata yok; v4 Turbo ve v3 ses etiketiyle, Türkçe cümleyle üretildi.
+
+| Model | Etiket | Tonlar arası fark: hız (kel/sn) | perde oynaklığı (yarım ton) | şiddet dalgalanması (dB) | Üretim süresi (tam klip, REST) |
+|---|---|---|---|---|---|
+| Flash v2.5 | yok | 0,43 | 1,30 | 1,46 | 0,6 sn (ilk çağrı 3,0 soğuk) |
+| Multilingual v2 | yok | 0,54 | 1,61 | 0,50 | 0,9-1,0 sn |
+| v4 Turbo | var | 0,13 | 0,31 | 0,37 | 1,4-1,5 sn |
+| v3 | var | 0,33 | 0,37 | 0,58 | 3,1-4,4 sn |
+
+- **Okuma (dürüst):** hız ve perde gibi kaba ölçüler Flash ve Multilingual v2'de tonlar arasında DAHA büyük fark gösteriyor (bu fark ağırlıkla bizim `speed`/`stability` ayarlarımızdan geliyor). v4 Turbo'da bu ölçüler az değişiyor, ama kullanıcı dinlemesinde fark **en çok v4'te** hissedildi. Çelişki yok: ses etiketi hız/perde yerine söyleyiş, vurgu ve duygu rengini değiştiriyor; kaba ölçüler bunu yakalamıyor. Bu yüzden karar ölçüme değil DİNLEMEYE bırakıldı, ölçü yalnız yardımcı.
+- **Gecikme:** süreler tam klibin REST üretim süresidir (ilk ses baytı değil). v4 Turbo ~1,4 sn, Flash ~0,6 sn, v3 3-4 sn. Canlı hat için akış (streaming) ve ilk ses süresi ayrıca ölçülmeli; v3 canlı hat için uygun değil, v4 Turbo sınırda, tek cümlelik demo klibinde sorun değil.
+- **Karar:** demo ton gösterimi v4 Turbo; canlı hat modeli akışlı gecikme ölçümü sonrası seçilir.
+- **Kalan bilinmeyenler:** Türkçede etiketlerin sesli okunup okunmadığı (kullanıcı dinlemesinde bildirilmedi, açıkça doğrulanmadı), akışlı ilk ses süresi, kalibrasyonun ayar sayıları.
