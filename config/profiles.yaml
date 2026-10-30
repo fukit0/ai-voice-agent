@@ -19,6 +19,14 @@ profiles:
     tts: {provider: ema}
     notes: "Canlıda EMA. Chatterbox, Qwen3 30B ile aynı anda bellekteyken (36 GB Mac) ikisini de bozuyor (ADR 0001); yalnızca TTS stüdyosunda tek başına, kör dinleme için kullanılır."
 
+  L2-EL:
+    name: Dengeli + ElevenLabs
+    purpose: L2 ile aynı STT ve LLM; yalnızca TTS EMA yerine ElevenLabs (ton farkı ve doğallık denemesi)
+    stt: {provider: mlx_whisper, model: mlx-community/whisper-large-v3-turbo}
+    llm: {provider: ollama, model: "qwen3:30b-a3b-instruct-2507-q4_K_M"}
+    tts: {provider: elevenlabs, model: eleven_v4_turbo}
+    notes: "STT ve LLM L2 ile aynı örnekleri paylaşır (bellekte tek kopya). Ses ve ton Persona > Ses stüdyosu'ndan seçilir ve bir sonraki cümlede etki eder: ton -> o tona atanan ses, yoksa 'Genel ses', yoksa ELEVENLABS_VOICE_ID. TTS ağdan gelir; gecikmesi EMA'dan farklıdır, Playground'daki tur süresinden ölçülür (ölçülmedi)."
+
   L3:
     name: Doğruluk
     purpose: Türkçe ince ayarlı STT'nin katkısı

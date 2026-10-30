@@ -118,7 +118,12 @@ def calls(tmp_path):
 
 def test_real_config_defines_plan_profiles():
     profiles = load_profiles()
-    assert list(profiles) == ["L1", "L2", "L3", "L4", "L5", "A1", "A2", "A3"]
+    assert list(profiles) == ["L1", "L2", "L2-EL", "L3", "L4", "L5", "A1", "A2", "A3"]
+    # L2-EL: L2 ile aynı STT ve LLM (bellekte paylaşılır), yalnızca TTS ElevenLabs
+    assert profiles["L2-EL"].component("stt") == profiles["L2"].component("stt")
+    assert profiles["L2-EL"].component("llm") == profiles["L2"].component("llm")
+    assert profiles["L2-EL"].component("tts") == {"provider": "elevenlabs", "model": "eleven_v4_turbo"}
+    assert profiles["L2"].component("tts") == {"provider": "ema"}   # L2 değişmedi
     assert profiles["L1"].component("tts")["provider"] == "ema"
     assert profiles["L2"].component("llm")["model"] == "qwen3:30b-a3b-instruct-2507-q4_K_M"
     assert profiles["L5"].component("stt") is None
@@ -138,8 +143,8 @@ def test_api_profile_status_lists_missing_keys(monkeypatch):
     assert res.status_code == 200
     a1 = next(p for p in res.json() if p["id"] == "A1")
     assert a1["ready"] is False
-    assert set(a1["missing_env"]) == {"DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY",
-                                      "ELEVENLABS_VOICE_ID"}
+    # ses kimliği artık zorunlu ortam değişkeni değil (Persona'dan atanan ses de olur); eksik ses readiness_issues'ta raporlanır
+    assert set(a1["missing_env"]) == {"DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY"}
 
 
 def test_realtime_profiles_report_their_own_key(monkeypatch):

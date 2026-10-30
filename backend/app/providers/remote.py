@@ -135,8 +135,18 @@ class AnthropicLLM(LLMProvider):
 
 class ElevenLabsTTS(TTSProvider):
     kind = "elevenlabs"
-    required_env = ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID")
+    # Ses kimliği artık zorunlu ortam değişkeni değil: Persona > Ses stüdyosu'ndan atanan ses de yeterli (readiness_issues denetler).
+    required_env = ("ELEVENLABS_API_KEY",)
     SAMPLE_RATE = 24000
+
+    def readiness_issues(self) -> list[str]:
+        from .. import tone_voice
+
+        miss = tone_voice.missing_voice_tones()
+        if not miss:
+            return []
+        return [f"ses atanmamış tonlar: {', '.join(miss)}. Persona > Ses stüdyosu'ndan 'Genel ses' ya da bu tonlara ses atayın "
+                "(veya ELEVENLABS_VOICE_ID tanımlayın)"]
 
     def request(self, text, language="tr", speed=1.0, tone=None, voice=None):
         """İstek gövdesi ve ses kimliği (synthesize ve TTS laboratuvarı ortak kullanır). `voice` verilirse en yüksek öncelik."""
@@ -159,9 +169,11 @@ class ElevenLabsTTS(TTSProvider):
             body["seed"] = int(self.options["seed"])
         # Ton başına ayrı ses (Voice Library/Voice Design): ELEVENLABS_VOICE_ID_ENERJIK vb. tanımlıysa o kullanılır.
         # voice_settings'ten çok daha belirgin fark verir; tanımlı değilse tek ses + ayar kullanılır.
-        # Öncelik: ortam değişkeni > ekrandan atanan ton sesi (data/tone-voice.json) > genel ses
-        voice = (voice or (tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}"))
-                 or (tone and tone_voice.voices().get(tone)) or os.environ["ELEVENLABS_VOICE_ID"])
+        # Öncelik: açık `voice` > ton ortam değişkeni > ekrandan o tona atanan ses > ekrandan Genel ses > ELEVENLABS_VOICE_ID
+        voice = voice or tone_voice.resolve_voice(tone)
+        if not voice:
+            raise ProviderError("ElevenLabs sesi yok: Persona > Ses stüdyosu'ndan 'Genel ses' ya da bu tona ses atayın "
+                                "(veya ELEVENLABS_VOICE_ID tanımlayın).")
         return voice, body
 
     def synthesize(self, text, language="tr", speed=1.0, tone=None):

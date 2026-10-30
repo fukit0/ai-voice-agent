@@ -7,6 +7,8 @@ import {
 const TONES: { id: string; label: string }[] = [
   { id: "samimi", label: "Samimi" }, { id: "resmi", label: "Resmî" }, { id: "enerjik", label: "Enerjik" }, { id: "sakin", label: "Sakin" },
 ];
+// Atama yuvaları: dört ton + "Genel ses" (kendi sesi olmayan tonlar ve tonsuz çağrılar; L2-EL/A1 profilleri bunu kullanır)
+const SLOTS: { id: string; label: string }[] = [...TONES, { id: "default", label: "Genel ses" }];
 const GENDER = [["", "Tümü"], ["female", "Kadın"], ["male", "Erkek"], ["neutral", "Nötr"]];
 const AGE = [["", "Tümü"], ["young", "Genç"], ["middle_aged", "Orta yaş"], ["old", "Yaşlı"]];
 const USE_CASE = [["", "Tüm kullanımlar"], ["conversational", "Sohbet"], ["narrative_story", "Anlatı"], ["social_media", "Sosyal medya"],
@@ -121,7 +123,7 @@ export function VoicePicker() {
   };
 
   const nameOf = (id: string) => voices.find((v) => v.voice_id === id)?.name ?? id;
-  const tonesOf = (id: string) => TONES.filter((t) => assigned[t.id] === id);
+  const tonesOf = (id: string) => SLOTS.filter((t) => assigned[t.id] === id);
   const chip = (label: string, on: boolean, set: () => void) => (
     <button key={label} type="button" className="vp-pill" aria-pressed={on} onClick={set}>{label}</button>
   );
@@ -136,9 +138,9 @@ export function VoicePicker() {
       </p>
 
       <ul className="voice-assigned vp-slots" data-testid="voice-assigned">
-        {TONES.map((t) => (
+        {SLOTS.map((t) => (
           <li key={t.id} className={assigned[t.id] ? "vp-slot vp-slot-on" : "vp-slot"}>
-            <b>{t.label}:</b> {assigned[t.id] ? nameOf(assigned[t.id]) : "genel ses"}
+            <b>{t.label}:</b> {assigned[t.id] ? nameOf(assigned[t.id]) : t.id === "default" ? "atanmadı" : "genel ses"}
             {assigned[t.id] && (
               <button type="button" className="vp-x" onClick={() => void assign(t.id, "")} aria-label={`${t.label} atamasını kaldır`}>×</button>
             )}
@@ -212,7 +214,7 @@ export function VoicePicker() {
                 )}
                 {menuFor === v.voice_id && (
                   <div className="vp-menu voice-assign-buttons">
-                    {TONES.map((t) => (
+                    {SLOTS.map((t) => (
                       <button key={t.id} type="button" aria-pressed={assigned[t.id] === v.voice_id}
                         onClick={() => void assign(t.id, v.voice_id)}>{t.label} için seç</button>
                     ))}

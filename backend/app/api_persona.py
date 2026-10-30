@@ -222,8 +222,8 @@ def tts_lab(body: LabBody) -> dict:
     tts = remote.ElevenLabsTTS(body.model, **({"seed": body.seed} if body.seed is not None else {}))
     try:
         voice, req = tts.request(body.text, "tr", body.speed, body.tone, body.voice_id)
-    except KeyError as exc:
-        raise HTTPException(400, {"error": "no_voice", "message": "Ses seçin veya ELEVENLABS_VOICE_ID tanımlayın."}) from exc
+    except ProviderError as exc:   # ses çözülemedi (ton/Genel ses/ortam değişkeni hiçbiri yok)
+        raise HTTPException(400, {"error": "no_voice", "message": str(exc)}) from exc
     price = next((m["price_per_1k_usd"] for m in _matrix()["models"] if m["id"] == body.model), None)
     runs = []
     for _ in range(body.runs):

@@ -214,6 +214,72 @@ def test_voice_assignment_rejects_bad_ids(data):
     assert client.put("/api/persona/tones/voices", json={"voices": {"sakin": "../etc"}}).status_code == 422
 
 
+def _clear_voice_env(monkeypatch):
+    for k in ("ELEVENLABS_VOICE_ID", *(f"ELEVENLABS_VOICE_ID_{t.upper()}" for t in TV.TONE_IDS)):
+        monkeypatch.delenv(k, raising=False)
+
+
+def test_general_voice_slot_precedence_and_validation(data, monkeypatch):
+    _clear_voice_env(monkeypatch)
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID", "envgenel")
+    assert TV.resolve_voice("sakin") == "envgenel"
+    r = client.put("/api/persona/tones/voices", json={"voices": {"default": "ekrangenel12", "enerjik": "ekranener123"}})
+    assert r.status_code == 200 and r.json()["assigned"] == {"default": "ekrangenel12", "enerjik": "ekranener123"}
+    # Persona'da seçilen Genel ses .env'deki genel sesten önce gelir; o tona atanan ses Genel sesten önce gelir
+    assert TV.resolve_voice("sakin") == "ekrangenel12" and TV.resolve_voice(None) == "ekrangenel12"
+    assert TV.resolve_voice("enerjik") == "ekranener123"
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID_ENERJIK", "envener")
+    assert TV.resolve_voice("enerjik") == "envener"   # ton ortam değişkeni en üstte (mevcut davranış korunur)
+    assert client.put("/api/persona/tones/voices", json={"voices": {"default": "../x"}}).status_code == 422
+    client.put("/api/persona/tones/voices", json={"voices": {"default": ""}})
+    assert TV.resolve_voice("sakin") == "envgenel"    # atama kaldırılınca ortam değişkenine döner
+
+
+def test_voice_assignment_affects_existing_tts_instance_immediately(data, monkeypatch):
+    """Profil yeniden başlatılmadan: Persona'da ses değişince aynı TTS örneğinin bir sonraki cümlesi yeni sesi kullanır."""
+    from backend.app.providers import remote
+    _clear_voice_env(monkeypatch)
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    urls = []
+
+    class Res:
+        content = b"\x00\x00" * 100
+
+    monkeypatch.setattr(remote, "_post", lambda url, **kw: urls.append(url) or Res())
+    t = remote.ElevenLabsTTS("eleven_v4_turbo")
+    client.put("/api/persona/tones/voices", json={"voices": {"default": "birinciSes123"}})
+    t.synthesize("a", "tr", 1.0, "samimi")
+    client.put("/api/persona/tones/voices", json={"voices": {"default": "ikinciSes1234", "samimi": "samimiSes1234"}})
+    t.synthesize("a", "tr", 1.0, "samimi")
+    t.synthesize("a", "tr", 1.0, "resmi")
+    assert [u.rsplit("/", 1)[1] for u in urls] == ["birinciSes123", "samimiSes1234", "ikinciSes1234"]
+
+
+def test_elevenlabs_without_voice_gives_clear_error_and_readiness(data, monkeypatch):
+    from backend.app.providers import remote
+    from backend.app.providers.base import ProviderError
+    _clear_voice_env(monkeypatch)
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    t = remote.ElevenLabsTTS("eleven_v4_turbo")
+    with pytest.raises(ProviderError, match="Genel ses"):
+        t.synthesize("a", "tr", 1.0, "sakin")
+    issues = t.readiness_issues()
+    assert len(issues) == 1 and all(tone in issues[0] for tone in TV.TONE_IDS)
+    TV.set_voices({"samimi": "samimiSes1234", "resmi": "resmiSes12345", "enerjik": "enerjikSes123"})
+    assert "sakin" in t.readiness_issues()[0] and "samimi" not in t.readiness_issues()[0]   # yalnız eksik ton söylenir
+    TV.set_voices({"default": "genelSes12345"})
+    assert t.readiness_issues() == []
+
+
+def test_l2_el_profile_listed_and_needs_only_api_key(monkeypatch):
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    res = {p["id"]: p for p in client.get("/api/profiles", params={"check": "false"}).json()}
+    p = res["L2-EL"]
+    assert p["components"]["tts"]["provider"] == "elevenlabs" and p["components"]["tts"]["model"] == "eleven_v4_turbo"
+    assert "ELEVENLABS_API_KEY" in p["missing_env"] and "ELEVENLABS_VOICE_ID" not in p["missing_env"]
+    assert res["L2"]["components"]["tts"]["provider"] == "ema"
+
+
 def test_list_voices_merges_account_and_turkish_library(data, monkeypatch):
     from backend.app.providers import remote
     monkeypatch.setenv("ELEVENLABS_API_KEY", "k")

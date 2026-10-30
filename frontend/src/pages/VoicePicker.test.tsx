@@ -71,6 +71,18 @@ describe("Ses kütüphanesi", () => {
     await waitFor(() => expect(screen.getByTestId("voice-assigned")).toHaveTextContent("Enerjik: genel ses"));
   });
 
+  it("Genel ses yuvasına atar (tonu olmayanlar ve L2-EL/A1 profilleri bunu kullanır); önizleme tonlarında Genel ses yoktur", async () => {
+    const calls = mockApi();
+    render(<VoicePicker />);
+    const row = await screen.findByTestId("voice-hesapses12345");
+    expect(screen.getByTestId("voice-assigned")).toHaveTextContent("Genel ses: atanmadı");
+    fireEvent.click(within(row).getByRole("button", { name: "Ton ata" }));
+    fireEvent.click(screen.getByRole("button", { name: "Genel ses için seç" }));
+    await waitFor(() => expect(screen.getByTestId("voice-assigned")).toHaveTextContent("Genel ses: Egemen"));
+    expect(calls.find((c) => c.method === "PUT")!.body).toEqual({ voices: { default: "hesapses12345" } });
+    expect(within(screen.getByLabelText("Önizleme tonu")).queryByRole("option", { name: "Genel ses" })).toBeNull();
+  });
+
   it("kütüphane sesi için 'Hesabıma ekle' sunar ve doğru kimliklerle çağırır", async () => {
     const calls = mockApi();
     render(<VoicePicker />);

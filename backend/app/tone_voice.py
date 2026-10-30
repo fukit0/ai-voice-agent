@@ -18,6 +18,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 TONE_IDS = ("samimi", "resmi", "enerjik", "sakin")
+# Ses atama yuvaları: dört ton + "default" (Genel ses: kendi sesi atanmamış tonlar ve tonsuz çağrılar için)
+VOICE_SLOTS = TONE_IDS + ("default",)
 # Ses etiketi ([warmly] gibi) destekleyen ElevenLabs model ailesi (resmî belge: v3, v4, v4 Turbo; Flash/Multilingual v2'de belgede yok)
 TAG_MODEL = re.compile(r"^eleven_v[34]")
 ALLOWED = {"speed", "tag", "stability", "similarity_boost", "style", "use_speaker_boost", "exaggeration", "cfg_weight", "temperature"}
@@ -86,13 +88,27 @@ def validate(mapping: dict) -> list[str]:
 
 
 def voices() -> dict[str, str]:
-    """Ekrandan atanan ton -> ElevenLabs ses kimliği (boş = genel ses)."""
-    return {t: v for t, v in (load().get("voices") or {}).items() if t in TONE_IDS and v}
+    """Ekrandan atanan ton (veya "default" = Genel ses) -> ElevenLabs ses kimliği."""
+    return {t: v for t, v in (load().get("voices") or {}).items() if t in VOICE_SLOTS and v}
+
+
+def resolve_voice(tone: str | None) -> str | None:
+    """ElevenLabs ses kimliği, öncelik sırasıyla: ton ortam değişkeni (ELEVENLABS_VOICE_ID_<TON>) > ekrandan o tona atanan ses >
+    ekrandan atanan Genel ses > ELEVENLABS_VOICE_ID. Ekran ortam değişkeninin genel sesinden önce gelir: Persona'da seçilen ses
+    .env'deki eski değere takılmadan profillere hemen etki eder. Hiçbiri yoksa None."""
+    assigned = voices()
+    return ((tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}")) or (tone and assigned.get(tone))
+            or assigned.get("default") or os.environ.get("ELEVENLABS_VOICE_ID") or None)
+
+
+def missing_voice_tones() -> list[str]:
+    """Hiçbir kaynaktan ses çözülemeyen tonlar (boşsa her ton için bir ses var)."""
+    return [t for t in TONE_IDS if not resolve_voice(t)]
 
 
 def set_voices(assign: dict) -> dict:
     """Ton başına ses ata (boş metin = atamayı kaldır). Kimlik biçimi doğrulanır; diğer ayarlar korunur."""
-    bad = [t for t in assign if t not in TONE_IDS]
+    bad = [t for t in assign if t not in VOICE_SLOTS]
     bad += [f"{t}={v!r}" for t, v in assign.items() if v and not re.fullmatch(r"[A-Za-z0-9]{10,40}", str(v))]
     if bad:
         raise ValueError("Geçersiz ton/ses kimliği: " + ", ".join(map(str, bad)))
