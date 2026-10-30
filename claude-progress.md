@@ -338,3 +338,9 @@ agents do not update it automatically.
 - Doğrulanmadı: gerçek öksürük/klavye/kapı kayıtları, 'hmm', WebRTC/telefon yolunda 500 ms, OpenAI realtime canlı, Playground arayüzünde voiced_min/barge_blocked gösterimi yok.
 - Sonraki: kullanıcı core-013 kaydıyla etiketli kayıt toplar (`cough_1.wav`, `speech_1.wav` ...) → `python scripts/eval_barge_gate.py --dir <klasör>` → sonuca göre eşik/Silero kararı.
 
+### core-016 gerçek kayıt turu (2026-10-30 gece)
+- Kullanıcı 33 gerçek kayıt aldı (`kayitlar/barge/`, git'e EKLENMEZ: kişisel ses). İlk sürüm başarısız: `evidence/core-016-gercek-20261030-210436.json`.
+- Düzeltme: HF alt sınırı kaldırıldı -> HF_MAX 0,30; PEAK_MIN 0,60 -> 0,75; sentetik ses gerçek spektruma yaklaştırıldı (testler gevşetilmedi). 479 test geçti. Yeniden ölçüm (aynı kayıtlar, bulutta): `evidence/core-016-gercek-20261030-210947.json`: nefes/kapı/klavye 0, öksürük 1/5, hmm 1/3, boğaz 4/5, konuşma 3/5 -> `passed:false`.
+- Hâlâ bozuk/doğrulanmamış: boğaz temizleme, hmm, öksürük (1), konuşma kayıtlarının seviyesi (2/5 eşik altı), Gemini'de etkisiz, tek konuşmacı aşırı uyum. Durum `blocked` kalır.
+- Sonraki: daha yüksek sesli/çok konuşmacılı kayıt + kısa STT/Silero doğrulaması (ADR 0011 seçenek a/b); söz kesme eşiğini canlı ayarda yeniden düşür.
+

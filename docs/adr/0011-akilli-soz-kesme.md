@@ -16,7 +16,11 @@ Söz kesme yalnız seviye + süreye bakıyordu (core-015): eşiği 160 ms aşan 
 Gerekçe: PoC'de tekrarlanabilir, testli, bağımlılıksız ve gecikmeyi artırmıyor (sentetik konuşmada medyan kesme 160 ms, değişmedi).
 
 ## Sınırlar (demoda saklanmaz)
-- Eşikler SENTETİK işaretlerle ayarlandı (kapı gümbürtüsü ilk denemede kesti; üçüncü özellik o bulgudan sonra eklendi): gerçek kayıtlarla (`scripts/eval_barge_gate.py --dir`) doğrulanmadı, aşırı uyum riski var.
+- GERÇEK KAYIT SONUCU (2026-10-30, 33 dosya, tek konuşmacı/mikrofon, sınıf başına n=5): ilk sürüm BAŞARISIZ (öksürük 5/5, boğaz 2/5, nefes 1/5 yanlış kesme; konuşma 1/5 kesti). Neden: ≥400 Hz payı ALT sınırdı ama gerçek konuşmada bu pay düşüktür (0,08-0,26); öksürük çerçeveleri kısmen perdeli (özilinti 0,58-0,68).
+  Yeniden ayar (PEAK_MIN 0,75, HF ÜST sınır 0,30): nefes 0/5, kapı 0/5, klavye 0/5, öksürük 1/5, hmm 1/3, boğaz 4/5, konuşma 3/5 (eski süzgeçsiz davranışla AYNI; kalan 2 konuşma kaydı seviye eşiğinin altında). Süzgeçsiz: nefes 2, öksürük 5, kapı 3, hmm 1, boğaz 5, konuşma 3.
+  Test hâlâ `passed:false` (boğaz, hmm, öksürük 1). Eşikler bu 33 kayda göre ayarlandı -> aşırı uyum riski; yeni konuşmacı/mikrofonla yeniden ölçülmeli.
+- Konuşma kayıtları sessiz (tepe −26…−32 dB); canlı eşik −27 dBFS iken (söz kesme seviyesi −21) süzgeçsiz bile neredeyse hiç kesmez: asıl sınırlayıcı süzgeç değil SEVİYE ayarıdır.
+- Boğaz temizleme ve 'hmm' perde/spektrum özellikleriyle ayrılamıyor: kısa STT/Silero doğrulaması (seçenek a/b) gerekir.
 - 'Hmm' gibi sesli geri bildirimler perdeli olduğu için hâlâ keser; çözüm kısa STT doğrulaması (b).
 - Fısıltı ve 'ş/s' gibi perdesiz başlangıçlar kesmeyi en çok ~sesli ünlüye kadar geciktirir (sentetikte 300 ms içinde).
 - Realtime: OpenAI profilinde karar yereldir (süzgeç geçerli); Gemini'de sunucu kendi VAD'iyle keser, süzgeç etkisizdir (arayüzde uyarı notu).

@@ -3,11 +3,13 @@
 Yöntem: 20 ms'lik (320 örnek, 16 kHz) çerçevede *ses perdesi periyodikliği*. Sesli ünlüler ve ünsüzler (a, e, m, n, l, r...) 80-400 Hz aralığında
 belirgin bir temel periyoda sahiptir; öksürük, nefes, klavye tıkı, kapı gürültüsü gürültü benzeri ya da dürtüdür ve periyodik değildir.
 Üç özellik: (1) normalleştirilmiş özilinti tepe değeri (80-400 Hz gecikme aralığında), (2) sıfır geçiş oranı (çok yüksek = gürültü/frikatif, çok düşük = gümbürtü),
-(3) enerjinin 400 Hz üstündeki payı (düşük frekanslı kapı/masa gümbürtüsü periyodik görünse de konuşma değildir).
+(3) enerjinin 400 Hz üstündeki payı: GERÇEK kayıtlarda konuşma çerçevelerinde bu pay düşüktür (≈0,08-0,26, enerji temel+ilk formantta), öksürük/boğaz temizleme
+gibi kısmen perdeli patlamalarda yüksektir; bu yüzden ALT değil ÜST sınır olarak kullanılır (ilk sürüm alt sınırdı ve gerçek konuşmayı eliyordu).
 
 SINIRLAR (demoda saklanmaz): sessiz konuşma (fısıltı) ve frikatif başlangıçlar ('ş', 's') sesli sayılmaz; kesme bir sonraki sesli çerçeveye kadar bekler.
 Sesli, sürekli 'hmm' bu yöntemle konuşmadan ayrılamaz (perdesi vardır); onun için kısa STT doğrulaması gerekir (yapılmadı).
-Eşikler sentetik işaretlerle ayarlandı; gerçek kayıtlarla (core-013) `scripts/eval_barge_gate.py` ile doğrulanmalıdır.
+Eşikler ilk sentetik işaretlerle ayarlandı, SONRA gerçek kayıtlarla (33 dosya, tek konuşmacı/mikrofon, sınıf başına n=5, evidence/core-016-gercek-*.json) yeniden ayarlandı: aşırı uydurma riski vardır;
+yeni konuşmacı/mikrofonla `scripts/eval_barge_gate.py --dir` yeniden koşulmalıdır. Boğaz temizleme ve 'hmm' bu özelliklerle konuşmadan ayrılamadı (ADR 0011).
 """
 from __future__ import annotations
 
@@ -16,10 +18,10 @@ import numpy as np
 SAMPLE_RATE = 16000
 LAG_MIN = SAMPLE_RATE // 400      # 400 Hz
 LAG_MAX = SAMPLE_RATE // 80       # 80 Hz
-PEAK_MIN = 0.60                   # normalleştirilmiş özilinti tepe eşiği (gerçek sesli konuşma ≈0,7-0,95; düşük frekanslı gürültü bunu seyrek aşar)
+PEAK_MIN = 0.75                   # normalleştirilmiş özilinti tepe eşiği (gerçek kayıtlarda 0,60'ta öksürük çerçeveleri geçiyordu: 0,58-0,68)
 ZCR_MIN = 0.02                    # çerçeve başına sıfır geçiş oranı alt sınırı: <200 Hz'lik gümbürtü/kapı çarpması (≈0,01) konuşma değildir
 ZCR_MAX = 0.30                    # üst sınır: yüksek = gürültü/frikatif
-HF_MIN = 0.15                     # enerjinin ≥400 Hz payı: gümbürtü/kapı çarpması (<200 Hz) ≈0, konuşma (formantlar) belirgin
+HF_MAX = 0.30                     # enerjinin ≥400 Hz payı ÜST sınırı: gerçek konuşma ≈0,08-0,26; yüksek pay = öksürük/boğaz temizleme
 
 
 def features(frame: np.ndarray) -> tuple[float, float, float]:
@@ -46,6 +48,6 @@ def features(frame: np.ndarray) -> tuple[float, float, float]:
     return min(1.0, max(0.0, best)), zcr, hf
 
 
-def is_voiced(frame: np.ndarray, peak_min: float = PEAK_MIN, zcr_min: float = ZCR_MIN, zcr_max: float = ZCR_MAX, hf_min: float = HF_MIN) -> bool:
+def is_voiced(frame: np.ndarray, peak_min: float = PEAK_MIN, zcr_min: float = ZCR_MIN, zcr_max: float = ZCR_MAX, hf_max: float = HF_MAX) -> bool:
     peak, zcr, hf = features(frame)
-    return peak >= peak_min and zcr_min <= zcr <= zcr_max and hf >= hf_min
+    return peak >= peak_min and zcr_min <= zcr <= zcr_max and hf <= hf_max

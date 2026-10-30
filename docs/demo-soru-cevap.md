@@ -272,3 +272,6 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - Gemini realtime profilinde kesmeyi sunucu yapar; bu süzgeç orada etkisizdir. OpenAI realtime ve cascade profillerinde geçerlidir.
 - Çok uzun (1,2 sn+) perdesiz yüksek ses yine keser: bilerek, arayan hiç duyulamaz hâle gelmesin diye.
 
+**GÜNCEL DURUM (gerçek kayıt, 2026-10-30): çalışıyor DENEMEZ, kısmen çalışıyor.** Kendi sesimizle 33 kayıtta: nefes, kapı, klavye hiç kesmedi; öksürük 5'te 1 kesti (süzgeçsiz 5/5); ama boğaz temizleme 5'te 4 ve "hmm" 3'te 1 hâlâ kesiyor. Sebep: bu sesler perdeli, basit özelliklerle konuşmadan ayrılamıyor; çözüm kısa STT/Silero doğrulaması (yapılmadı).
+Demoda söyle: "Eşikler tek konuşmacı, sınıf başına 5 kayıtla ayarlandı; genellemesi kanıtlanmadı. Süzgeç konuşma kesme hızını bozmuyor (160 ms) ama canlı seviye eşiği −27 dBFS iken konuşmanın bir kısmı zaten eşiğin altında kalıyor." Bunu 'ilk yükleme' gibi bir bahaneyle geçiştirme; sınırlama gerçektir.
+

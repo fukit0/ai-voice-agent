@@ -1,0 +1,81 @@
+{
+  "source": "gercek kayit: kayitlar/barge",
+  "legacy_no_filter": false,
+  "settings": {
+    "threshold_db": null,
+    "effective_threshold_db": -45.0,
+    "barge_frames": 8,
+    "barge_margin_db": 6.0,
+    "barge_ms": 160,
+    "voiced_min": 3,
+    "force_ms": 1200
+  },
+  "classes": {
+    "breath": {
+      "n": 5,
+      "barged": 1,
+      "rate": 0.2,
+      "expected": "kesmez",
+      "median_cut_ms": 160,
+      "max_cut_ms": 160
+    },
+    "cough": {
+      "n": 5,
+      "barged": 5,
+      "rate": 1.0,
+      "expected": "kesmez",
+      "median_cut_ms": 180,
+      "max_cut_ms": 560
+    },
+    "door": {
+      "n": 5,
+      "barged": 0,
+      "rate": 0.0,
+      "expected": "kesmez",
+      "median_cut_ms": null,
+      "max_cut_ms": null
+    },
+    "hmm": {
+      "n": 3,
+      "barged": 0,
+      "rate": 0.0,
+      "expected": "kesmez",
+      "median_cut_ms": null,
+      "max_cut_ms": null
+    },
+    "keyboard": {
+      "n": 5,
+      "barged": 0,
+      "rate": 0.0,
+      "expected": "kesmez",
+      "median_cut_ms": null,
+      "max_cut_ms": null
+    },
+    "speech": {
+      "n": 5,
+      "barged": 1,
+      "rate": 0.2,
+      "expected": "keser",
+      "median_cut_ms": 460,
+      "max_cut_ms": 460
+    },
+    "throat": {
+      "n": 5,
+      "barged": 2,
+      "rate": 0.4,
+      "expected": "kesmez",
+      "median_cut_ms": 640.0,
+      "max_cut_ms": 920
+    }
+  },
+  "false_barge_classes": [
+    "breath",
+    "cough",
+    "throat"
+  ],
+  "missed_barge_classes": [
+    "speech"
+  ],
+  "over_500ms_classes": [],
+  "passed": false
+}
