@@ -231,3 +231,5 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 3. **"Sırayla çal":** aynı cümle samimi, resmî, enerjik, sakin sırayla çalar. Altlarındaki sayıları gösterin (enerjik daha hızlı, sakin daha yavaş).
 4. **Tonu Persona'da "Enerjik" yapıp kaydedin, Playground'da arama açın:** ajan açılışta ve her cümlede o tonla konuşur (yalnız `tone` parametresini tanıyan TTS'te).
 5. **Söyleyin:** EMA tek sestir, ton orada yalnız hızdır; asıl ifade ElevenLabs v4 Turbo / ayrı ses ile gelir. Sınırlar S29'da.
+
+- **Güncelleme (2026-10-30, kullanıcı dinlemesi):** Ton farkı **v4 modelinde duyuluyor, Flash v2.5'te belirgin değil.** Demoda ton gösterimi v4 (Turbo) ile yapılır; Flash ile yapılırsa "ton farkı ince" denir. **Sınır (saklanmaz):** bu sonuç kullanıcının dinlemesine dayanır, sayısal rapor paylaşılmadı; v4 Turbo canlı hat gecikmesi ölçülmedi. Ses seçici (ElevenLabs'teki gibi ses listesi) önerildi, henüz yapılmadı.

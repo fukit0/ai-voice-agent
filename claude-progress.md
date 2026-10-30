@@ -306,3 +306,4 @@ agents do not update it automatically.
 - Arastirma (ADR 0010): ses etiketi yalniz v3/v4/v4 Turbo; Flash v2.5 yalniz stability+hiz+ses secimi; Multilingual v2 style ekler; en guclu kaldirac ayri ses (Voice Library / Voice Design).
 - DOGRULANMADI: ElevenLabs (bulut proxy/anahtar yok) — modeller arasi gercek ton farki, Turkce etiket kalitesi, v4 Turbo gecikmesi; Chatterbox ton testi (torch yok). Sayilar baslangic tahmini.
 - Sirada (kullanici, Mac): `python scripts/verify_elevenlabs_tones.py`, klipleri dinle; Persona > Ton demosu'nu ElevenLabs profilinde dene; sonucu bana ver, tablo kalibre edilsin.
+- 2026-10-30 (Session 038 devam): Kullanici dinledi: ton farki v4'te hissediliyor, Flash v2.5'te belirgin degil. Demo modeli v4 (Turbo). Olculmedi: v4 Turbo canli hat gecikmesi, report.json sayilari. Oneri: ElevenLabs ses secici (onay bekliyor).

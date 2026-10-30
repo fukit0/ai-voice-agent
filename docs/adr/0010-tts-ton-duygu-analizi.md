@@ -64,3 +64,8 @@ Kaynaklar: resemble-ai/chatterbox README ve mtl_tts.py; elevenlabs.io/docs (voic
 - Ses etiketlerinin Türkçede nasıl okunduğu (sesli okunma riski dahil) doğrulanmadı.
 - Chatterbox ton testi bulutta torch olmadığı için atlandı (1 test skip); Mac'te çalıştırılmalı.
 - Akustik özet (otokorelasyonlu perde) yaklaşıktır; dinlemenin yerini tutmaz.
+
+## Dinleme sonucu (kullanıcı, 2026-10-30) ve karar
+- **Gözlem (kullanıcı, gerçek dinleme):** ton farkı yalnız **v4** modelinde hissediliyor; Flash v2.5'te belirgin değil. Belge araştırmasındaki beklentiyle (ses etiketi yalnız v3/v4 ailesinde) uyumlu. Sayısal akustik rapor (report.json) henüz paylaşılmadı; tespit dinlemeye dayanıyor.
+- **Karar (demo):** ton gösterimi için ElevenLabs modeli **v4 (Turbo)**; Flash v2.5 ton demosunda kullanılmaz (hızlı ama ton farkı ince). Canlı hatta v4 Turbo gecikmesi ÖLÇÜLMEDİ; ölçülmeden canlı hat varsayılanı değiştirilmez.
+- **Sonraki adım (öneri, onay bekliyor):** ElevenLabs ses seçici (Türkçe ses listesi + dinleme + ton başına ses atama). Ton farkını model dışında sesin kendisi de büyütür (scn-010'u öne çeker). Kütüphane sesinin hesaba eklenmesi gerekip gerekmediği ve ticari lisans kullanımı doğrulanmadı.
