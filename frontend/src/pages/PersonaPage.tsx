@@ -3,9 +3,7 @@ import {
   fetchPersona, fetchPersonaReport, previewPersona, resetPersona, savePersona,
   type PersonaFields, type PersonaReport, type PersonaView,
 } from "../api";
-import { ToneDemo } from "./ToneDemo";
-import { TtsLab } from "./TtsLab";
-import { VoicePicker } from "./VoicePicker";
+import { VoiceStudio } from "./VoiceStudio";
 
 const TONE_LABEL: Record<string, string> = {
   samimi: "Samimi (sıcak, rahat)", resmi: "Resmî (ölçülü, kibar)", enerjik: "Enerjik (canlı, neşeli)", sakin: "Sakin (yumuşak, telaşsız)",
@@ -25,6 +23,7 @@ export function PersonaPage() {
   const [problems, setProblems] = useState<string[]>([]);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [report, setReport] = useState<PersonaReport | null>(null);
+  const [studio, setStudio] = useState<"closed" | "open" | "hidden">("closed"); // "hidden": bir kez açıldı, durumu korunsun
 
   const apply = (v: PersonaView) => {
     setView(v); setForm(v.persona); setAcks(v.persona.acknowledgements.join("\n")); setAvoid(v.persona.avoid_phrases.join("\n"));
@@ -74,9 +73,8 @@ export function PersonaPage() {
         her cevaptan sonra söylenir; istem serbest sohbette kullanılır. Gerçek aramalarda cümle uzunluğu aşağıdaki raporla denetlenir.
       </p>
       <p className="meta" data-testid="persona-voice-note">
-        <b>Not:</b> Ton hem <b>söz üslubunu</b> hem de <b>sesin söyleyişini</b> etkiler; ama ne kadar etkileyeceği TTS sağlayıcısına bağlıdır.
-        EMA tek ses olduğu için yalnız hız değişir; Chatterbox ifade gücünü, ElevenLabs kararlılık/hızı (v3 ve v4 modellerinde ses etiketlerini) kullanır.
-        Aşağıdaki <b>ton demosu</b> aynı cümleyi dört tonda yan yana dinletir.
+        <b>Not:</b> Ton hem söz üslubunu hem sesin söyleyişini etkiler; etkisi TTS sağlayıcısına bağlıdır (EMA yalnız hız, Chatterbox ifade gücü,
+        ElevenLabs kararlılık/hız ve v3/v4'te ses etiketleri). Sesleri ve tonları denemek için <b>Ses stüdyosu</b>nu açın.
       </p>
       {msg && <p className={msg.kind === "ok" ? "status status-ok" : "error"} role="status">{msg.text}</p>}
       {form && view && (
@@ -136,9 +134,14 @@ export function PersonaPage() {
         </div>
       )}
 
-      <VoicePicker />
-      <TtsLab />
-      <ToneDemo />
+      <div className="studio-card" data-testid="studio-card">
+        <div>
+          <h3 className="sub">Ses stüdyosu (ElevenLabs)</h3>
+          <p className="meta">Ses ara ve dinle, her ton için ses ata, modelleri gecikme ve maliyetle kıyasla, dört tonu yan yana çal.</p>
+        </div>
+        <button type="button" className="primary" aria-haspopup="dialog" onClick={() => setStudio("open")}>Ses stüdyosunu aç</button>
+      </div>
+      {studio !== "closed" && <VoiceStudio open={studio === "open"} onClose={() => setStudio("hidden")} />}
 
       <h3 className="sub">Cümle uzunluğu raporu (kayıtlı aramalar)</h3>
       <p className="meta">Playground'da yapılan aramaların ajan cümleleri; sınır ve yasak kalıplara göre. Gerçek arama yoksa boş görünür.</p>

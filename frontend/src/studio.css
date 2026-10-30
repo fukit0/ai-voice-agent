@@ -1,0 +1,35 @@
+/* Ses stüdyosu: ElevenLabs ayarlarının açılır penceresi (VoiceStudio) + Persona ekranındaki kısa kart */
+.studio-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin: 8px 0 24px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.studio-card h3 { margin: 0 0 2px; }
+.studio-card p { margin: 0; }
+.studio-card .primary { padding: 9px 20px; border-radius: 10px; }
+.studio { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 10, 12, .55); backdrop-filter: blur(3px); }
+.studio[hidden] { display: none; }
+.studio-box { width: min(1080px, 100%); height: min(880px, 100%); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); box-shadow: 0 24px 70px rgba(0, 0, 0, .4); }
+.studio-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.studio-head h2 { margin: 0; font-size: 18px; }
+.studio-close { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+.studio-close:hover { color: var(--text); border-color: var(--accent); }
+.studio-tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--panel); overflow-x: auto; }
+.studio-tabs button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 10px 16px 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; cursor: pointer; white-space: nowrap; }
+.studio-tabs button span { font-size: 12px; }
+.studio-tabs button:hover { color: var(--text); }
+.studio-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.studio-body { flex: 1; overflow-y: auto; padding: 16px 20px 0; }
+.studio-body [role="tabpanel"][hidden] { display: none; }
+.studio-body section { margin-top: 0; }
+.studio-body section > h3.sub:first-child { display: none; } /* sekme başlığı zaten yukarıda */
+.studio-body .vp-custom { bottom: 0; border-radius: 12px 12px 0 0; }
+@media (max-width: 800px) { .studio { padding: 0; } .studio-box { height: 100%; border-radius: 0; border: 0; } }
+.studio-body label { display: block; margin: 8px 0 4px; font-size: 13px; }
+.studio-body textarea, .studio-body input:not([type="range"]):not([type="search"]), .studio-body select { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); box-sizing: border-box; }
+.studio-body textarea { width: 100%; }
+.studio-body .tts-lab .persona-row { grid-template-columns: 2fr 2fr 1.2fr 90px; align-items: end; }
+.studio-body .tts-lab .persona-row select, .studio-body .tts-lab .persona-row input { width: 100%; }
+.studio-body #lab-calls { width: 140px; }
+.studio-body .persona-actions { margin: 12px 0; }
+.studio-body button:not(.vp-pill):not(.vp-play):not(.vp-x):not(.primary):not([role="tab"]):not(.studio-close) { font: inherit; font-size: 13px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); cursor: pointer; }
+.studio-body button:not(.vp-pill):not(.vp-play):not(.vp-x):not(.primary):not([role="tab"]):not(.studio-close):hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.studio-body button:disabled { opacity: .5; cursor: not-allowed; }
+.studio-body .tone-card { background: var(--panel); border-color: var(--line); border-radius: 10px; }
+@media (max-width: 800px) { .studio-body .tts-lab .persona-row { grid-template-columns: 1fr 1fr; } }
