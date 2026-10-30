@@ -82,6 +82,10 @@ Demoda gelebilecek sorular ve dürüst, kısa cevaplar. Her cevapta "bugün çal
 - **Sınır (demoda saklanmaz):** düzeltme birim testle ve prompt içeriğiyle doğrulandı; GERÇEK LLM ile yeniden denenmedi. Bu cümleler core-012'deki prompt ölçümünün örnek setine girecek. Realtime profillerde (A2/A3) adım kuralı henüz iletilmiyor.
 - **Kelime hataları ("Katılman", "Buyurun davetin"):** bunlar LLM değil konuşma tanıma (STT) hatasıdır. Çözüm yolu: kayıt (core-013) + STT test ekranında Kanal=Sol ile müşteri sesini farklı modellerle ve alan ipucuyla yan yana ölçmek (core-014). Alan ipucu varsayılan kapalı; kısa seslerde ipucunu aynen yazma riski var, ölçülmeden açılmaz. "Telefon filtresi STT'yi kötüleştiriyor mu" sorusu hâlâ ölçülmedi.
 
+- **Güncelleme 2026-10-30 (canlı hata 45e4e7002bc2):** yalın "İstemiyorum." (sorudaki "dinlemek" olmadan) hâlâ ret sayılıp görüşmeyi kapattı. **Karar değişti:** KVKK adımında (yalnız orada) yalın "istemiyorum / hayır / gerek yok" artık devam sayılır; kod tarafında deterministik koruma var, LLM'in kararına bırakılmadı. **Gerekçe:** yanlış "devam" bir sonraki soruda ("müsait misiniz?") düzelir, yanlış "ret" görüşmeyi geri dönüşsüz kapatır. "İlgilenmiyorum", "katılmak istemiyorum", "aramayın" gibi açık retler ret kalır. Diğer evet/hayır sorularında yalın "istemiyorum" hâlâ ret sayılır (bilinçli fark).
+- **Yeniden sorma:** ajan artık tüm açılışı baştan okumaz, yalnız "Aydınlatma Metni'ni dinlemek ister misiniz?" cümlesini sorar.
+- **Sınır (demoda saklanmaz):** 14 birim testle doğrulandı; GERÇEK LLM/STT ile yeniden denenmedi. STT çöpü ("Debiyorum.") anlaşılmadı sayılır ve soru kısa biçimde tekrar sorulur; iki tekrardan sonra çağrı nazikçe kapanır.
+
 ## S11. Realtime (A2/A3) L2'den hizli mi?
 Henuz kanitlanmadi. Canli smoke'ta tek atis ilk ses A2 0.74s / A3 0.89s, ama Playground'da tam senaryoda A2 p50 2.41s (1 arama, bir tur 8.8s) ve L2 1.43s (3 arama) olculdu; ornek 5'in altinda ve hedef 1.2s. Demoda "smoke hizli, tam akis olculmedi" diye anlatilmali; karar 5'er aramalik karsilastirmadan sonra (scripts/session_latency.py).
 

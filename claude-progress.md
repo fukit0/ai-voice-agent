@@ -322,3 +322,11 @@ agents do not update it automatically.
 - Doğrulanmadı: gerçek aramalarla liste/detay/ses oynatma; L2 vs L2-EL gerçek kıyas (örnek sayısı ≥5 gerekir).
 - Not: Mac'te `frontend/src/api.ts` ve `styles.css` yazılamıyor; yeni kod ayrı dosyalarda (`callsApi.ts`, `calls.css`).
 - Sonraki: kullanıcı L2 ve L2-EL ile birkaç gerçek arama yapar → /calls'ta Kıyas'a bakar → lab-004 passing.
+
+## Session 2026-10-30 (akşam, 2): KVKK sorusunda yalın "İstemiyorum" düzeltmesi (core-012 bulgusu)
+
+- Canlı kayıt 45e4e7002bc2 (L2+EL): "Aydınlatma metnini dinlemek ister misiniz?" -> "İstemiyorum." -> görüşme kapandı (katilmak_istemedi). Beklenen: devam. Ayrıca aynı kayıtta STT 4.7 sn + LLM 12.3 sn (soğuk model olasılığı; doğrulanmadı).
+- Yapıldı: (1) `giris` adımına `bareNo: "devam"`; `flow.bare_no_fix` deterministik koruma (kademeli + realtime yol), açık ret sözleri refuse kalır; llmHint'e yalın "istemiyorum" eklendi. (2) `retryText`: yeniden sorma/sessizlik tekrarında yalnız soru cümlesi (`FlowDriver.retry_of`). (3) `backend/tests/test_giris_bare_no.py` 14 test. Backend 458 geçti.
+- Doğrulanmadı: gerçek LLM/STT ile yeniden deneme; ElevenLabs ile kısa tekrar cümlesinin sesi; core-012 holdout yeniden ölçümü (set bilerek değiştirilmedi).
+- Sonraki: kullanıcı Mac'te "İstemiyorum." ve "Debiyorum." (STT çöpü) ile dener.
+

@@ -183,6 +183,26 @@ def negative_yesno_fix(step: dict, obj: dict | None, utterance: str) -> tuple[di
     return obj, None
 
 
+_CALL_REFUSAL = ("anket", "görüşme", "aramay", "aranma", "rahatsız", "ilgilenm", "katılm", "katilm")   # görüşmenin/aramanın KENDİSİNİ reddeden sözler
+
+
+def bare_no_fix(step: dict, obj: dict | None, utterance: str) -> tuple[dict | None, str | None]:
+    """Adım `bareNo` taşıyorsa (örn. KVKK 'dinlemek ister misiniz?'), tek başına 'istemiyorum/hayır/gerek yok' o sorunun olumsuz cevabıdır
+    ve görüşmeyi reddetmek DEĞİLDİR (canlı test 45e4e7002bc2: 'İstemiyorum.' -> kapanis_ret). Gerekçe: yanlış 'devam' sonraki soruda
+    ('müsait misiniz?') düzeltilebilir, yanlış 'ret' görüşmeyi geri dönüşsüz kapatır. Aramayı/anketi açıkça reddeden söz varsa dokunulmaz."""
+    target = step.get("bareNo")
+    if not target or not obj or obj.get("intent") not in ("refuse", "unclear") or not utterance.strip():
+        return obj, None
+    low = utterance.replace("İ", "i").replace("I", "ı").casefold()
+    toks = re.findall(r"[a-zçğıöşüâ]+", low)
+    if any(w in low for w in _CALL_REFUSAL) or any(t in _POS_WORDS for t in toks):
+        return obj, None
+    neg = any(t.startswith(("istemiyor", "istemem", "istemi")) or t in ("hayır", "hayir", "yok", "olmaz", "gerek", "gerekmez") for t in toks)
+    if not neg:
+        return obj, None
+    return {"intent": "answer", "value": target}, f"{obj.get('intent')}->{target} (bareNo)"
+
+
 _NUM_WORDS = {"sıfır": 0, "sifir": 0, "bir": 1, "iki": 2, "üç": 3, "uc": 3, "dört": 4, "dort": 4, "beş": 5, "bes": 5, "altı": 6,
               "alti": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
 _NUM_PARTICLE = {0: "sıfır mı", 1: "bir mi", 2: "iki mi", 3: "üç mü", 4: "dört mü", 5: "beş mi", 6: "altı mı", 7: "yedi mi",
@@ -330,6 +350,14 @@ class FlowDriver:
         step = self.steps[key]
         return S.fill(self.texts.get(key, step["defaultText"]), self.values)
 
+    def retry_of(self, key: str) -> str:
+        """Yeniden sorarken okunacak metin: adım `retryText` taşıyorsa yalnız soru cümlesi (uzun açılışı baştan okumaz), yoksa tam metin.
+        Senaryo editöründen metin değiştirildiyse (override) tam metin kullanılır; kısa metin eski soruyu okutmasın."""
+        step = self.steps[key]
+        if step.get("retryText") and key not in self.texts:
+            return S.fill(step["retryText"], self.values)
+        return self.text_of(key)
+
     def _node_event(self, step: dict, spoken: str) -> dict:
         return {"type": "node", "key": step["key"], "code": step["code"], "title": step["title"], "kind": step["kind"],
                 "group": step["group"], "spoken": spoken, "terminal": step["kind"] == "Terminal"}
@@ -399,6 +427,8 @@ class FlowDriver:
             obj, crossed = injection_guard(obj, utterance)
             if crossed is None:
                 obj, crossed = negative_yesno_fix(step, obj, utterance)
+        if crossed is None:
+            obj, crossed = bare_no_fix(step, obj, utterance)
         ok, value = check_value(step, obj) if obj is not None else (False, None)
         intent = obj.get("intent") if ok and obj else "unclear"
         reply.events.append({"type": "understood", "step": key, "intent": intent, "value": value, "llm_s": reply.llm_s,
@@ -423,7 +453,7 @@ class FlowDriver:
             return reply
         if intent == "off_topic" and self.retries < MAX_RETRIES:
             self.retries += 1
-            reply.utterances.append("Sorunuzu not aldım, şimdi anketimize devam edelim. " + self.text_of(key))
+            reply.utterances.append("Sorunuzu not aldım, şimdi anketimize devam edelim. " + self.retry_of(key))
             return reply
         return self._retry(step, reply)
 
@@ -454,7 +484,7 @@ class FlowDriver:
         key = step["key"]
         if self.retries < MAX_RETRIES:
             self.retries += 1
-            q = self.text_of(key)
+            q = self.retry_of(key)
             if self.retries == 1:
                 reply.utterances.append("Özür dilerim, tam anlayamadım. " + q)
             else:
@@ -483,7 +513,7 @@ class FlowDriver:
             return reply
         self.silences += 1
         if self.silences == 1:
-            reply.utterances.append("Sizi duyamadım, sesiniz geliyor mu? " + self.text_of(self.current))
+            reply.utterances.append("Sizi duyamadım, sesiniz geliyor mu? " + self.retry_of(self.current))
             return reply
         if "kapanis_sessiz" in self.steps:
             return self._exit("kapanis_sessiz", reply)
