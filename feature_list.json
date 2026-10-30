@@ -1321,6 +1321,30 @@
       "moscow": "must",
       "status": "not_started",
       "evidence": []
+    },
+    {
+      "id": "ui-001",
+      "plan_ref": "F7",
+      "priority": 91,
+      "area": "lab",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Önyüzü yenile: gruplu menü, koyu/açık tema, Genel Bakış ve Ayarlar",
+      "user_visible_behavior": "Demo için referans arayüze (sahibinden-demo.intalkive.com) benzer kabuk: gruplu sol menü, durum hapları, Yeni Arama düğmesi, tema anahtarı, mobilde çekmece menü; gerçek arama kayıtlarından hesaplanan Genel Bakış; profil/ortam özeti Ayarlar sayfası. Mevcut ekranlar yeni temayı devralır.",
+      "status": "passing",
+      "verification": [
+        "npx tsc --noEmit temiz",
+        "npx vitest run: 81 test geçer (8'i yeni: Genel Bakış KPI/boş durum/aralık, Ayarlar, tema, çekmece, Yeni Arama)",
+        "playwright --project=lab: 6 test geçer (smoke on ekranı gezer)",
+        "Ekran görüntüleri: evidence/ui-001-*.png (Genel Bakış görüntüsü SENTETİK veriyle)"
+      ],
+      "evidence": [
+        "evidence/ui-001-genel-bakis-sentetik-veri.png",
+        "evidence/ui-001-ayarlar.png",
+        "evidence/ui-001-mobil-menu.png",
+        "evidence/ui-001-lab-home.png"
+      ],
+      "notes": "Karar: referanstan YAPI/görünüm alındı (menü grupları, kart ve tablo düzeni, tema), onun senaryo/çağrı-listesi (kuyruk, geri arama, canlı izleme, KVKK) özellikleri alınmadı: bizde backend karşılığı yok, sahte sayfa yapılmadı. Ayarlar salt okunur özet (tek düzenlenebilir: tema); kalıcı ayar deposu yok. Doğrulanmadı/açık: (1) Mac'te gerçek oturum verisiyle Genel Bakış görseli; (2) mevcut sayfaların (TTS/STT/LLM/Persona/Playground) her biri tek tek göz kontrolünden geçmedi, yalnız tema devraldı, Senaryolar ve Aramalar ekranına bakıldı; (3) e2e voice projesi: 3 test başarısız (Ayşe/Elif ajan adı beklentisi core-005 persona değişikliğinden eski kalmış, kabuktan bağımsız; 3 test geçti) henüz düzeltilmedi; (4) Canlı İzleme, Kuyruk, Geri Aramalar, Başarı Kriterleri (dinleyici değerlendirme formu), Görüşme detayında dalga formu/hız seçici yok: ayrı feature gerektirir. Mac'te App.tsx yazılamadığı için eski dosya .git/stage-retune/ altına taşınıp yenisi konuldu."
     }
   ]
 }

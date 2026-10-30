@@ -104,12 +104,13 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Lab iskeleti", () => {
-  it("menüde sekiz ekranı gösterir", () => {
+  it("menüde on ekranı gruplu gösterir", () => {
     mockApi();
     renderAt("/");
     const nav = screen.getByRole("navigation", { name: "Lab ekranları" });
     for (const s of SCREENS) expect(within(nav).getByRole("link", { name: s.label })).toBeInTheDocument();
-    expect(SCREENS).toHaveLength(8);
+    expect(SCREENS).toHaveLength(10);
+    for (const g of ["Genel", "Arama", "Kayıtlar & Raporlar", "Yapılandırma", "Lab araçları"]) expect(within(nav).getByText(g)).toBeInTheDocument();
   });
 
   it("kök yolu ilk ekrana yönlendirir", () => {

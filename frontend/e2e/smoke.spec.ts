@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-const SCREENS = ["TTS stüdyosu", "STT test", "LLM testi", "Senaryolar", "Playground", "Aramalar", "Kıyas matrisi"];
+const SCREENS = ["Genel Bakış", "Playground", "Aramalar", "Kıyas matrisi", "Senaryolar", "Persona", "Ayarlar", "TTS stüdyosu", "STT test", "LLM testi"];
 
-test("Lab açılır, backend bağlı ve yedi ekran arasında gezinilir", async ({ page }) => {
+test("Lab açılır, backend bağlı ve on ekran arasında gezinilir", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Voice Agent Lab" })).toBeVisible();
   await expect(page.getByTestId("backend-status")).toHaveText(/Backend bağlı/);

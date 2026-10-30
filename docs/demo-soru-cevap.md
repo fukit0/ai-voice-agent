@@ -275,3 +275,11 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 **GÜNCEL DURUM (gerçek kayıt, 2026-10-30): çalışıyor DENEMEZ, kısmen çalışıyor.** Kendi sesimizle 33 kayıtta: nefes, kapı, klavye hiç kesmedi; öksürük 5'te 1 kesti (süzgeçsiz 5/5); ama boğaz temizleme 5'te 4 ve "hmm" 3'te 1 hâlâ kesiyor. Sebep: bu sesler perdeli, basit özelliklerle konuşmadan ayrılamıyor; çözüm kısa STT/Silero doğrulaması (yapılmadı).
 Demoda söyle: "Eşikler tek konuşmacı, sınıf başına 5 kayıtla ayarlandı; genellemesi kanıtlanmadı. Süzgeç konuşma kesme hızını bozmuyor (160 ms) ama canlı seviye eşiği −27 dBFS iken konuşmanın bir kısmı zaten eşiğin altında kalıyor." Bunu 'ilk yükleme' gibi bir bahaneyle geçiştirme; sınırlama gerçektir.
 
+## S33. "Arayüz neden böyle? Referans üründeki her şey var mı?" (ui-001, 2026-10-30)
+Kısa cevap: Referans arayüzün yapısını (gruplu menü, kart/tablo düzeni, koyu/açık tema, mobil menü) kullandık; onun özelliklerinin hepsini DEĞİL.
+- Var ve GERÇEK veriyle çalışan: Genel Bakış (arama sayısı, tamamlanma, süre, medyan tepki süresi, söz kesme, sonuç dağılımı; hepsi kayıtlı oturumlardan hesaplanır, veri yoksa boş durum gösterilir), Aramalar/Kıyas, Senaryolar, Persona, Playground, TTS/STT/LLM laboratuvarları.
+- Ayarlar: etkin profil ve ortam anahtarı durumunu gösteren SALT OKUNUR özet; tek düzenlenebilir şey tema. Kalıcı ayar deposu yok, eşikler Playground'da canlı değişir. Demoda "ayarlar kaydedilir" deme.
+- Yok (bilerek): Canlı İzleme, Arama Kuyruğu, Geri Aramalar, Excel dışa aktarma, Başarı Kriterleri'ndeki dinleyici değerlendirme formu, görüşme detayında dalga formu. Bunların backend karşılığı yok; boş sayfa yapıp varmış gibi göstermedik. Demoda bunu "sonraki faz" diye söyle; "ilk yükleme" bahanesi değil, bu sınırlamayı bil.
+- Referanstaki gerçek veri (ör. 18 kişi, %85,7 cevaplanma) bizim değil; ekran görüntülerindeki Genel Bakış `evidence/ui-001-genel-bakis-sentetik-veri.png` SENTETİK veriyle alındı, demoda gerçek kayıtlarla göster.
+- Tepki süresi kartı kırmızı çıkabilir (hedef ≤1,2 sn): bu gerçek ölçümdür, rengi hedefe göre verilir, saklamayız.
+

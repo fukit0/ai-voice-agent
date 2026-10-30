@@ -344,3 +344,11 @@ agents do not update it automatically.
 - Hâlâ bozuk/doğrulanmamış: boğaz temizleme, hmm, öksürük (1), konuşma kayıtlarının seviyesi (2/5 eşik altı), Gemini'de etkisiz, tek konuşmacı aşırı uyum. Durum `blocked` kalır.
 - Sonraki: daha yüksek sesli/çok konuşmacılı kayıt + kısa STT/Silero doğrulaması (ADR 0011 seçenek a/b); söz kesme eşiğini canlı ayarda yeniden düşür.
 
+## Session 2026-10-30 (gece 2): ui-001 önyüz yenileme (passing, açıklı)
+- Kullanıcı: core-016 `blocked` kalsın; önyüz tamamen yenilensin; yerleşik tarayıcıdaki referans uygulama (sahibinden-demo.intalkive.com: Genel Bakış, Görüşmeler + detay, Başarı Kriterleri, Canlı İzleme, Senaryolar, Ayarlar) incelendi.
+- Yapılan: `theme.css` (koyu/açık tema, sarı vurgu), gruplu menü (`screens.ts` group/icon), `App.tsx` kabuğu (durum hapları, Yeni Arama, tema anahtarı, mobil çekmece), yeni `OverviewPage` (KPI + grafikler, /api/calls'tan), yeni `SettingsPage`, `icons.tsx`, `theme.ts`.
+- Kanıt: tsc temiz, vitest 81 geçti, playwright lab 6 geçti, `evidence/ui-001-*.png`.
+- Bilinçli test değişikliği: App.test "sekiz ekran" -> "on ekran, gruplu"; e2e smoke ekran listesi 10'a çıktı (ekran sayısı arttığı için, gevşetme değil).
+- Açık: voice e2e 3 test eski (Ayşe/Elif adı), Mac'te gerçek veriyle görsel kontrol, kalan sayfaların tek tek göz kontrolü, referanstaki Canlı İzleme/Kuyruk/Geri Arama/Başarı Kriterleri formu (backend yok).
+- Çalıştırma: `cd frontend && npm run build` sonra backend'i başlat (dist/ eskidir).
+
