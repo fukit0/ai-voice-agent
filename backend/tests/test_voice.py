@@ -16,6 +16,7 @@ from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+from backend.app.voice.synthsounds import voiced
 from backend.app.providers import registry
 from backend.app.providers.base import STTProvider, STTResult
 from backend.app.providers.fake import FakeLLM, FakeSTT, FakeTTS
@@ -210,7 +211,7 @@ def test_barge_in_flushes_agent_audio_and_listens(tmp_path, monkeypatch):
         await s.start()
         await settle(s)
         assert s.state == "speaking" and out.pushed
-        for f in frames(speech(0.5, amp=0.2)):   # kullanıcı ajanın üstüne konuşuyor
+        for f in frames(voiced(0.5, 0.2)):   # kullanıcı ajanın üstüne konuşuyor (perdeli, konuşma benzeri: core-016 süzgecinden geçer)
             s.feed(f)
         assert s.stats["barge_ins"] == 1 and out.flushed == 1 and not out.pushed
         assert s.state == "listening" and any(e["type"] == "barge_in" for e in events)

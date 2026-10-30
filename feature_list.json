@@ -1099,15 +1099,21 @@
       "moscow": "must",
       "title": "Akıllı söz kesme: öksürük, nefes, klavye gibi konuşma olmayan sesler ajanı kesmesin",
       "user_visible_behavior": "Ajan konuşurken kullanıcı öksürür, boğazını temizler, 'hmm' der veya yakında bir ses olursa ajan susmaz. Gerçek bir konuşma başladığında (kelime benzeri ses) araya girme hâlâ çalışır.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "Öksürük/boğaz temizleme/klavye tıkı/kapı sesi örnekleri (gerçek kayıt, core-013 kaydıyla toplanır) ajanı kesmez; normal konuşma kesme oranı korunur.",
         "Kesme kararı yalnız seviye değil: süre (kısa patlama), spektral özellik (konuşma benzeri/ses perdesi) veya hafif bir doğrulama (Silero VAD ya da kısa STT) ile verilir; seçilen yöntem ve gerekçesi ADR'de.",
         "Söz kesme gecikmesi 500 ms sınırını aşmaz (core-002 ölçümü yeniden koşulur); yanlış kesme/kaçan kesme oranı evidence/core-016-*.json'a yazılır.",
         "Realtime profillerde (OpenAI interrupt_response, Gemini START_OF_ACTIVITY_INTERRUPTS) sunucu VAD'inin aynı sesleri kesmesi için karşılık belirlenir veya 'etkisiz' uyarısı gösterilir."
       ],
-      "evidence": [],
-      "notes": "Kaynak: kullanici geri bildirimi 2026-10-27 - core-015 esigi calisiyor ama 'esigi gecen her seste bolunuyor; oksurursem kesmesin'. Mevcut mantik (vad.py barge_level_db + barge_frames, session.py/realtime.py _on_frame) yalnizca enerji + sure bakar; oksuruk 160 ms'i kolayca asar. Secenekler: (a) Silero VAD (ogrenilmis konusma/gurultu ayrimi; vad.py arayuzu icin ayrilmisti), (b) kesme adayinda ajan sesini azaltip (duck) kisa STT/anahtar dogrulamasi, (c) spektral/ses perdesi sezgisi (zayif). Oneri (a) + gerekirse (b). DOGRULANMAMIS: hicbiri denenmedi."
+      "evidence": [
+        "backend/tests/test_barge_gate.py (21 test, sentetik)",
+        "evidence/core-016-sentetik-20261030-202059.json (süzgeçli: yanlış kesme yok, kaçan kesme yok, medyan kesme 160 ms)",
+        "evidence/core-016-sentetik-legacy-20261030-202059.json (süzgeçsiz karşılaştırma: öksürük/boğaz/kapı/nefes keser)",
+        "scripts/eval_barge_gate.py",
+        "docs/adr/0011-akilli-soz-kesme.md"
+      ],
+      "notes": "Kaynak: kullanici geri bildirimi 2026-10-27 - core-015 esigi calisiyor ama 'esigi gecen her seste bolunuyor; oksurursem kesmesin'. Mevcut mantik (vad.py barge_level_db + barge_frames, session.py/realtime.py _on_frame) yalnizca enerji + sure bakar; oksuruk 160 ms'i kolayca asar. Secenekler: (a) Silero VAD (ogrenilmis konusma/gurultu ayrimi; vad.py arayuzu icin ayrilmisti), (b) kesme adayinda ajan sesini azaltip (duck) kisa STT/anahtar dogrulamasi, (c) spektral/ses perdesi sezgisi (zayif). Oneri (a) + gerekirse (b). DOGRULANMAMIS: hicbiri denenmedi. | 2026-10-30 UYGULANDI (sentetik doğrulama), GERÇEK DOĞRULAMA BEKLİYOR: yöntem (a)/(b)/(c) arasından (c)'nin güçlendirilmiş hâli seçildi: konuşma benzerliği süzgeci (voice/speechlike.py: ses perdesi periyodikliği + sıfır geçiş oranı + ≥400 Hz enerji payı) ve voice/vad.BargeTracker; kesme için seviye+süre (core-015) ARTI koşuda en az 3 sesli (perdeli) çerçeve gerekir; 1,2 sn perdesiz yüksek ses yine keser (süzgeç arayanı susturamaz). session.py ve realtime.py ortak BargeTracker kullanır; stats.barge_blocked ve barge_blocked olayı kanıt sayacıdır; vad ayarı voiced_min (0 = kapalı). Neden Silero değil: bu ortamda model/ONNX indirilip gerçek mikrofonla doğrulanamadı; bağımlılıksız süzgeç PoC'de tekrarlanabilir ve testlidir; Silero aynı BargeTracker arayüzüne takılabilir (ADR 0011). SENTETİK sonuç: 9 konuşma işaretinin 9'u 160 ms'de keser; öksürük, boğaz temizleme, klavye, kapı, nefes 30 işaretin 0'ı keser (süzgeçsiz 24'ü keser). Not: kapı gümbürtüsü ilk denemede yanlış kesti; ≥400 Hz enerji payı özelliği bu bulgudan SONRA eklendi, yani eşikler sentetik işaretlere göre ayarlı (aşırı uyum riski). 9 eski söz kesme testi konuşma yerine beyaz gürültü besliyordu (artık kesmez, bilinçli); bu testlerde işaret konuşma benzeri perdeli sese çevrildi, test zayıflatılmadı; core-015 seviye testi voiced_min=0 ile korundu. Backend 479 test geçti. KALAN: (1) gerçek öksürük/boğaz temizleme/klavye/kapı kayıtları (core-013 ile) etiketli klasöre konup `python scripts/eval_barge_gate.py --dir <klasör>` ile ölçülmeli (konuşma kayıtları speech_*.wav); (2) 'hmm' gibi sesli geri bildirimler perdeli olduğu için hâlâ keser (kısa STT doğrulaması yapılmadı); (3) gerçek telefon/WebRTC yolunda 500 ms sınırı (core-002 ölçümü) yeniden koşulmalı; (4) realtime: OpenAI'de yerel karar (interrupt_response=false) süzgeçten geçer ama gerçek denenmedi, Gemini'de sunucu kendi VAD'iyle keser: süzgeç ETKİSİZ (vad_settings notunda uyarı); (5) Playground arayüzünde voiced_min ayarı ve barge_blocked sayacı gösterilmedi."
     },
     {
       "id": "core-017",

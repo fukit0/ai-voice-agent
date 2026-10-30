@@ -24,7 +24,7 @@ from . import phone
 from . import sttguard
 from .flow import prompt_info
 from .silence import SilenceGuard
-from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
+from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, BargeTracker, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
 
 OUT_RATE = 48000
 GREETING = "Merhaba, ben Ayşe. sahibinden.com adına arıyorum. Size kısa bir anket yapabilir miyim?"
@@ -105,9 +105,10 @@ class VoiceSession:
         self.transcript: list[dict] = []
         self.stats = {"frames_in": 0, "seconds_in": 0.0, "utterances": 0, "dropped": 0, "barge_ins": 0,
                       "agent_seconds_out": 0.0, "peak_in_db": -120.0, "holds": 0, "merged": 0,
-                      "barge_cut_ms": []}
+                      "barge_cut_ms": [], "barge_blocked": 0}
         self._buf = np.zeros(0, np.float32)
         self._turn_id = 0
+        self._barge_gate = BargeTracker(self.vad)
         self._barge = 0
         self._barge_t0 = 0.0
         self._held: tuple[np.ndarray, str, dict, float] | None = None
@@ -143,7 +144,8 @@ class VoiceSession:
     def set_vad(self, cmd: dict) -> None:
         """core-015: ekrandan giriş eşiği / söz kesme ayarı (oturum açıkken, sesi yeniden başlatmadan)."""
         applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
-                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")))
+                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")),
+                                     voiced_min=cmd.get("voiced_min"))
         self.stats["vad"] = applied
         self.emit({"type": "vad_settings", **applied, "server_side": self._server_vad_note(applied)})
 
@@ -185,14 +187,15 @@ class VoiceSession:
         events = self.vad.feed(frame)
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
-            loud = self.vad.level > self.vad.barge_level_db
-            if loud and self._barge == 0:
-                self._barge_t0 = time.perf_counter()
-            self._barge = self._barge + 1 if loud else 0
-            if self._barge >= self.vad.barge_frames:
+            verdict = self._barge_gate.update(frame, time.perf_counter())
+            if verdict == "barge":
+                self._barge_t0 = self._barge_gate.t0
                 self._barge_in()
+            elif verdict == "blocked":      # core-016: konuşma benzeri olmayan yüksek ses (öksürük vb.) ajanı kesmedi
+                self.stats["barge_blocked"] += 1
+                self.emit({"type": "barge_blocked"})
         else:
-            self._barge = 0
+            self._barge_gate.reset()
         for kind, payload in events:
             if kind == "end":
                 if self.state in ("thinking", "speaking"):

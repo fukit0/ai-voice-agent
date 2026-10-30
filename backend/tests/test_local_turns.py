@@ -5,6 +5,7 @@ import numpy as np
 
 from backend.app import scenario as S
 from backend.app.voice.flow import FlowDriver
+from backend.app.voice.synthsounds import voiced
 from backend.app.voice.realtime import FakeRealtime, OpenAIRealtime, RealtimeVoiceSession, TOOL_NAME, make_backend
 from backend.tests.test_realtime import Sent, settle_rt, user_says  # noqa: F401
 from backend.tests.test_voice import FakeOut, env, silence, speech  # noqa: F401
@@ -92,7 +93,7 @@ def test_audio_is_silent_while_agent_speaks_and_barge_in_catches_up_with_the_las
         await settle_rt(s, lambda: s._first_audio is not None)
         await asyncio.sleep(0.1)
         backend.log.clear()
-        s.feed(speech(0.4, amp=0.3))                       # ajan konuşurken müşteri konuşmaya başlar -> söz kesme
+        s.feed(voiced(0.4, 0.3))                           # ajan konuşurken müşteri konuşmaya başlar -> söz kesme
         await asyncio.sleep(0.2)
         assert s.stats["barge_ins"] == 1
         audio = [v for k, v in backend.log if k == "audio"]

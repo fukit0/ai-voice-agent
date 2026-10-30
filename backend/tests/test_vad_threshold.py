@@ -7,6 +7,7 @@ import asyncio
 
 import numpy as np
 
+from backend.app.voice.synthsounds import voiced
 from backend.app.voice.vad import Endpointer
 from backend.app.voice.realtime import OpenAIRealtime
 from backend.tests.test_voice import FRAME, env, frames, make_session, settle, silence  # noqa: F401
@@ -16,6 +17,11 @@ def tone(seconds, db):
     """Verilen RMS seviyesinde (dBFS) gürültü."""
     rng = np.random.default_rng(7)
     return (rng.standard_normal(int(16000 * seconds)) * 10 ** (db / 20)).astype(np.float32)
+
+
+def vtone(seconds, db):
+    """Verilen RMS seviyesinde (dBFS) konuşma benzeri (perdeli) ses: core-016 süzgecinden geçer."""
+    return voiced(seconds, 10 ** (db / 20))
 
 
 def test_default_behavior_is_unchanged():
@@ -34,10 +40,12 @@ def test_configure_clamps_and_reports():
 
 
 def test_noise_burst_barges_at_default_but_not_at_raised_threshold(tmp_path, monkeypatch):
+    """core-015 SEVİYE eşiği davranışı; core-016 konuşma-benzerliği süzgeci kapalı (voiced_min=0 = eski davranış) ölçülür."""
     async def run(db_threshold):
         s, out, events = make_session(tmp_path, monkeypatch)
         await s.start()
         await settle(s)
+        s.set_vad({"voiced_min": 0})
         if db_threshold is not None:
             s.set_vad({"db": db_threshold})
         s.feed(tone(0.2, -35))   # 200 ms gürültü patlaması
@@ -52,7 +60,7 @@ def test_normal_speech_still_barges_at_raised_threshold(tmp_path, monkeypatch):
         await s.start()
         await settle(s)
         s.set_vad({"db": -30})
-        s.feed(tone(0.4, -20))
+        s.feed(vtone(0.4, -20))
         assert s.stats["barge_ins"] == 1
     asyncio.run(main())
 
@@ -65,7 +73,7 @@ def test_noise_does_not_cancel_pending_answer_while_thinking(tmp_path, monkeypat
         before = s._turn_id
         s.feed(tone(0.4, -35))
         assert s._turn_id == before and s.state == "thinking" and s.stats["barge_ins"] == 0
-        s.feed(tone(0.4, -20))                 # normal ses seviyesi bekleyen cevabı iptal eder
+        s.feed(vtone(0.4, -20))                # normal ses seviyesinde konuşma bekleyen cevabı iptal eder
         assert s.stats["barge_ins"] == 1
     asyncio.run(main())
 
@@ -91,9 +99,9 @@ def test_barge_duration_and_margin_are_adjustable_and_saved(tmp_path, monkeypatc
         await s.start()
         await settle(s)
         s.set_vad({"barge_frames": 30})
-        s.feed(tone(0.4, -20))                  # 20 çerçeve < 30: kesmez
+        s.feed(vtone(0.4, -20))                 # 20 çerçeve < 30: kesmez
         assert s.stats["barge_ins"] == 0
-        s.feed(tone(0.4, -20))
+        s.feed(vtone(0.4, -20))
         assert s.stats["barge_ins"] == 1
         ev = [e for e in events if e["type"] == "vad_settings"][-1]
         assert ev["barge_frames"] == 30 and ev["barge_ms"] == 600

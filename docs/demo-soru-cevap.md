@@ -261,3 +261,14 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - Realtime profillerde (A2 vb.) aşama ayrımı yoktur; yalnızca toplam gecikme karşılaştırılır.
 - Ağırlıklı kıyas matrisi ve dinleme puanı (lab-005) henüz yok; bu ekran ölçülmüş sayıları gösterir, kalite puanı vermez.
 - Gerçek arama ile uçtan uca doğrulama (3+ arama, kayıt çalma) henüz yapılmadı.
+
+## S32. "Müşteri öksürürse ya da arkada ses olursa ajan susuyor mu?" (core-016, 2026-10-30)
+
+**Kısa cevap:** Hayır, çoğu durumda susmaz. Ajan artık yalnızca yüksek sese değil, sesin konuşmaya benzeyip benzemediğine (ses perdesi) bakar. Öksürük, boğaz temizleme, klavye, kapı sesi ve nefes ajanı kesmez; gerçek konuşma yine anında (≈160 ms) keser.
+
+**Demoda dürüst olunacak sınırlar (bahane değil, bil):**
+- Doğrulama şimdilik SENTETİK işaretlerle yapıldı (testler + `evidence/core-016-sentetik-*.json`); gerçek öksürük/klavye kayıtlarıyla ölçülmedi. Eşikler bu işaretlere göre ayarlandı.
+- "Hmm" gibi sesli geri bildirimler perdeli olduğu için hâlâ ajanı kesebilir. Çözüm yolu: kısa konuşma tanıma doğrulaması (yapılmadı).
+- Gemini realtime profilinde kesmeyi sunucu yapar; bu süzgeç orada etkisizdir. OpenAI realtime ve cascade profillerinde geçerlidir.
+- Çok uzun (1,2 sn+) perdesiz yüksek ses yine keser: bilerek, arayan hiç duyulamaz hâle gelmesin diye.
+

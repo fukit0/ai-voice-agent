@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from backend.app import scenario as S
 from backend.app.main import app
+from backend.app.voice.synthsounds import voiced
 from backend.app.voice import realtime as R
 from backend.app.voice.flow import FlowDriver
 from backend.app.voice.realtime import (FakeRealtime, GeminiLive, OpenAIRealtime, RealtimeVoiceSession,
@@ -203,7 +204,7 @@ def test_barge_in_flushes_agent_audio_and_interrupts_provider(tmp_path, monkeypa
         s, backend, out, events = build(tmp_path, monkeypatch)
         await s.start()
         await settle_rt(s, lambda: out.pushed)
-        s.feed(speech(0.5, amp=0.2))                         # ajan konuşurken müşteri araya girer
+        s.feed(voiced(0.5, 0.2))                             # ajan konuşurken müşteri araya girer (konuşma benzeri)
         await settle_rt(s, lambda: backend.interrupts == 1)
         ev = next(e for e in events if e["type"] == "barge_in")
         assert ev["cut_ms"] < 150 and out.flushed >= 1 and s.state == "listening"

@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from backend.app import scenario as S
 from backend.app.main import app
+from backend.app.voice.synthsounds import voiced
 from backend.app.providers.base import STTProvider, STTResult
 from backend.app.providers.fake import FakeLLM
 from backend.app.voice import session as session_mod
@@ -123,7 +124,7 @@ def test_barge_in_event_reports_detection_time(tmp_path, monkeypatch):
         s, out, events = make_session(tmp_path, monkeypatch)
         await s.start()
         await settle(s)
-        s.feed(speech(0.5, amp=0.2))
+        s.feed(voiced(0.5, 0.2))
         ev = next(e for e in events if e["type"] == "barge_in")
         assert 0 <= ev["cut_ms"] < 100                  # çerçeveler hızlı beslendi; gerçek zamanda ≈ 200 ms (BARGE_FRAMES)
         assert s.stats["barge_cut_ms"] == [ev["cut_ms"]]
@@ -150,7 +151,8 @@ def test_agent_audio_stops_within_500ms_of_user_speech_over_real_webrtc(env):
     """Ölçüm istemci tarafındadır: kullanıcı konuşmaya başladığı andan, ajan sesinin istemcide kesildiği ana kadar."""
     import av
     from fractions import Fraction
-    rng = np.random.default_rng(3)
+    from scipy.signal import resample_poly
+    v48 = resample_poly(voiced(2.0, 0.1), 3, 1)        # konuşma benzeri (perdeli) 48 kHz işaret: core-016 süzgecinden geçer
 
     class Mic(BargeMic):
         async def recv(self):
@@ -163,7 +165,8 @@ def test_agent_audio_stops_within_500ms_of_user_speech_over_real_webrtc(env):
             loud = self.ONSET <= sec < self.ONSET + 1.5
             if loud and self.onset_wall is None:
                 self.onset_wall = time.time()
-            samples = (rng.standard_normal(960) * 0.1 * 32767).astype(np.int16) if loud else np.zeros(960, np.int16)
+            i = int((sec - self.ONSET) * 48000)
+            samples = (v48[i:i + 960] * 32767).astype(np.int16) if loud and len(v48[i:i + 960]) == 960 else np.zeros(960, np.int16)
             frame = av.AudioFrame.from_ndarray(samples.reshape(1, -1), format="s16", layout="mono")
             frame.sample_rate, frame.pts, frame.time_base = 48000, self.n, Fraction(1, 48000)
             return frame

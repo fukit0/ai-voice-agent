@@ -10,11 +10,15 @@ from collections import deque
 
 import numpy as np
 
+from .speechlike import is_voiced
+
 SAMPLE_RATE = 16000
 FRAME = 320  # 20 ms
 BARGE_FRAMES = 8        # 160 ms kesintisiz yüksek ses: söz kesme (200 ms iken istemci ölçümü ≈380 ms; tarayıcı jitter payı için kısaltıldı)
 BARGE_MARGIN_DB = 6.0
 MANUAL_RANGE_DB = (-70.0, -10.0)
+VOICED_MIN = 3          # core-016: söz kesme için kesintisiz yüksek ses içinde en az bu kadar SESLİ (perdeli) çerçeve gerekir (0 = süzgeç kapalı, eski davranış)
+FORCE_FRAMES = 60       # 1,2 sn kesintisiz yüksek ses perdesiz olsa da (fısıltı/çok gürültülü hat) kesilir: süzgeç ajanı sonsuza dek susturamaz
 
 
 def level_db(frame: np.ndarray) -> float:
@@ -37,6 +41,8 @@ class Endpointer:
         self.manual_db: float | None = None   # core-015: ekrandan elle eşik (dBFS); None = uyarlanır eşik (eski davranış)
         self.barge_frames = BARGE_FRAMES      # söz kesme için kesintisiz yüksek ses süresi (20 ms çerçeve)
         self.barge_margin_db = BARGE_MARGIN_DB
+        self.voiced_min = VOICED_MIN          # core-016 akıllı söz kesme: konuşma benzeri (perdeli) çerçeve sayısı; 0 = kapalı
+        self.force_frames = FORCE_FRAMES
         self.level = -120.0
         self.collecting = False
         self._run = 0       # ardışık konuşma çerçevesi (başlangıç doğrulaması)
@@ -60,9 +66,11 @@ class Endpointer:
         base = self.threshold_db if self.manual_db is not None else max(self.threshold_db, -45.0)
         return base + self.barge_margin_db
 
-    def configure(self, threshold_db=None, barge_frames=None, barge_margin_db=None, reset_threshold=False) -> dict:
+    def configure(self, threshold_db=None, barge_frames=None, barge_margin_db=None, reset_threshold=False, voiced_min=None) -> dict:
         """Çalışırken ayar (core-015). Değerler güvenli aralığa kırpılır; ne uygulandıysa döndürülür."""
         lo, hi = MANUAL_RANGE_DB
+        if voiced_min is not None:
+            self.voiced_min = max(0, min(20, int(voiced_min)))
         if reset_threshold:
             self.manual_db = None
         elif threshold_db is not None:
@@ -76,7 +84,8 @@ class Endpointer:
     def settings(self) -> dict:
         return {"threshold_db": None if self.manual_db is None else round(self.manual_db, 1),
                 "effective_threshold_db": round(self.threshold_db, 1), "barge_frames": self.barge_frames,
-                "barge_margin_db": self.barge_margin_db, "barge_ms": self.barge_frames * 20}
+                "barge_margin_db": self.barge_margin_db, "barge_ms": self.barge_frames * 20,
+                "voiced_min": self.voiced_min, "force_ms": self.force_frames * 20}
 
     def is_speech(self, frame: np.ndarray) -> bool:
         self.level = level_db(frame)
@@ -117,3 +126,40 @@ class Endpointer:
         self._frames = []
         self._speech_frames = 0
         self.preroll.clear()
+
+
+class BargeTracker:
+    """Söz kesme kararı (core-016): kesintisiz yüksek ses (seviye + süre, core-015) ARTI konuşma benzerliği.
+    Seviye eşiğini geçen ama perdesi olmayan patlama (öksürük, boğaz temizleme, klavye, kapı, nefes) ajanı kesmez; kesme
+    yalnızca koşuda `voiced_min` kadar sesli çerçeve görülünce olur (ya da koşu `force_frames`'i aşınca). `voiced_min=0` eski davranıştır.
+    `update` -> "barge" (kes) | "blocked" (kesmeyecek bir gürültü koşusu bitti; kanıt sayacı) | None. session.py ve realtime.py ortak kullanır."""
+
+    def __init__(self, vad: Endpointer):
+        self.vad = vad
+        self.reset()
+
+    def reset(self) -> None:
+        self.run = 0
+        self.voiced = 0
+        self.t0 = 0.0
+        self.fired = False
+
+    def update(self, frame: np.ndarray, now: float) -> str | None:
+        v = self.vad
+        loud = v.level > v.barge_level_db
+        if not loud:
+            blocked = self.run >= v.barge_frames and not self.fired    # eski mantıkla kesecekti, süzgeç engelledi
+            self.reset()
+            return "blocked" if blocked else None
+        if self.run == 0:
+            self.t0, self.voiced, self.fired = now, 0, False
+        self.run += 1
+        if v.voiced_min > 0 and is_voiced(frame):
+            self.voiced += 1
+        if self.fired or self.run < v.barge_frames:
+            return None
+        if v.voiced_min == 0 or self.voiced >= v.voiced_min or self.run >= v.force_frames:
+            self.fired = True
+            return "barge"
+        return None
+

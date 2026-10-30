@@ -33,7 +33,7 @@ from . import phone, sttguard
 from .flow import INTENTS, answer_rule
 from .session import END_MS_DEFAULT, END_MS_OPEN, OUT_RATE, to_int16
 from .silence import SilenceGuard
-from .vad import FRAME, SAMPLE_RATE, Endpointer
+from .vad import FRAME, SAMPLE_RATE, BargeTracker, Endpointer
 
 SPEAK_TIMEOUT_S = 10.0
 TOOL_NAME = "report_answer"
@@ -56,6 +56,9 @@ INSTRUCTIONS = (
 )
 OPENAI_URL = "wss://api.openai.com/v1/realtime"
 GEMINI_URL = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
+
+
+DEVIATION_THRESHOLD = 0.95
 
 
 def speak_instruction(text: str, rule: str | None = None) -> str:
@@ -103,9 +106,17 @@ class RealtimeBackend:
     def __init__(self, model: str):
         self.model = model
         self.rule: str | None = None
+        self.question: str | None = None
+        self.user_items: list[str] = []
 
-    def set_answer_rule(self, rule: str | None) -> None:
+    def set_answer_rule(self, rule: str | None, question: str | None = None) -> None:
         self.rule = rule
+        self.question = question          # core-024: cevap isteğine sorulan soru verilir (model soruyu söylemediği için bağlamında yok)
+        self.user_items: list[str] = []   # core-024: bu turda biriken müşteri ses öğeleri (cevap bildirilince bağlamdan silinir)
+
+    async def forget_user_items(self) -> None:
+        """core-024: cevap bildirildikten sonra müşteri ses öğeleri sunucu bağlamından silinir (eski cümleler sonraki cevabı kirletmesin)."""
+        self.user_items = []
 
     local_turns = False    # core-018: True ise tur sınırlarını sunucu değil yerel VAD belirler (commit + cevap isteği)
 
@@ -237,6 +248,8 @@ class OpenAIRealtime(_WsBackend):
     async def request_answer(self) -> None:
         """Müşteri konuştu: ses çıkarmadan yalnızca report_answer çağrısı iste."""
         instr = "Müşterinin az önceki cevabını report_answer fonksiyonuyla bildir."
+        if self.question:
+            instr += f" Müşteriye şu soru soruldu: «{self.question}». Yalnızca müşterinin SON cevabına bak, önceki cümleleri yok say."
         if self.rule:
             instr += f" value kuralı: {self.rule}."
         await self._send({"type": "response.create", "response": {
@@ -246,6 +259,11 @@ class OpenAIRealtime(_WsBackend):
     async def tool_result(self, call_id: str, name: str) -> None:
         await self._send({"type": "conversation.item.create", "item": {
             "type": "function_call_output", "call_id": call_id, "output": json.dumps({"ok": True})}})
+
+    async def forget_user_items(self) -> None:
+        ids, self.user_items = self.user_items, []
+        for item_id in ids:
+            await self._send({"type": "conversation.item.delete", "item_id": item_id})
 
     async def speak(self, text: str, rule: str | None) -> None:
         self.rule = rule
@@ -269,6 +287,8 @@ class OpenAIRealtime(_WsBackend):
             return [{"type": "agent_text", "text": msg.get("transcript", "")}]
         if t == "conversation.item.input_audio_transcription.completed":
             return [{"type": "user_text", "text": msg.get("transcript", "")}]
+        if t == "input_audio_buffer.committed" and msg.get("item_id"):
+            return [{"type": "user_item", "id": msg["item_id"]}]
         if t == "input_audio_buffer.speech_started":
             return [{"type": "speech_started"}]
         if t == "input_audio_buffer.speech_stopped":
@@ -466,13 +486,14 @@ class RealtimeVoiceSession:
         self.turns: list[dict] = []
         self.transcript: list[dict] = []
         self.stats = {"frames_in": 0, "seconds_in": 0.0, "utterances": 0, "dropped": 0, "barge_ins": 0,
-                      "agent_seconds_out": 0.0, "peak_in_db": -120.0, "holds": 0, "merged": 0, "barge_cut_ms": [],
+                      "agent_seconds_out": 0.0, "peak_in_db": -120.0, "holds": 0, "merged": 0, "barge_cut_ms": [], "barge_blocked": 0,
                       "tool_calls": 0, "invalid_tool_calls": 0, "realtime": backend.kind}
         self._buf = np.zeros(0, np.float32)
         self._send_q: asyncio.Queue[bytes | str | None] = asyncio.Queue()    # bytes: ses; "clear" / "answer": sıralı komut
         self._ring: deque[np.ndarray] = deque(maxlen=20)                      # ajan konuşurken son 400 ms ham ses (söz kesmede sunucuya yetiştirilir)
         self._tasks: list[asyncio.Task] = []
         self._barge = 0
+        self._barge_gate = BargeTracker(self.vad)
         self._barge_t0 = 0.0
         self._t_end: float | None = None        # yerel VAD'ın konuşma bitişini ilan ettiği an
         self._t_tool: float | None = None
@@ -537,7 +558,7 @@ class RealtimeVoiceSession:
         rule = None
         if not self.flow.finished and self.flow.current is not None:
             rule = answer_rule(self.flow.steps[self.flow.current])
-        self.backend.set_answer_rule(rule)
+        self.backend.set_answer_rule(rule, text)
         self._say("agent", text)
         self._last_spoken = text
         self._expect = "speak"
@@ -588,7 +609,8 @@ class RealtimeVoiceSession:
     def set_vad(self, cmd: dict) -> None:
         """core-015: yerel eşik anında; sunucu VAD'i (OpenAI) varsa yaklaşık karşılığıyla session.update ile güncellenir."""
         applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
-                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")))
+                                     barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")),
+                                     voiced_min=cmd.get("voiced_min"))
         self.stats["vad"] = applied
         note = self._server_vad_note(applied)
         self.emit({"type": "vad_settings", **applied, "server_side": note})
@@ -597,7 +619,7 @@ class RealtimeVoiceSession:
         if self.backend.local_turns:
             return "Tur yönetimi yerel (sunucu VAD'ı kapalı): eşik doğrudan konuşma başlangıç/bitişini ve söz kesmeyi belirler."
         if not hasattr(self.backend, "set_sensitivity"):
-            return "Bu profilde sunucu VAD'i ayarlanamıyor: eşik yalnızca yerel söz kesmeyi/uç noktayı etkiler; sunucu kendi VAD'iyle kesebilir."
+            return "Bu profilde sunucu VAD'i ayarlanamıyor: eşik yalnızca yerel söz kesmeyi/uç noktayı etkiler; sunucu kendi VAD'iyle kesebilir; akıllı söz kesme süzgeci (core-016) bu profilde ETKİSİZDİR (öksürük sunucuyu tetikleyebilir)."
         db = applied["effective_threshold_db"]
         thr = self.backend.set_sensitivity(db)
         try:
@@ -639,14 +661,15 @@ class RealtimeVoiceSession:
         events = self.vad.feed(frame)
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
-            loud = self.vad.level > self.vad.barge_level_db
-            if loud and self._barge == 0:
-                self._barge_t0 = time.perf_counter()
-            self._barge = self._barge + 1 if loud else 0
-            if self._barge >= self.vad.barge_frames and self._first_audio is not None:   # ajan gerçekten konuşuyorsa söz kesme
+            verdict = self._barge_gate.update(frame, time.perf_counter())
+            if verdict == "barge" and self._first_audio is not None:   # ajan gerçekten konuşuyorsa söz kesme
+                self._barge_t0 = self._barge_gate.t0
                 self._barge_in()
+            elif verdict == "blocked":      # core-016: konuşma benzeri olmayan yüksek ses ajanı kesmedi
+                self.stats["barge_blocked"] += 1
+                self.emit({"type": "barge_blocked"})
         else:
-            self._barge = 0
+            self._barge_gate.reset()
         for kind, _ in events:
             if kind == "end" and self.state == "listening":
                 self.stats["utterances"] += 1
@@ -749,6 +772,8 @@ class RealtimeVoiceSession:
                 self._set_state("thinking")
                 if self.backend.auto_answer:
                     await self.backend.request_answer()
+        elif t == "user_item":
+            self.backend.user_items.append(ev["id"])
         elif t == "agent_text":
             # modelin gerçekte söylediği (transkript): sadakat ölçümü. Transkripte biz verdiğimiz metni yazıyoruz; sapma burada görünür.
             self._rec["agent_said"] = (self._rec.get("agent_said", "") + " " + ev["text"]).strip()
@@ -809,6 +834,7 @@ class RealtimeVoiceSession:
             self._rec["answer_s"] = round(self._t_tool - self._t_end, 3)
         try:
             await self.backend.tool_result(ev["id"], TOOL_NAME)
+            await self.backend.forget_user_items()
         except Exception:  # noqa: BLE001
             pass
         await self._deliver(self._apply(obj))
@@ -817,6 +843,8 @@ class RealtimeVoiceSession:
         reply = self.flow.handle_structured(obj, self._last_user)
         if any(e.get("type") == "understood" and not e.get("valid") for e in reply.events):
             self.stats["invalid_tool_calls"] += 1     # model yanlış tipte/bozuk değer bildirdi
+        if any(e.get("type") == "crosscheck" for e in reply.events):
+            self.stats["crosschecks"] = self.stats.get("crosschecks", 0) + 1   # core-024: model bildirimi transkriptle çelişti, düzeltildi
         return reply
 
     async def _on_response_done(self) -> None:
@@ -846,6 +874,11 @@ class RealtimeVoiceSession:
             import difflib
             norm = lambda s: " ".join("".join(ch for ch in s.casefold() if ch.isalnum() or ch.isspace()).split())  # noqa: E731
             self._rec["verbatim"] = round(difflib.SequenceMatcher(None, norm(self._last_spoken), norm(self._rec["agent_said"])).ratio(), 3)
+            if self._rec["verbatim"] < DEVIATION_THRESHOLD:
+                # core-024: model okunacak metinden saptı (yalnız model konuştuysa olur: sabit ses 1,0). Olay + sayaç; müşteri cevabı
+                # bu soruya göre yorumlanır, o yüzden izlenir.
+                self.stats["deviations"] = self.stats.get("deviations", 0) + 1
+                self.emit({"type": "speech_deviation", "turn": self._rec.get("turn"), "verbatim": self._rec["verbatim"]})
         if self._rec:
             self.turns.append(self._rec)
             self.emit({"type": "turn", **self._rec})

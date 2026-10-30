@@ -330,3 +330,11 @@ agents do not update it automatically.
 - Doğrulanmadı: gerçek LLM/STT ile yeniden deneme; ElevenLabs ile kısa tekrar cümlesinin sesi; core-012 holdout yeniden ölçümü (set bilerek değiştirilmedi).
 - Sonraki: kullanıcı Mac'te "İstemiyorum." ve "Debiyorum." (STT çöpü) ile dener.
 
+## Session 2026-10-30 (gece): core-016 akıllı söz kesme (blocked: gerçek kayıt bekliyor)
+
+- Yapıldı: `voice/speechlike.py` (perde periyodikliği + sıfır geçiş + ≥400 Hz payı), `vad.BargeTracker` (session.py ve realtime.py ortak), `voiced_min` ayarı, `stats.barge_blocked` + `barge_blocked` olayı, Gemini için "etkisiz" notu, `voice/synthsounds.py`, `scripts/eval_barge_gate.py`, ADR 0011, 21 yeni test (backend 479 geçti).
+- Sentetik ölçüm: konuşma 9/9 keser (160 ms); öksürük/boğaz/klavye/kapı/nefes 0/30 keser; süzgeçsiz 24/30 keser. Kapı bulgusu sonrası 3. özellik eklendi (aşırı uyum riski, ADR'de).
+- Beklenti değişikliği: 9 eski söz kesme testi beyaz gürültüyü "konuşma" sayıyordu; perdeli konuşma benzeri sese çevrildi (test zayıflatılmadı; core-015 seviye testi voiced_min=0 ile korundu).
+- Doğrulanmadı: gerçek öksürük/klavye/kapı kayıtları, 'hmm', WebRTC/telefon yolunda 500 ms, OpenAI realtime canlı, Playground arayüzünde voiced_min/barge_blocked gösterimi yok.
+- Sonraki: kullanıcı core-013 kaydıyla etiketli kayıt toplar (`cough_1.wav`, `speech_1.wav` ...) → `python scripts/eval_barge_gate.py --dir <klasör>` → sonuca göre eşik/Silero kararı.
+
