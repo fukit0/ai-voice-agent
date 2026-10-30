@@ -285,10 +285,16 @@ export type ToneDemoResult = {
 export type VoiceRow = {
   voice_id: string; name: string; description: string; preview_url: string | null; source: "account" | "library";
   public_owner_id: string | null; tags: string[];
+  gender?: string; age?: string; accent?: string; descriptive?: string; use_case?: string; category?: string;
+  cloned_by_count?: number | null;
 };
-export type VoiceList = { voices: VoiceRow[]; assigned: Record<string, string> };
-export const fetchVoices = (search = "", library = true) =>
-  personaCall<VoiceList>(`/api/persona/voices?library=${library}${search ? `&search=${encodeURIComponent(search)}` : ""}`);
+export type VoiceList = { voices: VoiceRow[]; assigned: Record<string, string>; has_more?: boolean; page?: number };
+export type VoiceQuery = { gender?: string; age?: string; use_case?: string; sort?: string; page?: number };
+export const fetchVoices = (search = "", library = true, q: VoiceQuery = {}) => {
+  const extra = Object.entries(q).filter(([, v]) => v !== undefined && v !== "" && v !== 0)
+    .map(([k, v]) => `&${k}=${encodeURIComponent(String(v))}`).join("");
+  return personaCall<VoiceList>(`/api/persona/voices?library=${library}${search ? `&search=${encodeURIComponent(search)}` : ""}${extra}`);
+};
 export const assignVoices = (voices: Record<string, string>) =>
   personaCall<{ assigned: Record<string, string> }>("/api/persona/tones/voices", "PUT", { voices });
 export const addLibraryVoice = (v: { public_owner_id: string; voice_id: string; name: string }) =>

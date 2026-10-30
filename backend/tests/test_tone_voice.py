@@ -239,6 +239,42 @@ def test_list_voices_merges_account_and_turkish_library(data, monkeypatch):
     assert client.get("/api/persona/voices").status_code == 400
 
 
+def test_list_voices_filters_sort_and_page(data, monkeypatch):
+    from backend.app.providers import remote
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    seen = []
+
+    class Res:
+        def __init__(self, body): self.body = body
+        def json(self): return self.body
+
+    def fake_get(url, **kw):
+        seen.append((url, kw["params"]))
+        if "shared-voices" in url:
+            return Res({"has_more": True, "voices": [{"voice_id": "libses1234567", "public_owner_id": "owner12345678", "name": "Gökçe",
+                                                      "gender": "female", "age": "young", "accent": "standard", "descriptive": "cheerful",
+                                                      "use_case": "social_media", "cloned_by_count": 321, "preview_url": "http://x/p.mp3"}]})
+        return Res({"voices": [{"voice_id": "hesapses12345", "name": "Erkek", "labels": {"gender": "male", "age": "old"}},
+                               {"voice_id": "hesapses67890", "name": "Kadın", "labels": {"gender": "female"}}]})
+
+    monkeypatch.setattr(remote, "_get", fake_get)
+    r = client.get("/api/persona/voices?gender=female&age=young&use_case=social_media&sort=popular&search=g").json()
+    lib = [p for u, p in seen if "shared-voices" in u][0]
+    assert lib["gender"] == "female" and lib["age"] == "young" and lib["use_cases"] == "social_media"
+    assert lib["sort"] == "cloned_by_count" and lib["search"] == "g" and lib["page"] == 0
+    row = r["voices"][-1]
+    assert (row["gender"], row["age"], row["accent"], row["descriptive"], row["use_case"], row["cloned_by_count"]) == (
+        "female", "young", "standard", "cheerful", "social_media", 321)
+    assert r["has_more"] is True
+    # hesap sesleri istemci tarafında değil sunucuda süzülür: yaş=young olan hesap sesi yok
+    assert [v["name"] for v in r["voices"] if v["source"] == "account"] == []
+    # ikinci sayfa yalnız kütüphane sesi getirir (hesap sesleri tekrar edilmez)
+    seen.clear()
+    r2 = client.get("/api/persona/voices?page=1").json()
+    assert [u for u, _ in seen] == ["https://api.elevenlabs.io/v1/shared-voices"] and r2["page"] == 1
+    assert client.get("/api/persona/voices?sort=bogus").status_code == 400
+
+
 def test_add_library_voice_validates_ids_and_posts(data, monkeypatch):
     from backend.app.providers import remote
     sent = []

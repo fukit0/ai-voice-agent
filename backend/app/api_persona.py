@@ -124,30 +124,44 @@ def _eleven_headers() -> dict:
 
 def _voice_row(v: dict, source: str) -> dict:
     labels = v.get("labels") or {}
+    pick = lambda k: labels.get(k) or v.get(k) or ""  # noqa: E731 - hesap sesleri labels içinde, kütüphane sesleri üst düzeyde döner
+    gender, age, descriptive, use_case, accent = (pick(k) for k in ("gender", "age", "descriptive", "use_case", "accent"))
     return {"voice_id": v.get("voice_id"), "name": v.get("name"), "description": v.get("description") or "",
             "preview_url": v.get("preview_url"), "source": source, "public_owner_id": v.get("public_owner_id"),
-            "tags": [x for x in (labels.get("gender") or v.get("gender"), labels.get("age") or v.get("age"),
-                                 labels.get("descriptive") or v.get("descriptive"), labels.get("use_case") or v.get("use_case")) if x]}
+            "gender": gender, "age": age, "accent": accent, "descriptive": descriptive, "use_case": use_case,
+            "category": v.get("category") or "", "cloned_by_count": v.get("cloned_by_count"),
+            "tags": [x for x in (gender, age, descriptive, use_case) if x]}
+
+
+_SORTS = {"trending": "trending", "popular": "cloned_by_count", "newest": "created_date", "usage": "usage_character_count_1y"}
 
 
 @router.get("/voices")
-def list_voices(search: str = "", library: bool = True) -> dict:
-    """ElevenLabs sesleri: hesaptakiler + (istenirse) Türkçe kütüphane sesleri; dinleme klibi, etiketler ve mevcut ton atamaları."""
+def list_voices(search: str = "", library: bool = True, gender: str = "", age: str = "", use_case: str = "",
+                sort: str = "trending", page: int = 0) -> dict:
+    """ElevenLabs sesleri: hesaptakiler + (istenirse) Türkçe kütüphane sesleri; arama, cinsiyet/yaş/kullanım filtresi, sıralama,
+    sayfalama; dinleme klibi, yapısal etiketler ve mevcut ton atamaları. Sayfa yalnız kütüphane sesleri için ilerler (hesap sesleri ilk sayfada)."""
     from .providers import ProviderError
     from .providers.remote import _get
-    headers, rows = _eleven_headers(), []
+    if sort not in _SORTS:
+        raise HTTPException(400, {"error": "bad_sort", "message": f"sort şunlardan biri olmalı: {', '.join(_SORTS)}."})
+    headers, rows, has_more = _eleven_headers(), [], False
+    q = {"search": search} if search else {}
     try:
-        mine = _get("https://api.elevenlabs.io/v2/voices", headers=headers,
-                    params={"page_size": 100, **({"search": search} if search else {})}).json().get("voices", [])
-        rows += [_voice_row(v, "account") for v in mine]
+        if page == 0:
+            mine = _get("https://api.elevenlabs.io/v2/voices", headers=headers, params={"page_size": 100, **q}).json().get("voices", [])
+            rows += [_voice_row(v, "account") for v in mine
+                     if all(not want or want == (_voice_row(v, "account")[k]) for k, want in (("gender", gender), ("age", age), ("use_case", use_case)))]
         if library:
-            shared = _get("https://api.elevenlabs.io/v1/shared-voices", headers=headers,
-                          params={"language": "tr", "page_size": 40, **({"search": search} if search else {})}).json().get("voices", [])
+            flt = {k: val for k, val in (("gender", gender), ("age", age), ("use_cases", use_case)) if val}
+            body = _get("https://api.elevenlabs.io/v1/shared-voices", headers=headers,
+                        params={"language": "tr", "page_size": 30, "page": max(0, page), "sort": _SORTS[sort], **flt, **q}).json()
             have = {r["voice_id"] for r in rows}
-            rows += [_voice_row(v, "library") for v in shared if v.get("voice_id") not in have]
+            rows += [_voice_row(v, "library") for v in body.get("voices", []) if v.get("voice_id") not in have]
+            has_more = bool(body.get("has_more"))
     except ProviderError as exc:
         raise HTTPException(502, {"error": "provider_failed", "message": str(exc)}) from exc
-    return {"voices": rows, "assigned": TV.voices()}
+    return {"voices": rows, "assigned": TV.voices(), "has_more": has_more, "page": page}
 
 
 @router.put("/tones/voices")
