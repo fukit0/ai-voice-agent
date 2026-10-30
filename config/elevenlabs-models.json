@@ -1,0 +1,18 @@
+{
+  "source": "https://elevenlabs.io/pricing/api (resmî API fiyat sayfası, İtalyanca sürüm), kontrol: 2026-10-30",
+  "price_note": "Fiyatlar 1.000 karakter başına USD, sayfadaki liste fiyatıdır; plan/kota/kurumsal anlaşma ve kredi sistemi farklı olabilir. Bir haber sitesi v4 ile v4 Turbo arasında fiyat farkı olmadığını yazıyor; resmî sayfa farklı gösteriyor, resmî sayfa esas alındı. Faturayı gerçek hesabınızda doğrulayın.",
+  "models": [
+    {"id": "eleven_flash_v2_5", "label": "Flash v2.5", "price_per_1k_usd": 0.04, "latency_note": "~75 ms (ultra düşük)", "tags": false,
+     "tone_levers": "kararlılık, hız, ses seçimi", "notes": "Canlı hat için en hızlı; ses etiketi yok. Sayfada 'Flash / Turbo' tek satır."},
+    {"id": "eleven_turbo_v2_5", "label": "Turbo v2.5", "price_per_1k_usd": 0.04, "latency_note": "Flash'tan biraz yavaş (sayfada ayrı değer yok)", "tags": false,
+     "tone_levers": "kararlılık, hız, ses seçimi", "notes": "Resmî sayfada ayrı satırı yok ('Flash / Turbo' altında); fiyat bu satırdan alındı, doğrulanmadı."},
+    {"id": "eleven_multilingual_v2", "label": "Multilingual v2", "price_per_1k_usd": 0.08, "latency_note": "belirtilmemiş (ölçümde ~0,9 sn tam klip)", "tags": false,
+     "tone_levers": "kararlılık, stil, hız, ses seçimi", "notes": "Stil etkili; canlı hat için yavaş."},
+    {"id": "eleven_v3", "label": "v3", "price_per_1k_usd": 0.08, "latency_note": "belirtilmemiş (ölçümde 3-4 sn tam klip)", "tags": true,
+     "tone_levers": "ses etiketleri, kararlılık", "notes": "Canlı hat için önerilmiyor."},
+    {"id": "eleven_v4", "label": "v4", "price_per_1k_usd": 0.08, "latency_note": "belirtilmemiş", "tags": true,
+     "tone_levers": "ses etiketleri", "notes": "Model kimliği ve Türkçe davranışı bu uygulamada denenmedi."},
+    {"id": "eleven_v4_turbo", "label": "v4 Turbo", "price_per_1k_usd": 0.04, "latency_note": "~100 ms çıkarım, ~150 ms ilk konuşma (ElevenLabs duyurusu)", "tags": true,
+     "tone_levers": "ses etiketleri, kararlılık, hız, ses seçimi", "notes": "Kullanıcı dinlemesinde ton farkı en çok burada duyuldu."}
+  ]
+}

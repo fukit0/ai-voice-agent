@@ -254,6 +254,52 @@ def test_add_library_voice_validates_ids_and_posts(data, monkeypatch):
     assert bad.status_code == 422
 
 
+def test_model_matrix_has_prices_and_tag_flags():
+    m = client.get("/api/persona/model-matrix").json()
+    by = {x["id"]: x for x in m["models"]}
+    assert {"eleven_flash_v2_5", "eleven_turbo_v2_5", "eleven_v4_turbo", "eleven_v3", "eleven_multilingual_v2"} <= set(by)
+    assert by["eleven_flash_v2_5"]["price_per_1k_usd"] == 0.04 and by["eleven_v3"]["price_per_1k_usd"] == 0.08
+    assert by["eleven_v4_turbo"]["tags"] is True and by["eleven_flash_v2_5"]["tags"] is False and "2026-10-30" in m["source"]
+
+
+def test_tts_lab_streams_measures_and_prices(data, monkeypatch):
+    from backend.app.providers import remote
+    calls = []
+
+    def fake_stream(url, **kw):
+        calls.append((url, kw["json"], kw["params"]))
+        pcm = (np.sin(np.arange(24000) / 20) * 8000).astype("<i2").tobytes()
+        return (0.12 + 0.01 * len(calls), 0.5, pcm)
+
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
+    monkeypatch.setattr(remote, "_post_stream", fake_stream)
+    r = client.post("/api/persona/tts-lab", json={"text": "Merhaba Ahmet Bey.", "model": "eleven_v4_turbo",
+                                                  "voice_id": "ozelses123456", "tone": "enerjik", "runs": 3})
+    assert r.status_code == 200, r.text
+    b = r.json()
+    assert calls[0][0].endswith("/text-to-speech/ozelses123456/stream") and len(calls) == 3
+    assert b["sent_text"] == "[excited] Merhaba Ahmet Bey." and b["chars"] == len("[excited] Merhaba Ahmet Bey.")   # etiket de faturalanır
+    assert b["cost_usd"] == round(b["chars"] * 0.04 / 1000, 5) and b["median_first_audio_seconds"] == 0.14
+    assert b["runs"][0]["audio_seconds"] == 1.0 and client.get(b["runs"][0]["url"]).content[:4] == b"RIFF"
+    assert calls[0][1]["seed"] == 1234 and calls[0][1]["voice_settings"]["stability"] == 0.25
+    flash = client.post("/api/persona/tts-lab", json={"text": "abcd", "model": "eleven_flash_v2_5", "voice_id": "ozelses123456", "tone": "enerjik"}).json()
+    assert flash["sent_text"] == "abcd" and flash["cost_usd"] == round(4 * 0.04 / 1000, 5)      # Flash'ta etiket yok
+
+
+def test_tts_lab_validation_and_missing_config(data, monkeypatch):
+    monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
+    monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+    ok = {"text": "a", "model": "eleven_flash_v2_5"}
+    assert client.post("/api/persona/tts-lab", json=ok).status_code == 400                     # anahtar yok
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    assert client.post("/api/persona/tts-lab", json=ok).status_code == 400                     # ses yok
+    assert client.post("/api/persona/tts-lab", json={**ok, "model": "../x"}).status_code == 422
+    assert client.post("/api/persona/tts-lab", json={**ok, "voice_id": "../etc"}).status_code == 422
+    assert client.post("/api/persona/tts-lab", json={**ok, "tone": "kaba", "voice_id": "ozelses123456"}).status_code == 422
+    assert client.post("/api/persona/tts-lab", json={**ok, "runs": 9}).status_code == 422
+
+
 def test_tone_map_put_validates_and_resets(data):
     bad = client.put("/api/persona/tones", json={"params": {"ema": {"default": {"samimi": {"speed": 9}}}}})
     assert bad.status_code == 422

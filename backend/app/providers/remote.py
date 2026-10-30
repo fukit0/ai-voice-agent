@@ -26,6 +26,29 @@ def _post(url: str, **kwargs):
     return res
 
 
+def _post_stream(url: str, **kwargs) -> tuple[float, float, bytes]:
+    """Akışlı POST: (ilk ses baytına kadar sn, toplam sn, gövde). Canlı hatta önemli olan ilk ses süresini ölçer."""
+    import httpx
+
+    t0 = time.perf_counter()
+    first, chunks = None, []
+    try:
+        with httpx.stream("POST", url, timeout=kwargs.pop("timeout", 60), **kwargs) as res:
+            if res.status_code >= 400:
+                res.read()
+                raise ProviderError(f"{url} HTTP {res.status_code}: {res.text[:200]}")
+            for chunk in res.iter_bytes():
+                if chunk and first is None:
+                    first = time.perf_counter() - t0
+                chunks.append(chunk)
+    except ProviderError:
+        raise
+    except Exception as exc:
+        raise ProviderError(f"{url} çağrısı başarısız: {exc}") from exc
+    total = time.perf_counter() - t0
+    return (first if first is not None else total), total, b"".join(chunks)
+
+
 def _get(url: str, **kwargs):
     import httpx
 
@@ -115,10 +138,10 @@ class ElevenLabsTTS(TTSProvider):
     required_env = ("ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID")
     SAMPLE_RATE = 24000
 
-    def synthesize(self, text, language="tr", speed=1.0, tone=None):
+    def request(self, text, language="tr", speed=1.0, tone=None, voice=None):
+        """İstek gövdesi ve ses kimliği (synthesize ve TTS laboratuvarı ortak kullanır). `voice` verilirse en yüksek öncelik."""
         from .. import tone_voice
 
-        t0 = time.perf_counter()
         model = self.model or "eleven_flash_v2_5"
         body = {"text": text, "model_id": model}
         if "multilingual_v2" not in model:   # language_code multilingual_v2'de desteklenmiyor
@@ -137,8 +160,13 @@ class ElevenLabsTTS(TTSProvider):
         # Ton başına ayrı ses (Voice Library/Voice Design): ELEVENLABS_VOICE_ID_ENERJIK vb. tanımlıysa o kullanılır.
         # voice_settings'ten çok daha belirgin fark verir; tanımlı değilse tek ses + ayar kullanılır.
         # Öncelik: ortam değişkeni > ekrandan atanan ton sesi (data/tone-voice.json) > genel ses
-        voice = ((tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}"))
+        voice = (voice or (tone and os.environ.get(f"ELEVENLABS_VOICE_ID_{tone.upper()}"))
                  or (tone and tone_voice.voices().get(tone)) or os.environ["ELEVENLABS_VOICE_ID"])
+        return voice, body
+
+    def synthesize(self, text, language="tr", speed=1.0, tone=None):
+        t0 = time.perf_counter()
+        voice, body = self.request(text, language, speed, tone)
         res = _post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
             params={"output_format": f"pcm_{self.SAMPLE_RATE}"},

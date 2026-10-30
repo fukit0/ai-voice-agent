@@ -29,6 +29,12 @@
         "enerjik": {"stability": 0.20, "similarity_boost": 0.75, "speed": 1.15},
         "sakin":   {"stability": 0.75, "similarity_boost": 0.75, "speed": 0.88}
       },
+      "eleven_turbo_v2_5": {
+        "samimi":  {"stability": 0.45, "similarity_boost": 0.75, "speed": 1.0},
+        "resmi":   {"stability": 0.85, "similarity_boost": 0.75, "speed": 0.95},
+        "enerjik": {"stability": 0.20, "similarity_boost": 0.75, "speed": 1.15},
+        "sakin":   {"stability": 0.75, "similarity_boost": 0.75, "speed": 0.88}
+      },
       "eleven_v4_turbo": {
         "samimi":  {"tag": "[warmly]",  "stability": 0.45, "speed": 1.0},
         "resmi":   {"tag": "[serious]", "stability": 0.80, "speed": 0.95},

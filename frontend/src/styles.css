@@ -121,3 +121,5 @@ textarea { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--lin
 .voice-assigned { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 .voice-assign-buttons { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
 .voice-assign-buttons button[aria-pressed="true"] { font-weight: 700; }
+.tts-lab { margin-top: 1.5rem; }
+.table-scroll { overflow-x: auto; }

@@ -4,6 +4,7 @@ import {
   type PersonaFields, type PersonaReport, type PersonaView,
 } from "../api";
 import { ToneDemo } from "./ToneDemo";
+import { TtsLab } from "./TtsLab";
 import { VoicePicker } from "./VoicePicker";
 
 const TONE_LABEL: Record<string, string> = {
@@ -136,6 +137,7 @@ export function PersonaPage() {
       )}
 
       <VoicePicker />
+      <TtsLab />
       <ToneDemo />
 
       <h3 className="sub">Cümle uzunluğu raporu (kayıtlı aramalar)</h3>

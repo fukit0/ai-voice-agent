@@ -293,6 +293,19 @@ export const assignVoices = (voices: Record<string, string>) =>
   personaCall<{ assigned: Record<string, string> }>("/api/persona/tones/voices", "PUT", { voices });
 export const addLibraryVoice = (v: { public_owner_id: string; voice_id: string; name: string }) =>
   personaCall<{ voice_id: string }>("/api/persona/voices/add", "POST", v);
+export type ModelRow = {
+  id: string; label: string; price_per_1k_usd: number; latency_note: string; tags: boolean; tone_levers: string; notes: string;
+};
+export type ModelMatrix = { source: string; price_note: string; models: ModelRow[] };
+export type LabRun = { id: string; url: string; first_audio_seconds: number; total_seconds: number; audio_seconds: number; acoustics: ToneAcoustics };
+export type LabResult = {
+  model: string; voice_id: string; tone: string | null; seed: number | null; chars: number; sent_text: string;
+  applied: Record<string, number | string>; price_per_1k_usd: number | null; cost_usd: number | null;
+  median_first_audio_seconds: number; runs: LabRun[];
+};
+export const fetchModelMatrix = () => personaCall<ModelMatrix>("/api/persona/model-matrix");
+export const runTtsLab = (b: { text: string; model: string; voice_id?: string | null; tone?: string | null; runs?: number; seed?: number | null }) =>
+  personaCall<LabResult>("/api/persona/tts-lab", "POST", b);
 export const fetchTones = () => personaCall<ToneInfo>("/api/persona/tones");
 export const runToneDemo = (body: { profile: string; text: string; model?: string | null; seed?: number | null; tones?: string[] }) =>
   personaCall<ToneDemoResult>("/api/persona/tone-demo", "POST", body);

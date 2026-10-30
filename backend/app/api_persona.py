@@ -1,6 +1,8 @@
 """Persona API'si (core-005): ekrandan persona okuma/kaydetme/sıfırlama, üretilen istem önizlemesi ve cümle uzunluğu raporu."""
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -168,6 +170,70 @@ def add_library_voice(body: VoiceAddBody) -> dict:
     except ProviderError as exc:
         raise HTTPException(502, {"error": "provider_failed", "message": str(exc)}) from exc
     return {"voice_id": res.json().get("voice_id", body.voice_id)}
+
+
+class LabBody(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    model: str = Field(pattern=r"^eleven_[a-z0-9_]{2,40}$")
+    voice_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9]{10,40}$")   # boşsa ton/genel ses
+    tone: str | None = None
+    seed: int | None = 1234
+    speed: float = Field(default=1.0, ge=0.7, le=1.3)
+    runs: int = Field(default=1, ge=1, le=3)
+
+
+def _matrix() -> dict:
+    import json
+    from pathlib import Path
+    p = Path(os.environ.get("SVA_ELEVEN_MODELS", TV.ROOT / "config" / "elevenlabs-models.json"))
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {"models": []}
+
+
+@router.get("/model-matrix")
+def model_matrix() -> dict:
+    """ElevenLabs modelleri: fiyat (1.000 karakter), gecikme notu, ses etiketi desteği, ton kaldıracı. Ölçüm sonuçları ekranda eklenir."""
+    return _matrix()
+
+
+@router.post("/tts-lab")
+def tts_lab(body: LabBody) -> dict:
+    """Seçilen model + ses + ton ile akışlı üretim; ilk ses süresi, toplam süre, tahmini maliyet ve ses döner (kıyas için)."""
+    import numpy as np
+    from .providers import ProviderError, remote
+    from .providers.audio import encode_wav
+
+    if body.tone is not None and body.tone not in TV.TONE_IDS:
+        raise HTTPException(422, {"error": "invalid_tone", "message": f"Ton şunlardan biri olmalı: {', '.join(TV.TONE_IDS)}."})
+    headers = _eleven_headers()
+    tts = remote.ElevenLabsTTS(body.model, **({"seed": body.seed} if body.seed is not None else {}))
+    try:
+        voice, req = tts.request(body.text, "tr", body.speed, body.tone, body.voice_id)
+    except KeyError as exc:
+        raise HTTPException(400, {"error": "no_voice", "message": "Ses seçin veya ELEVENLABS_VOICE_ID tanımlayın."}) from exc
+    price = next((m["price_per_1k_usd"] for m in _matrix()["models"] if m["id"] == body.model), None)
+    runs = []
+    for _ in range(body.runs):
+        try:
+            first, total, raw = remote._post_stream(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/stream",
+                params={"output_format": f"pcm_{tts.SAMPLE_RATE}"}, headers=headers, json=req)
+        except ProviderError as exc:
+            raise HTTPException(502, {"error": "provider_failed", "message": str(exc)}) from exc
+        audio = np.frombuffer(raw[: len(raw) // 2 * 2], dtype="<i2").astype(np.float32) / 32768.0
+        _seq[0] += 1
+        cid = f"lab-{_seq[0]:04d}"
+        while len(_clips) >= 40:
+            _clips.pop(next(iter(_clips)))
+        _clips[cid] = encode_wav(audio, tts.SAMPLE_RATE)
+        runs.append({"id": cid, "url": f"/api/persona/tone-demo/{cid}.wav", "first_audio_seconds": round(first, 3),
+                     "total_seconds": round(total, 3), "audio_seconds": round(audio.size / tts.SAMPLE_RATE, 2),
+                     "acoustics": TV.acoustics(audio, tts.SAMPLE_RATE, body.text)})
+    chars = len(req["text"])   # etiket de gönderilen karakterdir
+    firsts = sorted(r["first_audio_seconds"] for r in runs)
+    return {"model": body.model, "voice_id": voice, "tone": body.tone, "seed": body.seed, "chars": chars,
+            "applied": TV.params("elevenlabs", body.model, body.tone), "sent_text": req["text"],
+            "price_per_1k_usd": price, "cost_usd": round(chars * price / 1000, 5) if price is not None else None,
+            "median_first_audio_seconds": firsts[len(firsts) // 2], "runs": runs}
 
 
 @router.post("/tone-demo")
