@@ -486,13 +486,17 @@
       "moscow": "must",
       "title": "Arama listesi ve detayı (basit)",
       "user_visible_behavior": "Kullanıcı yapılan test aramalarını listeler, birini açıp transkripti, ses kaydını, cevapları ve gecikmeleri görür.",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "En az 3 arama listede görünür.",
         "Detayda ses kaydı çalınır, transkript ve cevaplar görünür."
       ],
-      "evidence": [],
-      "notes": "F4.1–F4.2'nin ilk hali."
+      "evidence": [
+        "backend/tests/test_calls.py (6 test)",
+        "frontend/src/pages/CallsPage.test.tsx (7 test)",
+        "Playwright ekran görüntüleri (sahte veri): açık/koyu/mobil"
+      ],
+      "notes": "F4.1–F4.2'nin ilk hali. 2026-10-30: uygulandı. /calls ekranı: 'Kıyas' (profil bazlı ya da seçilen aramalar; taban farkı, p50/p95, aşama medyanları, hedef rozeti, 'örnek az' <5 arama) ve 'Aramalar' (süzgeçli liste, onay kutusuyla seçim, detay paneli: ses oynatıcı, cevaplar, transkript, tur gecikmeleri). API: GET /api/calls, /api/calls/compare, /api/calls/{id}; veri data/voice-sessions oturum JSON'ları. Oturum kaydına stt/llm/tts/tts_tone/tts_speed eklendi (eski kayıtlarda yok → 'bilinmiyor'). Doğrulanan: backend 444 test (6 yeni, test_calls.py), frontend 73 test (7 yeni, CallsPage.test.tsx), tsc+build temiz, açık/koyu/mobil ekran görüntüsü (sahte veriyle). BLOKE: 'en az 3 GERÇEK arama listede, detayda kayıt çalar' kullanıcının Mac'inde gerçek aramalarla doğrulanmadı; sahte veriyle geçti sayılmaz. lab-005 (ağırlıklı kıyas matrisi/dinleme puanı) ve eval-001/002 kapsam dışı."
     },
     {
       "id": "eval-001",

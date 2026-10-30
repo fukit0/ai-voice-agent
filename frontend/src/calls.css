@@ -1,0 +1,57 @@
+/* Aramalar ekranı (lab-004): sekmeler, tablo, ayrıntı paneli. styles.css'e dokunmadan ayrı dosya. */
+.calls h2 { margin-bottom: 4px; }
+.calls-muted { color: var(--muted); font-size: 13px; }
+.calls-good { color: var(--ok); font-weight: 600; }
+.calls-bad { color: var(--err); }
+.calls-note { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.calls-empty { padding: 20px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }
+.calls .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.calls-tabs { display: flex; gap: 4px; margin: 14px 0 10px; border-bottom: 1px solid var(--line); }
+.calls-tabs button { padding: 9px 16px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.calls-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.calls-filters { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 8px 0 12px; }
+.calls-filters label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.calls select { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); min-width: 130px; }
+.calls-modebar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 10px; }
+.calls-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.calls-seg button { padding: 6px 14px; border: 0; background: var(--panel); color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.calls-seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.calls-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.calls-actions button { padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.calls-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.calls-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.calls-scroll { overflow-x: auto; }
+.calls-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.calls-table th, .calls-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
+.calls-table th { font-size: 12px; color: var(--muted); font-weight: 600; }
+.calls-table .calls-wrap { white-space: normal; min-width: 140px; }
+.calls-table tr.is-baseline td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.calls-table tr.is-open td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.calls-table td.calls-best { color: var(--ok); font-weight: 700; }
+.calls-table.small th, .calls-table.small td { padding: 4px 8px; }
+.calls-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 500; color: var(--muted); }
+.calls-tag.ok { color: var(--ok); border-color: var(--ok); }
+.calls-tag.bad { color: var(--err); border-color: var(--err); }
+.calls-tag.warn { color: #b26a00; border-color: #b26a00; }
+@media (prefers-color-scheme: dark) { .calls-tag.warn { color: #e0a64a; border-color: #e0a64a; } }
+.calls-link { margin-left: 6px; padding: 0; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+.calls-split { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr); gap: 16px; align-items: start; }
+.calls-detail { position: sticky; top: 8px; max-height: calc(100vh - 80px); overflow-y: auto; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.calls-detail-head { display: flex; align-items: center; justify-content: space-between; }
+.calls-detail h3 { margin: 0; font-size: 16px; }
+.calls-detail h4 { margin: 14px 0 6px; font-size: 13px; }
+.calls-x { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; }
+.calls-meta { margin: 6px 0; font-size: 12px; color: var(--muted); }
+.calls-detail audio { width: 100%; margin: 8px 0; }
+.calls-answers { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.calls-answers li { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.calls-answers span { color: var(--muted); }
+.calls-answers em { color: var(--muted); }
+.calls-transcript { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; max-height: 260px; overflow-y: auto; }
+.calls-transcript span { font-size: 11px; font-weight: 700; margin-right: 6px; color: var(--muted); text-transform: uppercase; }
+.calls-transcript li.agent span { color: var(--accent); }
+@media (max-width: 900px) { .calls-split { grid-template-columns: 1fr; } .calls-detail { position: static; max-height: none; } }
+/* Geniş tablolar için içerik sütunu: ızgara çocuğu taşmasın (mobilde), masaüstünde 880px sınırı kalksın */
+.content:has(.calls) { min-width: 0; max-width: 1280px; }
+.calls { min-width: 0; }
+.calls-tag { vertical-align: middle; line-height: 1.4; }

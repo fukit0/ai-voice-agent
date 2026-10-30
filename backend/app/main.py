@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__, sysinfo
 from .api_eval import router as eval_router
+from .api_calls import router as calls_router
 from .api_persona import router as persona_router
 from .api_profiles import router as profiles_router
 from .api_scenarios import router as scenarios_router
@@ -40,6 +41,7 @@ app.include_router(eval_router)
 app.include_router(voice_router)
 app.include_router(scenarios_router)
 app.include_router(persona_router)
+app.include_router(calls_router)
 
 
 @app.get("/api/health")

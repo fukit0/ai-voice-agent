@@ -62,6 +62,14 @@ def looks_incomplete(text: str) -> bool:
     return words[-1] in INCOMPLETE_WORDS or " ".join(words[-2:]) in INCOMPLETE_WORDS
 
 
+def _describe(provider) -> str | None:
+    """Sağlayıcının kısa etiketi (örn. 'elevenlabs:eleven_v4_turbo'); `describe` taşımayan test sahtelerinde None."""
+    try:
+        return provider.describe()
+    except AttributeError:
+        return None
+
+
 def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in _SENTENCE.split(text.strip()) if s.strip()]
 
@@ -405,6 +413,9 @@ class VoiceSession:
         path = folder / f"{self.sid}.json"
         path.write_text(json.dumps({
             "id": self.sid, "profile": self.profile_id, "started_at": self.started_at.isoformat(timespec="seconds"),
+            # Aramalar ekranı kıyası (lab-004): hangi bileşen, ton ve hızla konuşuldu (profil kimliği tek başına bunu söylemez)
+            "stt": _describe(self.stt), "llm": _describe(self.llm), "tts": _describe(self.tts),
+            "tts_tone": self.tts_tone, "tts_speed": self.tts_speed,
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
                                                     "path": self.flow.path, "answers": self.flow.answers,

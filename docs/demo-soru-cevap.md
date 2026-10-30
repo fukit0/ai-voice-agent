@@ -245,3 +245,15 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - **Öne çıkan seçenekler:** (1) **Flash + ayrı ses:** en hızlı ve ucuz; ton farkını büyük ölçüde sesin kendisi taşır. (2) **v4 Turbo + ses etiketi:** kullanıcı dinlemesinde ton farkı en çok burada duyuldu; hız da canlı hatta kullanılabilir düzeyde olması beklenir. Karar ölçüm ve dinlemeyle verilir.
 - **Sınırlar (saklanmaz):** (1) Fiyatlar resmî liste fiyatıdır (2026-10-30), kurumsal anlaşmada farklı olabilir; bir kaynak v4 ile v4 Turbo'yu aynı fiyatta gösteriyor, resmî sayfa 0,08/0,04 diyor. (2) Gecikme ölçümü sizin ağınızdan yapılır, telefon hattı gecikmesini içermez. (3) "Flash + ses ile ton yeterli mi" henüz ölçülmedi/dinlenmedi. (4) Turbo v2.5 ve v4 model kimliklerinin hesapta çalıştığı doğrulanmadı.
 - **Demo akışı (2 dk):** Lab'da aynı cümleyi enerjik tonla "Tüm modelleri sırayla dene"; matriste hız/maliyet farkını gösterin; Flash + Gökçe Deniz tarzı neşeli sesle, v4 Turbo + aynı sesle iki klibi dinletin.
+
+## S31. "Yaptığımız aramaları nerede karşılaştırırız?" (lab-004, 2026-10-30)
+
+**Kısa cevap:** Lab'de "Aramalar" ekranı. "Kıyas" sekmesi profilleri (ör. L2 ile L2-EL) yan yana koyar: ilk ses gecikmesi p50/p95, taban profile göre fark, STT/LLM/TTS aşama süreleri, sonuçlar. "Aramalar" sekmesinden tek tek aramayı açıp kaydı dinler, transkripte ve cevaplara bakarsınız. İşaretlediğiniz belirli aramaları da karşılaştırabilirsiniz.
+
+**Demoda dürüst olunacak sınırlar (bahane değil, bil):**
+- Gecikme = konuşma bitişinden ajanın ilk sesine; açılış turu hariç. Hedef p50 < 1.2 sn.
+- 5'ten az aramalı profilde "örnek az" rozeti görünür: o rakam istatistik değil, işarettir. Demodan önce her profille en az 5 arama yapın.
+- Bu ekrandan önceki kayıtlarda hangi STT/LLM/TTS kullanıldığı kayıtlı değil ("bilinmiyor"); profil adı yine ayırt eder.
+- Realtime profillerde (A2 vb.) aşama ayrımı yoktur; yalnızca toplam gecikme karşılaştırılır.
+- Ağırlıklı kıyas matrisi ve dinleme puanı (lab-005) henüz yok; bu ekran ölçülmüş sayıları gösterir, kalite puanı vermez.
+- Gerçek arama ile uçtan uca doğrulama (3+ arama, kayıt çalma) henüz yapılmadı.
