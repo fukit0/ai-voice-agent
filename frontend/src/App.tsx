@@ -11,6 +11,7 @@ import { ScenariosPage } from "./pages/ScenariosPage";
 import { PersonaPage } from "./pages/PersonaPage";
 import { PlaygroundPage } from "./pages/PlaygroundPage";
 import { CallsPage } from "./pages/CallsPage";
+import { MatrixPage } from "./pages/MatrixPage";
 import { LlmEvalPage } from "./pages/LlmEvalPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -31,6 +32,7 @@ const PAGES: Record<string, () => JSX.Element> = {
   "/playground": PlaygroundPage,
   "/tts": TtsPage,
   "/calls": CallsPage,
+  "/matrix": MatrixPage,
   "/settings": SettingsPage,
 };
 

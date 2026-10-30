@@ -561,13 +561,18 @@
       "moscow": "must",
       "title": "Kıyas matrisi ekranı",
       "user_visible_behavior": "Kullanıcı kıyas matrisini Lab'de görür; koşu sonuçları ve dinleme puanları otomatik dolar.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Yeni bir koşu sonrası ekran güncellenir.",
         "Ağırlıklar değiştirilince puanlar yeniden hesaplanır."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "backend/tests/test_matrix.py (12 test: puan kuralları, ağırlık yeniden normalizasyonu, eksik veri, yeni oturum sonrası güncelleme, join, lisans eleme)",
+        "frontend/src/pages/MatrixPage.test.tsx (5 test: boş durum, Yenile sonrası güncelleme, ağırlık değişince yeniden hesap, lisans/sıralama, hata)",
+        "evidence/lab-005-desktop.png, evidence/lab-005-mobile.png (sentetik demo verisiyle)",
+        "backend 491 geçti, vitest 86 geçti, playwright lab 6 geçti"
+      ],
+      "notes": "Açık: gerçek Mac verisiyle ekran doğrulanmadı (ekran görüntüleri sentetik veri). Kaynak kullanımı kriteri ölçülmüyor (eval-003) → her satırda eksik. Lisans tablosu config/matrix.json model kartlarından doğrulanmadı (verified=false). TTS dinleme puanı bu ekran için eşleşme join ile; gerçek bir dinleme oturumuyla denenmedi."
     },
     {
       "id": "core-011",

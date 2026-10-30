@@ -352,3 +352,11 @@ agents do not update it automatically.
 - Açık: voice e2e 3 test eski (Ayşe/Elif adı), Mac'te gerçek veriyle görsel kontrol, kalan sayfaların tek tek göz kontrolü, referanstaki Canlı İzleme/Kuyruk/Geri Arama/Başarı Kriterleri formu (backend yok).
 - Çalıştırma: `cd frontend && npm run build` sonra backend'i başlat (dist/ eskidir).
 
+## Session 2026-10-30 (gece 3): lab-005 kıyas matrisi (passing, açıklı)
+- Kullanıcı: "lab-005 tamamla". Tek aktif özellik.
+- Yapılan: `backend/app/matrix.py` (puan kuralları, ağırlık ayrıştırma, toplama, lisans eleme), `api_matrix.py` (`GET /api/matrix?weights=...`, önbelleksiz, 422 hatalı ağırlık), `config/matrix.json` (ağırlıklar, eşikler, lisans tablosu), `frontend/src/matrixApi.ts`, `pages/MatrixPage.tsx` (kaydırıcılar, Yenile, pencereye dönünce yenileme, kapsam, lisans rozetleri), `/matrix` artık yer tutucu değil.
+- Kararlar: puan tek yerde (backend); veri yoksa kriter eksik, sayı uydurulmaz; kapsam < %50 ise toplam yok; yalnızca commercial_ok=false eler; "+ ipucu" STT varyantı hariç.
+- Kanıt: backend 491 geçti (+12), vitest 86 geçti (+5), playwright lab 6 geçti, `evidence/lab-005-*.png` (sentetik veri). Tablo yatay taşma düzeltildi.
+- Açık: gerçek veriyle Mac'te görsel/uçtan uca kontrol; kaynak kullanımı ölçülmüyor (eval-003); lisans tablosu doğrulanmadı; voice e2e 3 eski test (Ayşe/Elif); Mac'te pytest kurulu değil (testler bulutta koşuldu).
+- Sonraki: eval-002 (seçilen yığın kaydı) bu matrisi kullanabilir.
+

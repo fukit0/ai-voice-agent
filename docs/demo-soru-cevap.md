@@ -259,7 +259,7 @@ S16 guncelleme (2026-10-28): STT olcumu yapildi (56 klip). Deepgram: WER 0,29, o
 - 5'ten az aramalı profilde "örnek az" rozeti görünür: o rakam istatistik değil, işarettir. Demodan önce her profille en az 5 arama yapın.
 - Bu ekrandan önceki kayıtlarda hangi STT/LLM/TTS kullanıldığı kayıtlı değil ("bilinmiyor"); profil adı yine ayırt eder.
 - Realtime profillerde (A2 vb.) aşama ayrımı yoktur; yalnızca toplam gecikme karşılaştırılır.
-- Ağırlıklı kıyas matrisi ve dinleme puanı (lab-005) henüz yok; bu ekran ölçülmüş sayıları gösterir, kalite puanı vermez.
+- Ağırlıklı puan bu ekranda değil, "Kıyas matrisi" ekranındadır (S34); Aramalar yalnızca ölçülmüş sayıları gösterir.
 - Gerçek arama ile uçtan uca doğrulama (3+ arama, kayıt çalma) henüz yapılmadı.
 
 ## S32. "Müşteri öksürürse ya da arkada ses olursa ajan susuyor mu?" (core-016, 2026-10-30)
@@ -283,3 +283,18 @@ Kısa cevap: Referans arayüzün yapısını (gruplu menü, kart/tablo düzeni, 
 - Referanstaki gerçek veri (ör. 18 kişi, %85,7 cevaplanma) bizim değil; ekran görüntülerindeki Genel Bakış `evidence/ui-001-genel-bakis-sentetik-veri.png` SENTETİK veriyle alındı, demoda gerçek kayıtlarla göster.
 - Tepki süresi kartı kırmızı çıkabilir (hedef ≤1,2 sn): bu gerçek ölçümdür, rengi hedefe göre verilir, saklamayız.
 
+## S34. "Hangi profil en iyi? Puanı nasıl hesaplıyorsunuz?" (lab-005, 2026-10-30)
+
+**Kısa cevap:** Lab'de "Kıyas matrisi". Her profil için beş kriter 0-100 puanlanır ve ağırlıklı toplanır: gecikme %30, doğallık (kör dinleme) %25, cevap doğruluğu %25, STT hatası %10, kaynak kullanımı %10. Ağırlıklar kaydırıcılarla değişir; puanlar anında yeniden hesaplanır. Değerler Lab kayıtlarından kendiliğinden dolar (aramalar, TTS dinleme puanları, STT ve LLM testleri); "Yenile" yeni koşuyu getirir.
+
+**Puan kuralları:** gecikme p50 ≤ 1,2 sn = 100, ≥ 3,0 sn = 0 (doğrusal); doğallık (ortalama−1)/4; doğruluk = tam doğru oranı; STT = 1−WER. Eşikler `config/matrix.json` içinde, kodda değil.
+
+**Demoda dürüst olunacak sınırlar (bahane değil, bil):**
+- Kaynak kullanımı ölçülmüyor (eval-003 yok). Her satırda "ölçülmedi"; toplam kalan ağırlığa bölünür. "Bu kriteri ölçtük" denmez.
+- Verisi olmayan kriter sayıyla doldurulmaz. Kapsam (verisi olan ağırlık payı) %50'nin altındaysa toplam yerine "yetersiz veri" yazar ve sıraya girmez; az veriyle birinci çıkmasın diye.
+- Kapsam %55 olan profilin 84,6'sı ile tam kapsamlı bir profilin 80'i aynı güvende değildir; kapsam sütununu birlikte göster.
+- Lisans elemesi yalnızca tabloda açıkça "ticari kullanım yok" yazan modeli eler. Tablo model kartlarından canlı doğrulanmadı (verified=false): "Lisans belirsiz" rozeti uyarıdır, onay değil. Gemma ve EMA için lisans belirsiz.
+- Gecikme 5'ten az aramada "örnek az" rozetiyle gelir. Dinleme puanı az kişiyle verildiyse doğallık da o kadar zayıftır; n değeri hücrede görünür.
+- STT ipucu ("+ ipucu") varyantları WER'e katılmaz: ipucu üretimde yok, karşılaştırmayı şişirir.
+- Ağırlıklar bu tarayıcıda saklanır; kalıcı ekip ayarı değildir. Seçilen yığının kaydı (eval-002) henüz yok.
+- Ekran görüntüleri sentetik veriyle; gerçek Mac verisiyle uçtan uca denenmedi.

@@ -155,3 +155,25 @@ a { color: var(--accent); }
   .setting { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) { .status { display: none; } .screen h2, .page h2 { font-size: 24px; } .kpi-value { font-size: 28px; } }
+
+/* lab-005 Kıyas matrisi */
+.head-actions { display: flex; gap: 10px; align-items: center; }
+.mx-weights { display: grid; gap: 10px; margin: 14px 0; }
+.mx-weight { display: grid; grid-template-columns: minmax(150px, 220px) 1fr 52px; align-items: center; gap: 14px; font-size: 14px; }
+.mx-weight input { width: 100%; accent-color: var(--accent-fill); }
+.mx-weight output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.mx-table { min-width: 980px; }
+.mx-table th, .mx-table td { white-space: normal; vertical-align: top; }
+.mx-table td:nth-child(2) { min-width: 200px; max-width: 260px; overflow-wrap: anywhere; }
+.mx-table td.num { white-space: nowrap; }
+.mx-table .mx-note { display: block; margin: 4px 0 0; width: max-content; }
+.mx-table-wrap { overflow-x: auto; }
+.mx-table .pill { white-space: normal; display: inline-block; max-width: 150px; text-align: center; }
+.mx-table { min-width: 1040px; }
+.mx-missing { color: var(--muted); font-style: italic; }
+.mx-n { white-space: nowrap; }
+.mx-note { margin-left: 6px; }
+.mx-out { opacity: .55; }
+.mx-total strong { font-size: 18px; }
+.note-list { margin: 12px 0 0; padding-left: 18px; }
+@media (max-width: 720px) { .mx-weight { grid-template-columns: 1fr 52px; } .mx-weight input { grid-column: 1 / -1; grid-row: 2; } }

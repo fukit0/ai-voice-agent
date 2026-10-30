@@ -1,0 +1,22 @@
+{
+  "_doc": "Kıyas matrisi ayarları (lab-005, plan F6.2/F7.5). Ağırlıklar plandaki önerilerdir; ekranda değiştirilebilir. 'license' tablosundaki değerler MODEL KARTLARINDAN CANLI DOĞRULANMADI (verified=false); elenme yalnızca commercial_ok=false iken olur, null = belirsiz (uyarı).",
+  "weights": {"latency": 30, "naturalness": 25, "accuracy": 25, "wer": 10, "resources": 10},
+  "min_coverage": 0.5,
+  "latency": {"full_score_s": 1.2, "zero_score_s": 3.0},
+  "license": {
+    "mlx_whisper:mlx-community/whisper-large-v3-turbo": {"license": "MIT (OpenAI Whisper)", "commercial_ok": true, "verified": false},
+    "hf_whisper:BuzzASR/turkish": {"license": "Belirsiz", "commercial_ok": null, "verified": false},
+    "ollama:gemma4:e4b": {"license": "Gemma kullanım koşulları (sürüm doğrulanmadı)", "commercial_ok": null, "verified": false},
+    "ollama:gemma4:12b": {"license": "Gemma kullanım koşulları (sürüm doğrulanmadı)", "commercial_ok": null, "verified": false},
+    "ollama:qwen3:30b-a3b-instruct-2507-q4_K_M": {"license": "Apache-2.0", "commercial_ok": true, "verified": false},
+    "ollama:gpt-oss:20b": {"license": "Apache-2.0", "commercial_ok": true, "verified": false},
+    "ema:": {"license": "Belirsiz", "commercial_ok": null, "verified": false},
+    "chatterbox:": {"license": "MIT", "commercial_ok": true, "verified": false},
+    "deepgram:nova-3": {"license": "Ticari API", "commercial_ok": true, "verified": false},
+    "anthropic:claude-haiku-5-5": {"license": "Ticari API", "commercial_ok": true, "verified": false},
+    "elevenlabs:eleven_v4_turbo": {"license": "Ticari API", "commercial_ok": true, "verified": false},
+    "elevenlabs:eleven_flash_v2_5": {"license": "Ticari API", "commercial_ok": true, "verified": false},
+    "openai_realtime:gpt-realtime-2.1-mini": {"license": "Ticari API", "commercial_ok": true, "verified": false},
+    "gemini_live:gemini-3.8-live": {"license": "Ticari API", "commercial_ok": true, "verified": false}
+  }
+}
