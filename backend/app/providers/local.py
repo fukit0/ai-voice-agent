@@ -202,7 +202,7 @@ class OllamaLLM(LLMProvider):
         body = res.json()
         return LLMResult(text=body.get("message", {}).get("content", "").strip(),
                          seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
-                         output_tokens=body.get("eval_count"),
+                         output_tokens=body.get("eval_count"), input_tokens=body.get("prompt_eval_count"),
                          extra={"load_seconds": round(body.get("load_duration", 0) / 1e9, 2)})
 
 

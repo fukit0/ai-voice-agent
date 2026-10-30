@@ -1,0 +1,16 @@
+{
+  "_doc": "eval-001 test müşterileri (5 persona). Sesler ElevenLabs'ten üretilir ve data/eval-sets/ altında saklanır. voice_id boşsa 'Test setini hazırla' cinsiyet/yaş süzgeciyle Türkçe kütüphaneden farklı bir ses seçer ve data/eval-sets/voices.json'a yazar; sabit ses istenirse buraya ses kimliği yazılır. Davranış alanları: speed (konuşma hızı), gain_db (mikrofona uzaklık), noise_snr_db (arka plan gürültüsü, null=yok), reaction_s (ajan bitince cevap vermeden önce bekleme).",
+  "tts": {"provider": "elevenlabs", "model": "eleven_flash_v2_5"},
+  "personas": [
+    {"id": "ayse_sakin", "name": "Ayşe (sakin, orta yaş)", "description": "Net ve normal hızda konuşan referans müşteri.",
+     "gender": "female", "age": "middle_aged", "speed": 1.0, "gain_db": 0, "noise_snr_db": null, "reaction_s": 0.4, "voice_id": null},
+    {"id": "mehmet_hizli", "name": "Mehmet (aceleci)", "description": "Hızlı ve kısa konuşur, ajan biter bitmez cevap verir.",
+     "gender": "male", "age": "middle_aged", "speed": 1.15, "gain_db": 0, "noise_snr_db": null, "reaction_s": 0.1, "voice_id": null},
+    {"id": "huseyin_yavas", "name": "Hüseyin (yaşlı, yavaş)", "description": "Yavaş konuşur, cevabına geç başlar.",
+     "gender": "male", "age": "old", "speed": 0.85, "gain_db": 0, "noise_snr_db": null, "reaction_s": 1.2, "voice_id": null},
+    {"id": "elif_gurultulu", "name": "Elif (genç, gürültülü ortam)", "description": "Arka planda sürekli gürültü olan genç müşteri (SNR 15 dB).",
+     "gender": "female", "age": "young", "speed": 1.0, "gain_db": 0, "noise_snr_db": 15, "reaction_s": 0.5, "voice_id": null},
+    {"id": "kemal_uzak", "name": "Kemal (telefon uzakta)", "description": "Telefonu uzakta tutan, düşük sesli müşteri (-9 dB, SNR 22 dB).",
+     "gender": "male", "age": "young", "speed": 1.0, "gain_db": -9, "noise_snr_db": 22, "reaction_s": 0.6, "voice_id": null}
+  ]
+}

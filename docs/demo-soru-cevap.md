@@ -313,3 +313,23 @@ Kısa cevap: Referans arayüzün yapısını (gruplu menü, kart/tablo düzeni, 
 - Realtime profillerde (A2/A3) kimlik sorusunu modelin kendisi prompt kuralıyla cevaplar; garantisi cascade kadar sıkı değil. Sabit cevap yalnız L profillerinde.
 - Gerçek LLM, gerçek STT ve gerçek mikrofonla denenmedi; kanıt sahte modellerle ve sentetik ses çerçeveleriyle (evidence/core-006-20261030.json).
 
+
+## S36 - Kiyas kosusu (eval-001): profilleri ayni 20 aramayla nasil karsilastiriyorsunuz?
+**Cevap:** Lab'da "Kiyas kosusu" ekraninda bir profil secilir, "Test setini kostur" denir. 5 kayitli musteri personasi (sakin, aceleci, yavas, gurultulu, uzak mikrofon) x 4 yol (tam katilim, ret, geri arama, belirsiz cevaplar) = 20 arama otomatik oynatilir. Musteri sesleri ElevenLabs ile bir kez uretilip diske kaydedilir; ayni sesler her profile verildigi icin kiyas adildir. Telefon filtresi kapali, acik ya da ikisi icin kostururlur; sonuclar Aramalar listesine duser ve Kiyas matrisini besler.
+
+**Demoda durust olunacak sinirlar (bahane degil, bil):**
+- Dogrulama sahte modellerle yapildi; gercek ElevenLabs ile set uretimi ve gercek profille 20 aramalik kosu henuz denenmedi (anahtar ve maliyet gerekir).
+- Klip dogrudan STT'ye beslenir: hoparlor yankisi, barge-in ve gercek zamanli oynatma OLCULMEZ. Gecikme degerleri bu yuzden gercek aramadan farkli olabilir.
+- Realtime profiller (A2/A3) desteklenmez, 400 doner.
+- Persona sesleri otomatik secilir (cinsiyet/yas filtresi); beğenilmeyen ses config/eval/personas.json'da voice_id ile sabitlenir.
+- Tek seferde bir kosu calisir; soguk profil kostrulmaz.
+
+## S37 - Bir arama bize ne kadara patliyor? (eval-003)
+**Cevap:** Her arama icin sure, konusma payi, STT dakikasi, LLM giris/cikis token, TTS karakter ve yerel hesaplama saniyesi otomatik kaydedilir; API profillerinde (A1: Deepgram + Claude Haiku + ElevenLabs) fiyat listesinden arama basi maliyet hesaplanir. Aramalar ekraninda detayda 'Kaynak ve maliyet', kiyas tablosunda 'Maliyet / arama' ve 'GPU sn' sutunlari var. Yerel profillerde API ucreti 0 gorunur, maliyeti GPU saniyesi tasir.
+
+**Demoda durust olunacak sinirlar (bahane degil, bil):**
+- Maliyet rakamlari sahte saglayicilarla dogrulandi; gercek bir API aramasinda token/karakter/maliyet henuz olculmedi. Demoda gercek rakam gosterecekseniz once bir A1 aramasi yapin.
+- Fiyatlar config/pricing.json'da; yalniz Deepgram resmi sayfadan dogrulandi. Haiku 5.5 fiyati ucuncu taraf kaynaktan, ElevenLabs liste fiyatidir; plan/kredi/kurumsal anlasma farkli olabilir. Ekran 'dogrulanmadi' uyarisi gosterir.
+- 'GPU saniyesi' yerel model cagri sure toplamidir, GPU doluluk yuzdesi degil; eszamanli aramalarda ayni GPU paylasilir. Donanim, enerji ve telefon (operator) maliyeti yok.
+- Realtime profiller (A2/A3) icin sayac yok; Aramalar'da '—' gorunur. Token vermeyen saglayicida kalem bos ve maliyet 'eksik' isaretlenir.
+- Kiyas matrisinin 'kaynak kullanimi' kriteri henuz bu veriden beslenmiyor (lab-005 hala 'olculmedi' der); veri artik var, baglanti bir sonraki is.

@@ -15,6 +15,7 @@ const PATHS: Record<string, string> = {
   menu: "M4 7h16M4 12h16M4 17h16",
   close: "M6 6l12 12M18 6L6 18",
   chevron: "M9 6l6 6-6 6",
+  play: "M7 5v14l12-7z",
 };
 
 export function Icon({ name, size = 18 }: { name: string; size?: number }) {

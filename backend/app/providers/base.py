@@ -39,6 +39,7 @@ class LLMResult:
     provider: str
     model: str
     output_tokens: int | None = None
+    input_tokens: int | None = None      # eval-003: maliyet icin; saglayici vermezse None (sifir yazilmaz)
     extra: dict[str, Any] = field(default_factory=dict)
 
 

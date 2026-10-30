@@ -511,14 +511,19 @@
       "moscow": "must",
       "title": "Kıyas düzeneği (kayıtlı persona sesleriyle otomatik koşu)",
       "user_visible_behavior": "Kullanıcı bir profili seçip 20 aramalık test setini tek tıkla koşturur; her arama kayıtlı persona sesleriyle otomatik oynatılır.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "20 test araması (5 persona x 4 yol) bir profil için tamamlanır.",
         "Telefon filtresi açık ve kapalı iki koşu yapılır.",
         "Sonuçlar arama listesine düşer."
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "evidence/eval-001-20261030.json",
+        "backend/tests/test_evalrun.py (14 test)",
+        "frontend/src/pages/BenchmarkPage.test.tsx (5 test)",
+        "backend 547 gecti, vitest 91 gecti, playwright lab 6 gecti"
+      ],
+      "notes": "Sahte modellerle dogrulandi (ToneTTS/ToneSTT/RuleLLM): 5 persona x 4 yol = 20 arama, telefon filtresi kapali/acik/ikisi de, sonuclar Aramalar listesine meta.eval ile duser. DOGRULANMADI: gercek ElevenLabs klip uretimi, gercek profille 20 aramalik kosu, hoparlor yankisi/barge-in/gercek zamanli oynatma. Realtime profiller 400 ile reddedilir. Sesler otomatik secilir (data/eval-sets/voices.json)."
     },
     {
       "id": "eval-003",
@@ -529,13 +534,18 @@
       "moscow": "must",
       "title": "Arama başına maliyet ve kaynak ölçümü",
       "user_visible_behavior": "Her arama için süre, konuşma payı, STT dakikası, LLM token, TTS karakter ve GPU saniyesi kaydedilir.",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Bir koşu sonrası her aramada tüm maliyet kalemleri doludur.",
         "API profillerinde fiyat listesinden arama başı maliyet hesaplanır."
       ],
-      "evidence": [],
-      "notes": "KISMEN (2026-10-26 envanter): logs/provider-calls.jsonl her sağlayıcı çağrısının süresini, karakter/ses saniyesini ve kaynağını (source) yazıyor; çıktı token alanı var. Arama başına toplama, GPU saniyesi, fiyat listesi ve maliyet hesabı yok. Kaynak: otomatik envanter (Haiku taraması); kodda elle doğrulananlar: scn-004/005/006/007, core-006, sim-001/003/004, core-009."
+      "evidence": [
+        "evidence/eval-003-20261031.json",
+        "backend/tests/test_usage.py (11 test)",
+        "frontend/src/pages/CallsPage.test.tsx (+3 test)",
+        "backend 558 gecti, vitest 94 gecti, playwright lab 6 gecti"
+      ],
+      "notes": "2026-10-31: uygulandi. backend/app/usage.py UsageMeter + MeteredLLM; VoiceSession her aramada STT dakikasi, LLM giris/cikis token, TTS karakter/ses sn, yerel hesaplama (GPU) sn, sure ve konusma payini sayar, close() oturum JSON'una `usage` bloku yazar. config/pricing.json: Deepgram Nova-3 $0.0092/dk (resmi sayfa, dogrulandi), Haiku 5.5 $0.10/$0.50 per Mtok (ucuncu taraf kaynak, DOGRULANMADI), ElevenLabs liste fiyati (dogrulanmadi). Aramalar ekraninda detayda 'Kaynak ve maliyet', kiyasta 'Maliyet / arama' ve 'GPU sn'. Dogrulanan: 20 aramalik sahte koşuda her aramada tum kalemler dolu, maliyet elle hesapla eslesiyor. DOGRULANMADI: gercek API aramasinda token/karakter/maliyet; gercek yerel profilde GPU sn. Sinirlar: 'GPU saniyesi' yerel model cagri suresi toplamidir (duvar saati), GPU doluluk yuzdesi degil; realtime (A2/A3) oturumlari sayac yazmaz (usage blogu yok, Aramalar'da '—'); Anthropic bos-cikti yeniden denemesinde ilk cagrinin tokeni sayilmaz; token vermeyen saglayicida kalem null ve maliyet 'eksik'; donanim/enerji/telefon (c_tel) maliyeti yok; kiyas matrisinin 'kaynak kullanimi' kriteri henuz bu veriden beslenmiyor."
     },
     {
       "id": "eval-002",

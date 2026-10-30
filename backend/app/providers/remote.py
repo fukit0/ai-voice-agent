@@ -130,7 +130,8 @@ class AnthropicLLM(LLMProvider):
             text = "".join(b.get("text", "") for b in body.get("content", []) if b.get("type") == "text")
         extra = {"stop_reason": body.get("stop_reason"), "blocks": [b.get("type") for b in body.get("content", [])]}
         return LLMResult(text=text.strip(), seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
-                         output_tokens=body.get("usage", {}).get("output_tokens"), extra=extra)
+                         output_tokens=body.get("usage", {}).get("output_tokens"),
+                         input_tokens=body.get("usage", {}).get("input_tokens"), extra=extra)
 
 
 class ElevenLabsTTS(TTSProvider):
@@ -176,9 +177,9 @@ class ElevenLabsTTS(TTSProvider):
                                 "(veya ELEVENLABS_VOICE_ID tanımlayın).")
         return voice, body
 
-    def synthesize(self, text, language="tr", speed=1.0, tone=None):
+    def synthesize(self, text, language="tr", speed=1.0, tone=None, voice=None):
         t0 = time.perf_counter()
-        voice, body = self.request(text, language, speed, tone)
+        voice, body = self.request(text, language, speed, tone, voice=voice)   # voice: eval-001 test müşterisi sesleri
         res = _post(
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
             params={"output_format": f"pcm_{self.SAMPLE_RATE}"},

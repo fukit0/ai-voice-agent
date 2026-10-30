@@ -48,6 +48,8 @@ def summary(doc: dict, folder: Path) -> dict[str, Any]:
         "tts_tone": doc.get("tts_tone"), "tts_speed": doc.get("tts_speed"),
         "phone_filter": bool(doc.get("phone_filter")), "realtime": bool(stats.get("realtime")),
         "has_audio": _has_audio(folder, doc),
+        "cost_usd": ((doc.get("usage") or {}).get("cost") or {}).get("total"),
+        "gpu_s": ((doc.get("usage") or {}).get("items") or {}).get("gpu_s"),
     }
 
 
@@ -88,10 +90,22 @@ def detail(folder: Path, sid: str) -> dict | None:
                 **summary(doc, folder),
                 "transcript": doc.get("transcript") or [], "turns": doc.get("turns") or [],
                 "answers": flow.get("answers") or [], "path": flow.get("path") or [], "prompt": flow.get("prompt"),
+                "usage": doc.get("usage"),
                 "stats": {k: stats.get(k) for k in ("seconds_in", "agent_seconds_out", "utterances", "dropped", "barge_ins",
                                                     "holds", "merged", "stt_rejected", "peak_in_db") if k in stats},
             }
     return None
+
+
+def _usage_group(docs: list[dict]) -> dict:
+    """eval-003: aramalarin `usage` blogundan ortalama maliyet/GPU saniyesi. Blogu olmayan eski aramalar sayilmaz (sifir varsayilmaz)."""
+    us = [d["usage"] for d in docs if d.get("usage")]
+    costs = [u["cost"]["total"] for u in us if (u.get("cost") or {}).get("total") is not None]
+    return {"usage_calls": len(us), "avg_cost_usd": round(statistics.mean(costs), 6) if costs else None,
+            "cost_complete": bool(us) and all((u.get("cost") or {}).get("complete") for u in us),
+            "avg_gpu_s": round(statistics.mean([u["items"]["gpu_s"] for u in us]), 2) if us else None,
+            "avg_stt_minutes": round(statistics.mean([u["items"]["stt_minutes"] for u in us]), 3) if us else None,
+            "avg_tts_chars": round(statistics.mean([u["items"]["tts_chars"] for u in us])) if us else None}
 
 
 def _group(key: str, label: str, docs: list[dict]) -> dict:
@@ -113,6 +127,7 @@ def _group(key: str, label: str, docs: list[dict]) -> dict:
         "avg_answers": round(statistics.mean(ans), 2) if ans else None,
         "barge_ins_per_call": round(statistics.mean([(d.get("stats") or {}).get("barge_ins", 0) for d in docs]), 2),
         "stt_rejected_total": sum((d.get("stats") or {}).get("stt_rejected", 0) for d in docs),
+        **_usage_group(docs),
         "tts": sorted({d["tts"] for d in docs if d.get("tts")}), "tones": sorted({d["tts_tone"] for d in docs if d.get("tts_tone")}),
         "realtime": any((d.get("stats") or {}).get("realtime") for d in docs),
         "meets_p50_target": bool(first) and statistics.median(first) < P50_TARGET_S,

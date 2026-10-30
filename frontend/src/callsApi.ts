@@ -15,15 +15,24 @@ export type CallRow = {
   stt_p50_s: number | null; llm_p50_s: number | null; tts_first_p50_s: number | null; tts_total_p50_s: number | null;
   barge_ins: number; stt_rejected: number; stt: string | null; llm: string | null; tts: string | null;
   tts_tone: string | null; tts_speed: number | null; phone_filter: boolean; realtime: boolean; has_audio: boolean;
+  cost_usd: number | null; gpu_s: number | null;   // eval-003: eski kayıtlarda null (sıfır değil)
 };
 export type CallList = { calls: CallRow[]; total: number; facets: { profiles: string[]; scenarios: string[]; outcomes: string[] } };
 export type CallTurn = { turn: number; greeting?: boolean; stt_s?: number; llm_s?: number; tts_first_s?: number; tts_total_s?: number;
   first_audio_after_end_s?: number; held_s?: number; stt_rejected?: boolean; user_seconds?: number; stt_conf?: number };
 export type CallAnswer = { step: string; code?: string; title?: string; kind?: string; value: unknown; utterance?: string; unanswered?: boolean };
 // Detayda `turns` ve `answers` özetteki sayıların yerine listelerdir (backend calls.detail).
+// eval-003: arama başına kaynak ve maliyet (backend usage.py). Sağlayıcı sayı vermediyse kalem null'dır.
+export type CallUsage = {
+  items: { duration_s: number; user_speech_s: number; agent_speech_s: number; speech_share: number | null; stt_minutes: number; stt_calls: number;
+    llm_calls: number; llm_input_tokens: number | null; llm_output_tokens: number | null; tts_chars: number; tts_calls: number; tts_audio_s: number; gpu_s: number };
+  missing: string[];
+  cost: { currency: string; by_component: Record<string, number | null>; total: number | null; complete: boolean; unpriced: string[];
+    prices_verified: boolean; note: string };
+};
 export type CallDetail = Omit<CallRow, "turns" | "answers"> & {
   transcript: { role: string; text: string; t?: number }[]; turns: CallTurn[]; answers: CallAnswer[];
-  path: string[]; prompt: unknown; stats: Record<string, number>; audio_url: string | null;
+  path: string[]; prompt: unknown; stats: Record<string, number>; audio_url: string | null; usage?: CallUsage | null;
 };
 export type CompareGroup = {
   key: string; label: string; sessions: number; turns: number;
@@ -31,6 +40,7 @@ export type CompareGroup = {
   stages: { stt: number | null; llm: number | null; tts_first: number | null; tts_total: number | null };
   outcomes: Record<string, number>; avg_duration_s: number | null; avg_answers: number | null;
   barge_ins_per_call: number; stt_rejected_total: number; tts: string[]; tones: string[]; realtime: boolean;
+  usage_calls: number; avg_cost_usd: number | null; cost_complete: boolean; avg_gpu_s: number | null; avg_stt_minutes: number | null; avg_tts_chars: number | null;
   meets_p50_target: boolean; enough_sessions: boolean; is_baseline: boolean; delta_p50_s: number | null; delta_pct: number | null;
 };
 export type CompareResult = { group: "profile" | "call"; baseline: string | null; groups: CompareGroup[]; p50_target_s: number; min_sessions: number; definition: string };

@@ -22,6 +22,7 @@ from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
 from . import sttguard
+from .. import usage as usage_mod
 from .flow import prompt_info
 from .silence import SilenceGuard
 from .vad import BARGE_FRAMES, BARGE_MARGIN_DB, FRAME, SAMPLE_RATE, BargeTracker, Endpointer  # noqa: F401 (BARGE_* diğer modüllerce buradan alınır)
@@ -94,8 +95,12 @@ class VoiceSession:
         self.emit = send_event
         self.vad = endpointer or Endpointer()
         self.silence = SilenceGuard()      # core-022: sessiz hat bekçisi
+        self.usage = usage_mod.UsageMeter()   # eval-003: arama basina kaynak/maliyet sayaci
+        self.meta: dict = {}               # eval-001: oturum JSON'una eklenen ek alanlar (örn. {'eval': {...}})
         self.greeting = greeting
         self.flow = flow  # FlowDriver: verilirse konuşmayı senaryo akışı yönetir (aksi halde serbest persona)
+        if flow is not None and hasattr(flow, "llm") and not isinstance(flow.llm, usage_mod.MeteredLLM):
+            flow.llm = usage_mod.MeteredLLM(flow.llm, self.usage)   # akistaki LLM cagrilari (cevap cikarma) sayilir
         self.phone_filter = phone_filter
         self._in_filter = phone.PhoneFilter(SAMPLE_RATE)
         self.history: list[dict] = [{"role": "system", "content": persona}]
@@ -255,6 +260,7 @@ class VoiceSession:
             t0 = time.perf_counter()
             stt_res = await asyncio.to_thread(self.stt.transcribe, audio, SAMPLE_RATE, "tr")
             rec["stt_s"] = round(time.perf_counter() - t0, 3)
+            self.usage.add_stt(rec["user_seconds"], rec["stt_s"])
             record_call(self.profile_id, "stt", self.stt, rec["stt_s"], ok=True, warm=True,
                         audio_seconds=rec["user_seconds"], chars=len(stt_res.text), source="voice")
             if turn != self._turn_id:
@@ -295,6 +301,7 @@ class VoiceSession:
         llm_res = await asyncio.to_thread(self.llm.complete, self.history[:1] + self.history[1:][-12:], 120, 0.3)
         rec["llm_s"] = round(time.perf_counter() - t1, 3)
         record_call(self.profile_id, "llm", self.llm, rec["llm_s"], ok=True, warm=True, chars=len(llm_res.text), source="voice")
+        self.usage.add_llm(llm_res, rec["llm_s"])
         if turn != self._turn_id:
             return
         reply = clean_reply(llm_res.text)
@@ -370,6 +377,7 @@ class VoiceSession:
                 res = await asyncio.to_thread(lambda: self.tts.synthesize(spoken, "tr", *extra, **kw))
                 dt = time.perf_counter() - t0
                 tts_total += dt
+                self.usage.add_tts(len(spoken), getattr(res, "audio_seconds", 0.0), dt)
                 record_call(self.profile_id, "tts", self.tts, dt, ok=True, warm=True, chars=len(spoken), source="voice")
                 if turn != self._turn_id:
                     return
@@ -400,6 +408,15 @@ class VoiceSession:
         self.emit({"type": "transcript", **item})
 
     # ---- kapanış --------------------------------------------------------------------------------
+    def _usage_report(self) -> dict:
+        comps = {}
+        for kind, prov in (("stt", self.stt), ("llm", self.llm), ("tts", self.tts)):
+            d = _describe(prov)
+            comps[kind] = {"provider": d.split(":", 1)[0], "model": d.split(":", 1)[1] if ":" in d else ""} if d else None
+        user_s = sum(float(t.get("user_seconds", 0)) for t in self.turns)
+        return usage_mod.report(self.usage, duration_s=(datetime.now(timezone.utc) - self.started_at).total_seconds(),
+                                user_speech_s=user_s, agent_speech_s=float(self.stats.get("agent_seconds_out", 0)), components=comps)
+
     async def close(self) -> Path | None:
         if self._closed:
             return None
@@ -415,6 +432,7 @@ class VoiceSession:
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / f"{self.sid}.json"
         path.write_text(json.dumps({
+            "usage": self._usage_report(),
             "id": self.sid, "profile": self.profile_id, "started_at": self.started_at.isoformat(timespec="seconds"),
             # Aramalar ekranı kıyası (lab-004): hangi bileşen, ton ve hızla konuşuldu (profil kimliği tek başına bunu söylemez)
             "stt": _describe(self.stt), "llm": _describe(self.llm), "tts": _describe(self.tts),
@@ -423,6 +441,6 @@ class VoiceSession:
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
                                                     "path": self.flow.path, "answers": self.flow.answers,
                                                     "prompt": prompt_info()},
-            "phone_filter": self.phone_filter, "vad": self.vad.settings()}, ensure_ascii=False, indent=2),
+            "phone_filter": self.phone_filter, "vad": self.vad.settings(), **self.meta}, ensure_ascii=False, indent=2),
             encoding="utf-8")
         return path

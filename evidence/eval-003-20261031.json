@@ -1,0 +1,57 @@
+{
+  "feature": "eval-003",
+  "date": "2026-10-31",
+  "kind": "sahte saglayicilarla (API gibi adlandirilmis: deepgram/anthropic/elevenlabs); GERCEK API cagrisi YOK; token sayilari sabit sahte (500 giris/20 cikis)",
+  "calls": 20,
+  "all_items_filled_every_call": true,
+  "cost_per_call_usd": {
+    "min": 0.03219,
+    "max": 0.209719,
+    "avg": 0.121148
+  },
+  "example_usage": {
+    "items": {
+      "duration_s": 0.5,
+      "user_speech_s": 29.34,
+      "agent_speech_s": 165.72,
+      "speech_share": 1.0,
+      "stt_minutes": 0.489,
+      "stt_calls": 21,
+      "llm_calls": 19,
+      "llm_input_tokens": 9500,
+      "llm_output_tokens": 380,
+      "tts_chars": 5102,
+      "tts_calls": 66,
+      "tts_audio_s": 165.72,
+      "gpu_s": 0
+    },
+    "missing": [],
+    "cost": {
+      "currency": "USD",
+      "by_component": {
+        "stt": 0.004499,
+        "llm": 0.00114,
+        "tts": 0.20408
+      },
+      "total": 0.209719,
+      "complete": true,
+      "unpriced": [],
+      "prices_verified": false,
+      "note": "yerel bilesenler 0 (API ucreti yok); donanim/enerji dahil degil"
+    }
+  },
+  "compare_group": {
+    "usage_calls": 20,
+    "avg_cost_usd": 0.121148,
+    "cost_complete": true,
+    "avg_gpu_s": 0,
+    "avg_stt_minutes": 0.275,
+    "avg_tts_chars": 2950
+  },
+  "pricing_file": "config/pricing.json",
+  "unverified": [
+    "Haiku 5.5 fiyati ucuncu taraf kaynak (dev.to); resmi sayfa dogrulanmadi",
+    "ElevenLabs fiyati config/elevenlabs-models.json liste fiyati; plan/kredi farkli olabilir",
+    "gercek aramada token/sure/karakter degerleri"
+  ]
+}

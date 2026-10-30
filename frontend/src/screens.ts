@@ -110,4 +110,14 @@ export const SCREENS: Screen[] = [
     summary:
       "30 örnek müşteri cevabı seçili LLM'lerden geçer; doğru normalize (değer) ve doğru dal oranı, JSON geçerliliği ve gecikme yan yana görünür.",
   },
+  {
+    path: "/benchmark",
+    label: "Kıyas koşusu",
+    featureId: "eval-001",
+    planRef: "F6.1",
+    group: "Lab araçları",
+    icon: "play",
+    summary:
+      "Bir profil seçilir; 5 kayıtlı test müşterisi x 4 yol = 20 arama otomatik koşar (telefon filtresi kapalı/açık/ikisi). Sonuçlar Aramalar'a düşer.",
+  },
 ];

@@ -1,0 +1,18 @@
+{
+  "feature": "eval-001",
+  "date": "2026-10-30",
+  "kind": "sahte modellerle otomatik test (ElevenLabs ve gercek profil KULLANILMADI)",
+  "verified": {
+    "backend": "backend/tests/test_evalrun.py 14 test; tum backend 547 gecti, 1 atlandi",
+    "frontend": "BenchmarkPage.test.tsx 5 test; vitest 91 gecti; tsc temiz; npm run build; playwright lab 6 gecti (smoke 11 ekran)",
+    "20_calls": "5 persona x 4 yol = 20 arama; beklenen sonuclar: tam_katilim->tamamlandi, ret->katilmak_istemedi, geri_arama->geri_arama, belirsiz->tamamlandi (unanswered>=1)",
+    "phone_filter": "kapali / acik / ikisi de (40 arama; tek persona icin 8 arama) test edildi",
+    "calls_list": "her koşu aramasi data/voice-sessions altina meta.eval ile yazilir ve Aramalar listesinde gorunur"
+  },
+  "not_verified": [
+    "Gercek ElevenLabs ile klip uretimi (anahtar, maliyet, ses secimi)",
+    "Gercek bir profille (STT/LLM/TTS) 20 aramalik koşu ve sureleri",
+    "Hoparlor yankisi, barge-in, gercek zamanli oynatma: koşucu klibi dogrudan STT'ye besler",
+    "Realtime profiller (A2/A3) 400 ile reddedilir"
+  ]
+}

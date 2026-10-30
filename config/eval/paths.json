@@ -1,0 +1,23 @@
+{
+  "_doc": "eval-001 test yolları (4). script: adım anahtarı -> müşterinin söyleyeceği cümle ya da sıralı cümleler (adıma her gelişte sıradaki cümle; liste bitince sonuncusu). Listede olmayan adımlar için 'defaults' (adım türüne göre) kullanılır. Cümleler konuşma gibi, sayılar yazıyla.",
+  "defaults": {"YesNo": "Evet.", "Score": "Sekiz.", "Duration": "Kırk beş saniye.", "OpenText": "Genel olarak memnunum.", "Choice": "Evet.",
+               "CallbackTime": "Yarın saat on beşte.", "CheckIn": "Devam edelim."},
+  "paths": [
+    {"id": "tam_katilim", "name": "Tam katılım", "description": "Anketi baştan sona cevaplar ve iletişim iznini verir; sonuç: tamamlandı.",
+     "script": {"giris": "Hayır, devam edelim.", "musaitlik": "Evet, müsaitim.", "q3": "Hayır, katılmadım.", "q3x": "Evet, hatırlıyorum.",
+                "q2": "Sekiz.", "q4": "Temsilci çok ilgiliydi, sorunumu çözdü.", "q3_1": "Yedi.", "q3_2": "Sekiz.", "q3_3": "Dokuz.", "q3_4": "Altı.", "q3_5": "On.",
+                "q5": "Kırk beş saniye.", "q6": "Dokuz.", "q12": "Dokuz.", "q12_neden": "Hizmetlerden genel olarak memnunum.", "q8": "Hayır, eklemek istediğim bir şey yok.",
+                "geri_arama_istegi": "Hayır.", "onay": "Evet."}},
+    {"id": "ret", "name": "Ankete katılmayı reddeder", "description": "İlk sorularda devam eder, puan sorusunda açıkça reddeder; sonuç: katılmak istemedi.",
+     "script": {"giris": "Hayır, devam edelim.", "musaitlik": "Evet, müsaitim.", "q3": "Hayır, katılmadım.", "q3x": "Evet, hatırlıyorum.",
+                "q2": "İlgilenmiyorum, devam etmek istemiyorum."}},
+    {"id": "geri_arama", "name": "Müsait değil, geri arama ister", "description": "Müsaitlik sorusunda 'şu an müsait değilim' der ve randevu saati verir; sonuç: randevu.",
+     "script": {"giris": "Hayır, devam edelim.", "musaitlik": "Şu an müsait değilim.", "randevu": "Yarın saat on beşte."}},
+    {"id": "belirsiz", "name": "Belirsiz ve konu dışı cevaplar", "description": "Bilmiyorum, anlamadım ve konu dışı soru ile tekrar sorma ve cevapsız geçme akışını zorlar (q2 üç kez belirsiz: cevapsız kayıt edilir).",
+     "script": {"giris": "Hayır, devam edelim.", "musaitlik": "Evet, müsaitim.", "q3": "Hayır, katılmadım.", "q3x": "Evet, hatırlıyorum.",
+                "q2": ["Hmm, bilmiyorum, emin değilim.", "Gerçekten bir şey diyemem.", "Hiçbir şey söyleyemem."], "q4": "Pek bir şey söyleyemem.",
+                "q3_1": ["Ne demek istediğinizi anlamadım.", "Yedi."], "q3_2": ["Bu arada yeni kampanyalar ne zaman başlıyor?", "Sekiz."],
+                "q3_3": "Dokuz.", "q3_4": "Altı.", "q3_5": "On.", "q5": "Kırk beş saniye.", "q6": "Dokuz.", "q12": "Dokuz.",
+                "q12_neden": "Bilmiyorum, öyle düşünüyorum.", "q8": "Hayır.", "geri_arama_istegi": "Hayır.", "onay": "Evet."}}
+  ]
+}

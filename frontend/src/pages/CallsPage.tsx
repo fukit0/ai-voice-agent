@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchCall, fetchCalls, fetchCompare } from "../callsApi";
-import type { CallDetail, CallList, CallRow, CompareGroup, CompareResult } from "../callsApi";
+import type { CallDetail, CallUsage, CallList, CallRow, CompareGroup, CompareResult } from "../callsApi";
 import "../calls.css";
 
 /** Aramalar (lab-004): kayıtlı test aramalarının listesi/detayı ve profil ya da seçilen aramalar bazında kıyası.
@@ -9,6 +9,8 @@ import "../calls.css";
 const OUTCOMES: Record<string, string> = { completed: "Tamamlandı", refused: "Reddetti", abandoned: "Yarıda kaldı", bitmedi: "Bitmedi" };
 const outcome = (o: string | null | undefined) => (o ? OUTCOMES[o] ?? o : "—");
 const sec = (v: number | null | undefined, d = 2) => (v === null || v === undefined ? "—" : `${v.toFixed(d)} sn`);
+const usd = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v === 0 ? "$0" : `$${v < 0.01 ? v.toFixed(5) : v.toFixed(4)}`);
+const num = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toLocaleString("tr-TR"));
 const when = (iso: string | null) => (iso ? iso.slice(5, 16).replace("T", " ") : "—");
 const ttsLabel = (c: { tts: string | null; tts_tone: string | null }) => (c.tts ? `${c.tts}${c.tts_tone ? ` · ${c.tts_tone}` : ""}` : "bilinmiyor");
 
@@ -43,6 +45,7 @@ function CompareTable({ result, onBaseline }: { result: CompareResult; onBaselin
             <th>p95</th>
             <th>Fark (p50)</th>
             <th>STT</th><th>LLM</th><th>TTS ilk ses</th>
+            <th>Maliyet / arama</th><th>GPU sn</th>
             <th>Cevap / arama</th>
             <th>Sonuç</th>
             <th>TTS</th>
@@ -72,6 +75,8 @@ function CompareTable({ result, onBaseline }: { result: CompareResult; onBaselin
               <td>{sec(g.first_audio?.p95)}</td>
               <td><Delta g={g} /></td>
               <td>{sec(g.stages.stt)}</td><td>{sec(g.stages.llm)}</td><td>{sec(g.stages.tts_first)}</td>
+              <td data-testid="cost-cell">{usd(g.avg_cost_usd)}{(g.usage_calls ?? 0) > 0 && !g.cost_complete && <span className="calls-tag bad" title="Bazı kalemlerin fiyatı ya da token sayısı yok">eksik</span>}</td>
+              <td>{g.avg_gpu_s == null ? "—" : g.avg_gpu_s.toFixed(1)}</td>
               <td>{g.avg_answers ?? "—"}</td>
               <td>{Object.entries(g.outcomes).map(([o, n]) => `${outcome(o)} ${n}`).join(", ")}</td>
               <td className="calls-wrap">{g.tts.length ? g.tts.join(", ") : "bilinmiyor"}{g.tones.length ? ` · ${g.tones.join(", ")}` : ""}</td>
@@ -80,6 +85,28 @@ function CompareTable({ result, onBaseline }: { result: CompareResult; onBaselin
         </tbody>
       </table>
       <p className="calls-note">{result.definition} Aşama sütunları tur başına medyandır; realtime kayıtlarda aşama ayrımı yoktur. Hedef: p50 &lt; {result.p50_target_s} sn.</p>
+    </div>
+  );
+}
+
+function UsagePanel({ u }: { u: CallUsage | null | undefined }) {
+  if (!u) return <p className="calls-muted" role="note">Bu aramada kaynak ölçümü yok (eval-003'ten önce kaydedilmiş).</p>;
+  const i = u.items;
+  const c = u.cost;
+  return (
+    <div data-testid="call-usage">
+      <table className="calls-table small">
+        <tbody>
+          <tr><th>Süre</th><td>{i.duration_s.toFixed(0)} sn (müşteri {i.user_speech_s.toFixed(0)} · ajan {i.agent_speech_s.toFixed(0)} · konuşma payı {i.speech_share === null ? "—" : `%${Math.round(i.speech_share * 100)}`})</td></tr>
+          <tr><th>STT</th><td>{i.stt_minutes.toFixed(2)} dk · {i.stt_calls} çağrı{c.by_component.stt !== undefined && <> · {usd(c.by_component.stt)}</>}</td></tr>
+          <tr><th>LLM</th><td>{num(i.llm_input_tokens)} giriş / {num(i.llm_output_tokens)} çıkış token · {i.llm_calls} çağrı{c.by_component.llm !== undefined && <> · {usd(c.by_component.llm)}</>}</td></tr>
+          <tr><th>TTS</th><td>{num(i.tts_chars)} karakter · {i.tts_audio_s.toFixed(0)} sn ses{c.by_component.tts !== undefined && <> · {usd(c.by_component.tts)}</>}</td></tr>
+          <tr><th>Yerel hesaplama</th><td>{i.gpu_s.toFixed(1)} sn (çağrı süresi toplamı; GPU doluluğu değil)</td></tr>
+          <tr><th>Toplam maliyet</th><td><strong>{usd(c.total)}</strong> {c.currency}</td></tr>
+        </tbody>
+      </table>
+      {!c.complete && <p className="calls-bad" role="note">Maliyet eksik: {c.unpriced.join(", ")} için fiyat ya da token bilgisi yok; toplam yalnız fiyatlı kalemleri kapsar.</p>}
+      {!c.prices_verified && <p className="calls-muted" role="note">Bazı liste fiyatları resmî sayfadan doğrulanmadı (config/pricing.json). {c.note}.</p>}
     </div>
   );
 }
@@ -108,6 +135,8 @@ function CallDetailPanel({ id, onClose }: { id: string; onClose: () => void }) {
           </p>
           <p className="calls-meta">TTS: {ttsLabel(d)}{d.tts_speed ? ` · hız ${d.tts_speed}` : ""} · STT: {d.stt ?? "bilinmiyor"} · LLM: {d.llm ?? "bilinmiyor"}</p>
           {d.audio_url ? <audio controls src={d.audio_url} data-testid="call-audio" aria-label="Arama kaydı" /> : <p className="calls-muted" role="note">Ses kaydı yok (silinmiş ya da kaydedilmemiş).</p>}
+          <h4>Kaynak ve maliyet</h4>
+          <UsagePanel u={d.usage} />
           <h4>Cevaplar</h4>
           {d.answers.length ? (
             <ul className="calls-answers">

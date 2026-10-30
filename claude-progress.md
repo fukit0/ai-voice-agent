@@ -369,3 +369,18 @@ agents do not update it automatically.
 - Açık: gerçek LLM/STT/mikrofonla doğrulama; realtime profillerde kimlik cevabı modele bağlı; dijital asistan beyanının hukuki metni.
 - Sonraki must adayları: eval-001/003/002 (başlanmamış); scn-001.. (Faz 2).
 
+
+## Session 2026-10-30 (gece 5): eval-001 kiyas duzenegi (passing, acikli)
+- Kullanici: "core-006 passing zaten. not_started olan bi feature" -> eval-001. Kararlar (kullanici): musteri sesleri ElevenLabs ile uretilip diske kaydedilir; 4 yol = tam katilim, ret, geri arama, belirsiz cevaplar.
+- Yapilan: `config/eval/personas.json` + `paths.json`, `backend/app/evalrun.py` (klip uretimi/onbellek, persona etkileri, headless VoiceSession kosucusu, kosu yonetimi), `api_evalrun.py` (/api/evalrun/*), `frontend` Kiyas kosusu ekrani (/benchmark), `ElevenLabsTTS.synthesize(voice=)`, `VoiceSession.meta`.
+- Kanit: test_evalrun.py 14, BenchmarkPage.test.tsx 5; backend 547, vitest 91, build, playwright lab 6 (smoke 11 ekran); evidence/eval-001-20261030.json (sahte modeller).
+- Acik: gercek ElevenLabs ile set uretimi ve gercek profille kosu dogrulanmadi; yankı/barge-in/gercek zamanli oynatma olculmuyor; realtime desteklenmiyor; Mac'te git HEAD.lock sorunu nedeniyle core-006 ve eval-001 commit edilemedi.
+- Sonraki: eval-003 (maliyet/kaynak), eval-002.
+
+## Session 2026-10-31 (gece 6): eval-003 arama basina maliyet ve kaynak olcumu (passing, acikli)
+- Kullanici: "eval-003 tamamla". Mevcut durum: provider-calls.jsonl sagliyordu; arama toplami, GPU sn, fiyat listesi, maliyet yoktu.
+- Yapilan: `usage.py` (sayac, MeteredLLM, report), `config/pricing.json`, `LLMResult.input_tokens` (Ollama prompt_eval_count, Anthropic usage.input_tokens), VoiceSession entegrasyonu + oturum JSON `usage`, calls.py (cost_usd, gpu_s, detay usage, grup ortalamalari), Aramalar ekrani (Kaynak ve maliyet, Maliyet/arama, GPU sn).
+- Kararlar: veri yoksa null (sifir degil); yerel bilesen API maliyeti 0 ama GPU sn ayri; eksik fiyat/token 'eksik' bayragi; fiyatlar dosyada ve dogrulama durumu isaretli.
+- Kanit: test_usage.py 11, CallsPage.test.tsx +3; backend 558, vitest 94, build, playwright lab 6; evidence/eval-003-20261031.json (sahte saglayicilar).
+- Acik: gercek API/yerel aramada dogrulama; Haiku fiyati resmi sayfadan; realtime oturumlari olculmuyor; kiyas matrisi kaynak kriteri; Mac'te commit.
+- Sonraki: eval-002 (secilen yigin kaydi), lab-005 matrisine kaynak kriterini baglamak.
