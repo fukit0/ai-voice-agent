@@ -420,6 +420,7 @@ class FlowDriver:
         self.silences = 0            # core-022: art arda sessizlik sayısı (gerçek bir cevap gelince sıfırlanır)
         self.fast_path = False       # core-027: kapalı sözlükte LLM'siz yol; profil `fast_path: true` ile api_voice açar, varsayılan kapalı
         self.last_fast = False
+        self.prompt_variant: str | None = None   # None: config'teki aktif ayrıştırıcı prompt sürümü; kıyas koşusu sürümleri tek tek dener
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.outcome: str | None = None
         self.answers: list[dict] = []
@@ -483,7 +484,7 @@ class FlowDriver:
                 self.last_fast = True
                 return fp, 0.0
         t0 = time.perf_counter()
-        res = self.llm.complete(build_messages(step, self.text_of(step["key"]), utterance, self.score_policy), 120, 0.0)
+        res = self.llm.complete(build_messages(step, self.text_of(step["key"]), utterance, self.score_policy, self.prompt_variant), 120, 0.0)
         obj, _ = parse_output(res.text)
         return obj, round(time.perf_counter() - t0, 3)
 

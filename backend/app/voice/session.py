@@ -715,7 +715,7 @@ class VoiceSession:
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
                                                     "path": self.flow.path, "answers": self.flow.answers,
-                                                    "prompt": prompt_info()},
+                                                    "prompt": prompt_info(getattr(self.flow, "prompt_variant", None))},
             "phone_filter": self.phone_filter, "vad": self.vad.settings(), **self.meta}, ensure_ascii=False, indent=2),
             encoding="utf-8")
         return path

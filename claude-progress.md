@@ -434,3 +434,9 @@ agents do not update it automatically.
 - Dogrulama: backend 690 gecti, vitest 103, tsc, build. Gercek aramayla acik/kapali olcum YAPILMADI.
 - Not: onceki 'llm_s == 0' cikarimi (4 A1S aramasi) eski kayit; yeni kayitta fast_path alani var.
 - Acik: L2-EL ve L2 icin ayar acik/kapali en az 5'er arama/kosu; acik uclu adimda yalniz sayi cevabi (kullanici 2 numarali oneriyi 'persona prompt yeter mi' diye sordu: yetmez, OpenText LLM'e gitmez); 2865daf46143 q12 erken kapanma (kullanici atladi).
+
+## Session 2026-11-01 (2): kiyas kosusunu tum prompt surumleriyle kosan script
+- Istek: L2'yi kiyas kosusunda tum ayristirici prompt surumleri (v1-v5) icin kosturan script; sonuclar analiz icin paylasilacak.
+- Yapilan: scripts/eval_variants.py (profil, surumler, hizli yol on/off [varsayilan KAPALI: surum etkisi izole], telefon filtresi, persona/yol alt kumesi). FlowDriver.prompt_variant (None = aktif sürüm), evalrun.run_call/execute prompt_variant parametresi; oturum kaydindaki flow.prompt hangi surumle yapildigini yazar. Cikti: tablo + evidence/eval-variants-<profil>-<tarih>.json (arama basina musterinin soyledigi, ajanin kaydettigi cevaplar, transkript, tur sureleri).
+- Dogrulama: backend 691 gecti (sahte saglayicilarla script akisi test edildi). GERCEK L2 koşusu yapilmadi.
+- Sinir: her surum seti bir kez kosar (tekrar yok) => tek orneklem, 20 arama/surum; kucuk farklar gurultu olabilir.

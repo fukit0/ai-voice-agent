@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -287,3 +288,20 @@ def test_run_applies_fast_path_setting_and_records_it_in_sessions(ready, fp):
     assert docs and all(d["config"]["fast_path"] is fp for d in docs)           # ölçüm hangi ayarla yapıldığını kendisi söyler
     fast_turns = sum(1 for d in docs for t in d["turns"] if t.get("fast_path"))
     assert (fast_turns > 0) is fp                                                # kapalıyken hiçbir tur kural yoluyla çözülmez
+
+
+def test_variants_script_runs_each_prompt_version_and_records_which(ready):
+    import argparse
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("eval_variants", Path(__file__).resolve().parents[2] / "scripts" / "eval_variants.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    args = argparse.Namespace(profile="TEST", variants=["v1", "v5"], fast_path="off", phone_filter="off",
+                              personas=[CFG["personas"][0]["id"]], paths=[CFG["paths"][0]["id"]])
+    res = asyncio.run(mod._run(args, None, CFG, ToneSTT("m"), RuleLLM("m"), FakeTTS("m")))
+    assert [r["variant"] for r in res] == ["v1", "v5"] and all(r["run_status"] == "done" for r in res)
+    for r in res:
+        assert r["summary"]["calls"] == 1 and r["calls"][0]["recorded_answers"] and r["calls"][0]["customer_said"]
+        assert r["calls"][0]["prompt"]["version"] == r["variant"]            # oturum kaydı hangi sürümle yapıldığını söyler
+    assert res[0]["calls"][0]["prompt"]["hash"] != res[1]["calls"][0]["prompt"]["hash"]
+    assert all(t.get("fast_path") is None for r in res for t in r["calls"][0]["turns_detail"])   # hızlı yol kapalı

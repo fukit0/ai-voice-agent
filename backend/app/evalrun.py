@@ -241,17 +241,20 @@ def _summary(doc: dict) -> dict[str, Any]:
 
 async def run_call(*, profile_id: str, stt, llm, tts, persona: dict, path: dict, phone_filter: bool, cfg: dict, run_id: str,
                    scenario: str = "anket", clip_loader: Callable[[str, float, str], np.ndarray] = read_clip,
-                   max_turns: int = MAX_TURNS, fast_path: bool = False) -> dict[str, Any]:
+                   max_turns: int = MAX_TURNS, fast_path: bool = False,
+                   prompt_variant: str | None = None) -> dict[str, Any]:
     from .voice.flow import FlowDriver
     from .voice.session import VoiceSession
     cust = persona_mod.load()
     flow = FlowDriver(S.get(scenario), llm, persona_mod.scenario_values(cust), score_policy="clarify", persona=cust)
+    flow.prompt_variant = prompt_variant      # None: aktif sürüm; script/kıyas sürümleri tek tek dener
     flow.fast_path = bool(fast_path)       # profilin hızlı yol ayarı kıyas koşusuna da uygulanır (canlı aramayla aynı davranış)
     sid, events, out = uuid.uuid4().hex[:12], [], HeadlessOut()
     session = VoiceSession(sid, profile_id, stt, llm, tts, out, events.append, flow=flow, phone_filter=phone_filter,
                            persona=persona_mod.system_prompt(cust), greeting=persona_mod.greeting(cust),
                            tts_speed=float(cust.get("speed", 1.0)), tts_tone=cust.get("tone"))
-    session.meta = {"eval": {"run_id": run_id, "persona": persona["id"], "path": path["id"], "phone_filter": phone_filter}}
+    session.meta = {"eval": {"run_id": run_id, "persona": persona["id"], "path": path["id"], "phone_filter": phone_filter,
+                            "prompt_variant": prompt_variant}}
     vid, visits, said = voice_of(persona), Counter(), []
     status = "ok"
     try:
@@ -313,8 +316,10 @@ def new_run(profile_id: str, pf_mode: str, cfg: dict, personas: list[str] | None
     return run
 
 
-async def execute(run: dict, cfg: dict, stt, llm, tts, scenario: str = "anket", clip_loader=read_clip, fast_path: bool = False) -> None:
-    run["fast_path"] = bool(fast_path)          # koşunun hangi ayarla yapıldığı kayıtta kalır
+async def execute(run: dict, cfg: dict, stt, llm, tts, scenario: str = "anket", clip_loader=read_clip, fast_path: bool = False,
+                  prompt_variant: str | None = None) -> None:
+    run["fast_path"] = bool(fast_path)
+    run["prompt_variant"] = prompt_variant          # koşunun hangi ayarla yapıldığı kayıtta kalır
     by_p = {p["id"]: p for p in cfg["personas"]}
     by_t = {t["id"]: t for t in cfg["paths"]}
     try:
@@ -327,7 +332,7 @@ async def execute(run: dict, cfg: dict, stt, llm, tts, scenario: str = "anket", 
                 res = await asyncio.wait_for(run_call(profile_id=run["profile"], stt=stt, llm=llm, tts=tts, persona=by_p[c["persona"]],
                                                       path=by_t[c["path"]], phone_filter=c["phone_filter"], cfg=cfg, run_id=run["id"],
                                                       scenario=scenario, clip_loader=clip_loader,
-                                                      fast_path=fast_path), timeout=900)
+                                                      fast_path=fast_path, prompt_variant=prompt_variant), timeout=900)
                 c.update(res)
             except Exception as exc:  # noqa: BLE001 - bir arama patlarsa diğerleri koşmaya devam eder
                 c.update(status="error", error=f"{type(exc).__name__}: {exc}")
