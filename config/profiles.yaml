@@ -58,6 +58,7 @@ profiles:
   A1S:
     name: API referansı (streaming)
     purpose: A1 ile aynı modeller; üretim benzeri gecikme (canlı STT + akışlı TTS + bağlantı yeniden kullanımı)
+    fast_path: true   # 'evet/hayır/9' gibi kapalı sözlük cevaplarında LLM atlanır (flow.fastpath_obj)
     stt: {provider: deepgram, model: nova-3, streaming: true}
     llm: {provider: anthropic, model: claude-haiku-5-5}
     tts: {provider: elevenlabs, model: eleven_flash_v2_5, streaming: true}

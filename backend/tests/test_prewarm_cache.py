@@ -113,14 +113,20 @@ def test_anthropic_prewarm_makes_one_short_request_and_swallows_errors(monkeypat
     assert m3.prewarm() == 0.05                       # istek başarısız ama bağlantı ısındı
 
 
-def test_voice_offer_prewarms_cascade_providers_before_accept(monkeypatch):
+def test_voice_offer_prewarms_stt_tts_before_accept_and_llm_in_background(monkeypatch):
     pytest.importorskip("aiortc")
     import asyncio as aio
     from backend.app import api_voice
     order = []
+    stt, llm_p, tts = object(), object(), object()
 
     async def fake_prewarm(*ps, timeout=4.0):
-        order.append("prewarm")
+        if ps == (llm_p,):
+            order.append("llm_start")
+            await aio.sleep(0.05)               # LLM ısıtması yavaş: kabulü geciktirmemeli
+            order.append("llm_done")
+            return {"llm": 1.5}
+        order.append("stt_tts")
         return {"x": 0.1}
 
     class Conn:
@@ -138,11 +144,21 @@ def test_voice_offer_prewarms_cascade_providers_before_accept(monkeypatch):
             order.append("accept")
             return type("A", (), {"sdp": "s", "type": "answer"})()
 
+    objs = iter([stt, llm_p, tts])
     monkeypatch.setattr(registry, "prewarm", fake_prewarm)
-    monkeypatch.setattr(api_voice, "_provider", lambda prof, c: object())
+    monkeypatch.setattr(api_voice, "_provider", lambda prof, c: next(objs))
     import backend.app.voice.rtc as rtc
     monkeypatch.setattr(rtc, "RtcVoiceConnection", lambda *a, **k: Conn())
     monkeypatch.setattr(api_voice, "CONNECTIONS", {})
-    res = aio.run(api_voice.offer(api_voice.OfferRequest(sdp="v=0", profile="L2")))
-    assert order == ["prewarm", "accept"] and res["session_id"] == "a" * 12
-    assert Conn.session.stats["prewarm_s"] == {"x": 0.1}
+
+    async def run():
+        res = await api_voice.offer(api_voice.OfferRequest(sdp="v=0", profile="L2"))
+        assert order[:2] == ["stt_tts", "accept"] and "llm_done" not in order[:2]
+        assert Conn.session.stats["prewarm_llm_pending"] is True
+        await aio.sleep(0.15)
+        return res
+
+    res = aio.run(run())
+    assert res["session_id"] == "a" * 12 and "llm_done" in order
+    assert Conn.session.stats["prewarm_s"] == {"x": 0.1, "llm": 1.5}
+    assert Conn.session.stats["prewarm_llm_pending"] is False

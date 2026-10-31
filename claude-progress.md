@@ -397,3 +397,9 @@ agents do not update it automatically.
 - Yapilan: registry.prewarm + api_voice.offer entegrasyonu, AnthropicLLM.prewarm, prompt_cache secenegi (varsayilan kapali, reddedilirse duz metne doner), latency_probe --prewarm / --llm-cache. Backend 639 gecti.
 - Not: onbellek asgarisi Haiku 5.5 icin 512 token; istemimiz sinirda, kazanc beklenmiyor, olculerek karar verilecek.
 - Acik: Mac'te --prewarm ve --llm-cache olcumu; A1S ile 5 gercek arama; alternatif hizli LLM olcumu; yerel LLM'li hibrit.
+
+## Session 2026-10-31 (gece): core-027 - LLM'siz hizli yol + arka plan isitma
+- Kullanici: "basla" (1: kapali sozlukte LLM'siz yol, 2: LLM isitmasini arka plana al).
+- Yapilan: flow.fastpath_obj (yalniz tam-cumle eslesme; belirsizde LLM), FlowDriver.fast_path (profil `fast_path`, yalniz A1S), 'fast_path' olayi; api_voice: STT/TTS isitma kabulden once, LLM isitma arka planda (_BG_TASKS). Etiketli 114+79 ornekte kapsam 23/193, yanlis 0. Backend 669 gecti, 1 atlandi.
+- Karar: bayrak LLM secenegi degil profil alani (LLM ornegi A1 ile paylasilsin, mevcut test bozulmasin).
+- Acik/dogrulanmadi: hizli yolun canli kapsami ve gecikme kazanci olculmedi (etiketli kume zor ornek agirlikli, gercek trafikte kapsam daha yuksek beklenir ama KANITSIZ); arka plan isitma ilk turla yarisirsa LLM soguk kalabilir (olculmedi); 5 gercek arama hala yok. core-027 blocked.

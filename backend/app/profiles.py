@@ -29,6 +29,7 @@ class Profile:
     components: dict[str, dict[str, Any] | None] = field(default_factory=dict)
     realtime: dict[str, Any] | None = None
     notes: str = ""
+    fast_path: bool = False   # core-027: kapalı sözlükte LLM'siz yol (flow.fastpath_obj); profil düzeyinde, LLM örneği paylaşımı bozulmasın
 
     def component(self, name: str) -> dict[str, Any] | None:
         return self.components.get(name)
@@ -88,7 +89,7 @@ def load_profiles(path: Path | None = None, include_studio: bool = False) -> dic
     for pid, cfg in entries.items():
         out[pid] = Profile(id=pid, name=cfg.get("name", pid), purpose=cfg.get("purpose", ""),
                            mode=cfg.get("mode", "cascade"), realtime=cfg.get("realtime"),
-                           notes=cfg.get("notes", ""),
+                           notes=cfg.get("notes", ""), fast_path=bool(cfg.get("fast_path", False)),
                            components={c: cfg.get(c) for c in COMPONENTS})
     if not out:
         raise ValueError(f"{path or profiles_path()} içinde profil yok")

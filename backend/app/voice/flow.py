@@ -268,6 +268,41 @@ def extract_numbers(text: str) -> list[float]:
     return out
 
 
+_FP_YES = {"evet", "evet müsaitim", "müsaitim", "tabii", "tabi", "tabii ki", "olur", "tamam", "tamam olur", "olur tabii", "evet buyurun",
+           "buyurun", "elbette", "uygunum", "evet uygunum", "evet tabii", "evet olur", "evet tamam", "evet elbette"}
+_FP_NO = {"hayır", "hayir", "hayır müsait değilim", "müsait değilim", "hayır değil"}
+_FP_SCORE_FILL = {"puan", "veriyorum", "veririm", "diyorum", "derim"}
+
+
+def fastpath_obj(step: dict, utterance: str) -> dict | None:
+    """LLM'siz hızlı yol (core-027): YALNIZ kapalı sözlükteki, tüm cümlesi eşleşen kısa cevaplar ('evet', 'hayır müsait değilim', '9',
+    'sekiz puan veriyorum'). Şüphede None döner ve LLM yoluna düşülür; kural hiçbir zaman tahmin etmez. Dönen nesne yine check_value ve
+    handle_structured korumalarından geçer."""
+    low = utterance.replace("İ", "i").replace("I", "ı").casefold()
+    toks = re.findall(r"\d+(?:[.,]\d+)?|[a-zçğıöşüâ]+", low)
+    if not toks or len(toks) > 4:
+        return None
+    norm = " ".join(toks)
+    kind = step.get("kind")
+    obj: dict | None = None
+    if kind in ("YesNo", "CheckIn"):
+        if norm in _FP_YES:
+            obj = {"intent": "answer", "value": True}
+        elif norm in _FP_NO:
+            obj = {"intent": "answer", "value": False}
+    elif kind == "Score":
+        if toks == ["bir"]:      # çıplak 'bir' tereddüt sesi de olabilir ('bir… ne diyeyim'); LLM'e bırak
+            return None
+        nums = extract_numbers(low)
+        rest = [t for t in toks if not (t[0].isdigit() or t in _NUM_WORDS) and t not in _FP_SCORE_FILL]
+        if len(nums) == 1 and not rest and nums[0] == int(nums[0]) and sum(t[0].isdigit() or t in _NUM_WORDS for t in toks) == 1:
+            obj = {"intent": "answer", "value": int(nums[0])}
+    if obj is None:
+        return None
+    ok, _ = check_value(step, obj)
+    return obj if ok else None
+
+
 BASE_VERSION = "2"        # build_messages taban metni değişirse artırılır (prompt hash'ine girer)
 PROMPT_CONFIG = Path(__file__).resolve().parents[3] / "config" / "prompts" / "cascade-parser.json"
 
@@ -383,6 +418,8 @@ class FlowDriver:
         self.finished = False
         self.identity_asks = 0       # core-006: cevaplanan kimlik sorusu sayısı
         self.silences = 0            # core-022: art arda sessizlik sayısı (gerçek bir cevap gelince sıfırlanır)
+        self.fast_path = False       # core-027: kapalı sözlükte LLM'siz yol; profil `fast_path: true` ile api_voice açar, varsayılan kapalı
+        self.last_fast = False
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.outcome: str | None = None
         self.answers: list[dict] = []
@@ -439,6 +476,12 @@ class FlowDriver:
     def _extract(self, step: dict, utterance: str) -> tuple[dict | None, float | None]:
         if step["kind"] == "OpenText":
             return {"intent": "answer", "value": utterance.strip()}, None
+        self.last_fast = False
+        if self.fast_path:
+            fp = fastpath_obj(step, utterance)
+            if fp is not None:
+                self.last_fast = True
+                return fp, 0.0
         t0 = time.perf_counter()
         res = self.llm.complete(build_messages(step, self.text_of(step["key"]), utterance, self.score_policy), 120, 0.0)
         obj, _ = parse_output(res.text)
@@ -453,6 +496,8 @@ class FlowDriver:
         if self.identity_asks < MAX_IDENTITY_ASKS and identity_question(utterance):
             return self._identity(key, utterance, reply)        # LLM çağrılmaz: hem hızlı hem dürüst cevap sabit
         obj, reply.llm_s = self._extract(step, utterance)
+        if self.last_fast:
+            reply.events.append({"type": "fast_path", "step": key, "text": utterance})
         return self.handle_structured(obj, utterance, reply)
 
     def _identity(self, key: str, utterance: str, reply: Reply) -> Reply:

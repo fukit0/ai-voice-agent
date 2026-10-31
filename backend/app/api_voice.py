@@ -7,6 +7,8 @@ ADR 0001: profil sıcak olmalı; soğuksa 409 profile_not_warm döner (Hazırla)
 """
 from __future__ import annotations
 
+import asyncio
+
 import json
 import re
 from pathlib import Path
@@ -21,6 +23,7 @@ from . import stt_runs
 from .api_profiles import _provider
 from .profiles import load_profiles
 
+_BG_TASKS: set = set()
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 CONNECTIONS: dict[str, "RtcVoiceConnection"] = {}  # noqa: F821 (aiortc yoksa import edilmez)
 MAX_SESSIONS = 3  # tek Mac'te modeller paylaşılır; çok sayıda eşzamanlı oturum ölçümleri bozar
@@ -84,6 +87,7 @@ async def offer(req: OfferRequest) -> dict:
             persona = persona_mod.load()   # core-005: ekrandaki persona (ad -> {ASISTAN}, onay sözleri)
             flow = FlowDriver(S.get(req.scenario), llm, {**persona_mod.scenario_values(persona), **(req.values or {})},
                               score_policy=req.score_policy, persona=None if realtime else persona)
+            flow.fast_path = bool(profile.fast_path) and not realtime
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
@@ -96,7 +100,19 @@ async def offer(req: OfferRequest) -> dict:
         conn.session.set_vad(req.vad)
     if not realtime:   # core-027: soğuk ilk çağrıyı (TLS + LLM) arama başında al; hata aramayı engellemez
         from .providers import registry
-        conn.session.stats["prewarm_s"] = await registry.prewarm(stt, llm, tts)
+        # STT/TTS ısıtması yalnız TLS (~0,1-0,3 sn): kabulden önce beklenir. LLM ısıtması ~1,5 sn sürer (gerçek istek) ve selamlama
+        # sesi/çalma süresiyle örtüşür: arka planda başlar, aramanın kurulumunu geciktirmez. İlk müşteri cevabı ısınma bitmeden gelirse
+        # LLM çağrısı kendi bağlantısını açar (soğuk yol kadar kötü, daha kötü değil).
+        conn.session.stats["prewarm_s"] = await registry.prewarm(stt, tts)
+        conn.session.stats["prewarm_llm_pending"] = True
+
+        async def _warm_llm() -> None:
+            conn.session.stats["prewarm_s"].update(await registry.prewarm(llm))
+            conn.session.stats["prewarm_llm_pending"] = False
+
+        task = asyncio.create_task(_warm_llm())
+        _BG_TASKS.add(task)                      # referans tutulmazsa görev çöp toplanabilir
+        task.add_done_callback(_BG_TASKS.discard)
     try:
         answer = await conn.accept(req.sdp, req.type)
     except Exception as exc:  # noqa: BLE001
