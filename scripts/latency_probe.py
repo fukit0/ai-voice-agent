@@ -99,8 +99,12 @@ def llm_messages() -> list[dict]:
 
 def llm_once(llm, messages) -> float:
     t0 = time.perf_counter()
-    llm.complete(messages, 120, 0.0)
-    return time.perf_counter() - t0
+    res = llm.complete(messages, 120, 0.0)
+    dt = time.perf_counter() - t0
+    ex = getattr(res, "extra", None) or {}
+    if "cache_read_input_tokens" in ex:      # önbellek açıkken son çağrının önbellek sayıları (rapora yazılır)
+        llm.last_cache = {"creation": ex.get("cache_creation_input_tokens"), "read": ex.get("cache_read_input_tokens")}
+    return dt
 
 
 def tts_once(tts, text: str, stream: bool) -> tuple[float, float]:
@@ -170,6 +174,11 @@ def render(r: dict[str, Any]) -> str:
         f = lambda v: "—" if v is None else f"{v:.2f}"
         lines.append(f"{name:32} {f(s['cold']):>8} {f(s['warm_median']):>12} {f(s['warm_p95']):>8}")
     est = r["estimated_first_audio_s"]
+    if r.get("prewarm_s"):
+        lines += ["", "Isıtma (sn): " + ", ".join(f"{k}={'—' if v is None else v}" for k, v in r["prewarm_s"].items())]
+    if r.get("llm_cache_tokens"):
+        c = r["llm_cache_tokens"]
+        lines += ["", f"Anthropic önbellek (son çağrı): yazılan {c['creation']}, okunan {c['read']} token" + ("  ← 0/0 ise istem asgari uzunluğun altında, önbelleklenmedi" if not (c['creation'] or c['read']) else "")]
     lines += ["", f"Tahmini ilk ses (ısınmış): {'—' if est is None else f'{est:.2f} sn'}", r["note"]]
     return "\n".join(lines)
 
@@ -179,6 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--profile", default="A1S")
     ap.add_argument("--wav", help="Türkçe kısa konuşma klibi (verilmezse data/stt-clips altındaki ilk .wav)")
     ap.add_argument("--reps", type=int, default=5)
+    ap.add_argument("--prewarm", action="store_true", help="ölçümden önce arama başındaki bağlantı ısıtmasını (registry.prewarm) uygula; ilk (soğuk) tekrar bunun etkisini gösterir")
+    ap.add_argument("--llm-cache", action="store_true", help="Anthropic istem önbelleğini aç (llm.prompt_cache); önbellek token sayıları rapora yazılır")
     ap.add_argument("--no-pace", action="store_true", help="akışlı STT'de sesi gerçek zamanlı hızda göndermez (ölçüm yanıltır)")
     ap.add_argument("--out-dir", default=str(ROOT / "evidence"))
     args = ap.parse_args(argv)
@@ -198,7 +209,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{args.profile} STT+LLM+TTS bileşenli bir kademeli profil değil; bu araç yalnız A1/A1S gibi API profilleri içindir.")
         return 2
     try:
-        stt, llm, tts = (registry.get_provider(prof.component(c), c, args.profile) for c in ("stt", "llm", "tts"))
+        specs = {c: dict(prof.component(c)) for c in ("stt", "llm", "tts")}
+        if args.llm_cache:
+            specs["llm"]["prompt_cache"] = True
+        stt, llm, tts = (registry.get_provider(specs[c], c, args.profile) for c in ("stt", "llm", "tts"))
     except ProviderNotReady as exc:
         print(f"Ölçüm yapılamadı: {exc}")
         return 2
@@ -214,7 +228,14 @@ def main(argv: list[str] | None = None) -> int:
     if issues:
         print("Ölçüm yapılamadı: " + "; ".join(issues))
         return 2
+    import asyncio
+    warm = asyncio.run(registry.prewarm(stt, llm, tts)) if args.prewarm else None
     report = probe(args.profile, stt, llm, tts, audio, rate, args.reps, pace=not args.no_pace)
+    report["prewarm_s"] = warm
+    report["llm_prompt_cache"] = bool(args.llm_cache)
+    cache = getattr(llm, "last_cache", None)
+    if cache:
+        report["llm_cache_tokens"] = cache
     report["clip"] = wav.name
     report["created_at"] = datetime.now().isoformat(timespec="seconds")
     print(render(report))

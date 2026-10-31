@@ -391,3 +391,9 @@ agents do not update it automatically.
 - Yapilan (Opus alt ajani + ben): ortak httpx.Client, ElevenLabs akisli TTS, Deepgram canli STT + toplu yedek, A1S profili, usage akis suresi, scripts/latency_probe.py. Backend 631, vitest 94, playwright 6.
 - Duzeltme: cloud kopyasi Mac'ten eskiydi; tar trnorm.py/test_trnorm.py'yi geriletti, git checkout ile geri alindi ve bulut kopyasi Mac'ten esitlendi.
 - Acik: gercek ortamda olcum (latency_probe A1 vs A1S, sonra 5 gercek arama); Anthropic prompt caching yapilmadi; A2/A3 usage sayaci yok.
+
+## Session 2026-10-31 (aksam): core-027 devam - baglanti isitma + istem onbellegi (opt-in)
+- Kullanici: "1 ve 2 ile basla". Gercek olcum (latency_probe) LLM'i darbogaz gosterdi (1,0-1,3 sn; soguk ilk cagri 1,75-2,6 sn).
+- Yapilan: registry.prewarm + api_voice.offer entegrasyonu, AnthropicLLM.prewarm, prompt_cache secenegi (varsayilan kapali, reddedilirse duz metne doner), latency_probe --prewarm / --llm-cache. Backend 639 gecti.
+- Not: onbellek asgarisi Haiku 5.5 icin 512 token; istemimiz sinirda, kazanc beklenmiyor, olculerek karar verilecek.
+- Acik: Mac'te --prewarm ve --llm-cache olcumu; A1S ile 5 gercek arama; alternatif hizli LLM olcumu; yerel LLM'li hibrit.

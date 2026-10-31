@@ -1,6 +1,7 @@
 """Sağlayıcı kayıt defteri: `provider` adı -> sınıf, örnek önbelleği ve çağrı loglaması."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -115,3 +116,22 @@ def record_call(profile_id: str, component: str, provider: Provider, seconds: fl
     except OSError as exc:  # log yazılamaması çağrıyı bozmamalı
         log.warning("provider-calls.jsonl yazılamadı: %s", exc)
     return entry
+
+
+async def prewarm(*providers: Any, timeout: float = 4.0) -> dict[str, float | None]:
+    """Arama başında uzak sağlayıcı bağlantılarını ısıtır (TCP+TLS; LLM için ayrıca tek kısa istek): ilk turdaki soğuk gecikmeyi alır.
+    Hiçbir hata aramayı engellemez: zaman aşımı/hata -> o sağlayıcı için None. Yerel sağlayıcılarda `prewarm` yoktur, atlanır.
+    Dönüş: {'anthropic:model': saniye | None}."""
+    todo = [p for p in providers if p is not None and callable(getattr(p, "prewarm", None))]
+    if not todo:
+        return {}
+
+    async def one(p: Any) -> float | None:
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(p.prewarm), timeout)
+        except Exception as exc:  # noqa: BLE001 — ısıtma en iyi çabadır
+            log.info("prewarm başarısız (%s): %s", p.describe(), exc)
+            return None
+
+    res = await asyncio.gather(*(one(p) for p in todo))
+    return {p.describe(): None if r is None else round(r, 3) for p, r in zip(todo, res)}

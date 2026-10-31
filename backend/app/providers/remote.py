@@ -376,6 +376,17 @@ class AnthropicLLM(_Prewarm, LLMProvider):
     required_env = ("ANTHROPIC_API_KEY",)
     WARM_URL = "https://api.anthropic.com/"
 
+    def prewarm(self) -> float | None:
+        """TLS + tek kısa gerçek istek (ölçüm: soğuk ilk LLM çağrısı 1,75-2,6 sn, ısınmış ~1,0 sn). Hata -> None, arama engellenmez."""
+        t0 = time.perf_counter()
+        tls = warm_connection(self.WARM_URL)      # önce yalnız bağlantı; istek başarısız olsa bile bu ısıtma geçerlidir
+        try:
+            self.complete([{"role": "system", "content": "Sen bir bağlantı denemesisin."},
+                           {"role": "user", "content": "Sadece 'tamam' yaz."}], 16, 0.0)
+        except Exception:  # noqa: BLE001
+            return tls
+        return time.perf_counter() - t0
+
     def complete(self, messages, max_tokens=256, temperature=0.3):
         system = "\n".join(m["content"] for m in messages if m["role"] == "system")
         chat = [m for m in messages if m["role"] != "system"]
@@ -383,7 +394,12 @@ class AnthropicLLM(_Prewarm, LLMProvider):
         if not getattr(self, "_no_temperature", False):
             payload["temperature"] = temperature  # yeni modeller reddeder ("temperature is deprecated"): aşağıda yeniden denenir
         if system:
-            payload["system"] = system
+            # Opt-in (profilde llm.prompt_cache: true): sistem istemi önbellek bloğu olur. Haiku 5.5 için asgari 512 token; altındaki
+            # istemler hatasız ama önbelleksiz işlenir. Kazanç ölçülmeden açılmaz (scripts/latency_probe.py --llm-cache).
+            if (getattr(self, "options", None) or {}).get("prompt_cache") and not getattr(self, "_no_cache_control", False):
+                payload["system"] = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+            else:
+                payload["system"] = system
         if not getattr(self, "_no_thinking_param", False):
             # Canlı ölçüm (core-012, 38/342 + 38/237 boş çıktı): Haiku 5.5 varsayılan olarak düşünüyor ve kısa max_tokens'ı (120) düşünmeye harcayıp
             # metin üretmeden bitiyor (stop_reason=max_tokens, yalnız 'thinking' bloğu). Kısa yapılandırılmış cevapta düşünme kapatılır.
@@ -402,6 +418,9 @@ class AnthropicLLM(_Prewarm, LLMProvider):
                     if "temperature" in msg and "temperature" in payload:
                         payload.pop("temperature")  # bu model sıcaklık parametresini kabul etmiyor: bir daha gönderme
                         self._no_temperature = True
+                    elif "cache_control" in msg and isinstance(payload.get("system"), list):
+                        payload["system"] = system   # önbellek bloğu reddedildi: düz metne dön, bir daha deneme
+                        self._no_cache_control = True
                     elif "thinking" in msg and "thinking" in payload:
                         payload.pop("thinking")     # bu model 'disabled' kabul etmiyor: bir daha gönderme
                         self._no_thinking_param = True
@@ -423,9 +442,16 @@ class AnthropicLLM(_Prewarm, LLMProvider):
             body = res.json()
             text = "".join(b.get("text", "") for b in body.get("content", []) if b.get("type") == "text")
         extra = {"stop_reason": body.get("stop_reason"), "blocks": [b.get("type") for b in body.get("content", [])]}
+        u = body.get("usage", {})
+        if u.get("cache_creation_input_tokens") is not None or u.get("cache_read_input_tokens") is not None:
+            extra["cache_creation_input_tokens"] = u.get("cache_creation_input_tokens", 0)
+            extra["cache_read_input_tokens"] = u.get("cache_read_input_tokens", 0)
         return LLMResult(text=text.strip(), seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
                          output_tokens=body.get("usage", {}).get("output_tokens"),
-                         input_tokens=body.get("usage", {}).get("input_tokens"), extra=extra)
+                         # önbellek açıkken usage.input_tokens yalnız ÖNBELLEKSİZ kısımdır; maliyet için hepsi tam fiyattan sayılır (üst sınır)
+                         input_tokens=(None if u.get("input_tokens") is None else
+                                       u["input_tokens"] + (u.get("cache_creation_input_tokens") or 0) + (u.get("cache_read_input_tokens") or 0)),
+                         extra=extra)
 
 
 class ElevenLabsTTS(_Prewarm, TTSProvider):

@@ -94,6 +94,9 @@ async def offer(req: OfferRequest) -> dict:
         conn.session.fixed_audio = FixedAudio.from_spec(profile.realtime)   # core-019: sabit yasal metinler OpenAI TTS ile
     if req.vad:
         conn.session.set_vad(req.vad)
+    if not realtime:   # core-027: soğuk ilk çağrıyı (TLS + LLM) arama başında al; hata aramayı engellemez
+        from .providers import registry
+        conn.session.stats["prewarm_s"] = await registry.prewarm(stt, llm, tts)
     try:
         answer = await conn.accept(req.sdp, req.type)
     except Exception as exc:  # noqa: BLE001
