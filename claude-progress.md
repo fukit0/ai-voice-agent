@@ -421,3 +421,9 @@ agents do not update it automatically.
 - Yapilan: ElevenLabs'li profillerde 'Akisli TTS' kutusu (profil secici). Kalici override data/profile-tts-streaming.json; API PUT /api/profiles/{id}/tts-streaming (null = yaml varsayilani); /api/profiles satirina tts_streaming ve tts_streaming_default. load_profiles(apply_overrides=False) yaml tanimini verir; test_profile_a1s.py artik bunu kullanir (test gevsetilmedi: ayni kontroller, yalniz ekran secimlerinden bagimsiz).
 - Dogrulama: backend 677 gecti, vitest 97, tsc, build. Tarayicida elle denenmedi; L2-EL akisli ilk ses olculmedi.
 - Sinir: yeni aramalara uygulanir; A1 da acilabilir ama o zaman 'akissiz referans' olmaz.
+
+## Session 2026-10-31 (gece 5): profil karar kaydi (eleme gerekcesi) + ElevenLabs ayarlari Ayarlar'a tasindi
+- Istek: kiyas kosusu sonrasi bazi modeller elenecek; neden elendigi profil bazinda demoda anlatilacak. Ayrica ElevenLabs model/akis ayarlari Ayarlar menusu altina.
+- Yapilan: backend/app/decisions.py (data/profile-decisions.json; durum aday/secildi/elendi; elendi/secildi icin gerekce zorunlu, en az 15 karakter; karar anindaki toplam/kapsam/kriter puani 'snapshot' olarak saklanir). API: PUT /api/matrix/decisions/{profil}, GET /api/matrix/decisions/report (profil bazli Markdown, lisans nedeniyle elenenler icin otomatik gerekce). Kiyas matrisi sayfasinda 'Profil kararlari' paneli + 'Demo ozetini goster'; tabloda karar rozeti. ElevenLabs modeli ve Akisli TTS ust cubuktan Ayarlar > Ses (ElevenLabs) bolumune tasindi (ElevenLabsSettings.tsx).
+- Dogrulama: backend 684 gecti, vitest 100, tsc, build. Tarayicida elle denenmedi.
+- Acik: gercek kiyas kosusu ve eleme kararlari sen yapinca kaydedilecek; karar metinleri demo-soru-cevap'a su an elle kopyalanmiyor (rapor ekranindan alinir). Elenen profil kiyas kosusu listesinden otomatik cikmaz (yalniz kayit).

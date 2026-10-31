@@ -202,6 +202,11 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
                      "total": None if eliminated else res["total"], "coverage": res["coverage"], "missing": res["missing"],
                      "eliminated": eliminated, "license": lic, "license_unknown": unknown, "rank": None})
 
+    from . import decisions
+    recs = decisions.load()
+    for r in rows:
+        r["decision"] = recs.get(r["profile"]) or {"status": "aday", "reason": "", "decided_at": None, "snapshot": None}
+
     ranked = sorted((r for r in rows if r["total"] is not None), key=lambda r: (-r["total"], -(r["metrics"]["latency"] or {}).get("score", 0)))
     for i, r in enumerate(ranked, 1):
         r["rank"] = i

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchMatrix } from "../matrixApi";
-import type { CriterionId, Matrix, MatrixRow, Metric, Weights } from "../matrixApi";
+import { fetchDecisionReport, fetchMatrix, saveDecision } from "../matrixApi";
+import type { CriterionId, DecisionStatus, Matrix, MatrixRow, Metric, Weights } from "../matrixApi";
 
 /** Kıyas matrisi (lab-005, plan F7.5). Puanlar ve toplam backend'de hesaplanır (GET /api/matrix) — tek doğruluk kaynağı.
  *  Ekran: ağırlık kaydırıcıları → yeniden hesap (kısa gecikmeli); "Yenile" ve pencereye dönüş → yeni koşu/arama/puan görünür.
@@ -44,6 +44,51 @@ function License({ r }: { r: MatrixRow }) {
   if (r.license_unknown.length) return <span className="pill warn" title={r.license_unknown.join(", ")}>Lisans belirsiz</span>;
   const verified = r.license.every((l) => l.verified);
   return <span className={`pill ${verified ? "ok" : ""}`}>{verified ? "Ticari OK" : "Ticari OK · doğrulanmadı"}</span>;
+}
+
+const STATUS_LABEL: Record<DecisionStatus, string> = { aday: "Aday", secildi: "Seçildi", elendi: "Elendi" };
+
+function DecisionRow({ r, onSaved }: { r: MatrixRow; onSaved: () => void }) {
+  const d = r.decision ?? { status: "aday" as DecisionStatus, reason: "", decided_at: null, snapshot: null };
+  const [status, setStatus] = useState<DecisionStatus>(d.status);
+  const [reason, setReason] = useState(d.reason);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setStatus(d.status); setReason(d.reason); }, [d.status, d.reason]);
+  const dirty = status !== d.status || reason.trim() !== d.reason;
+  const save = async () => {
+    setBusy(true); setErr(null);
+    try { await saveDecision(r.profile, status, reason); onSaved(); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <div className="mx-decision" data-testid={`decision-${r.profile}`}>
+      <strong>{r.profile}</strong> <span className="meta">{r.name}</span>
+      <select value={status} onChange={(e) => setStatus(e.target.value as DecisionStatus)} aria-label={`${r.profile} kararı`}>
+        {(Object.keys(STATUS_LABEL) as DecisionStatus[]).map((k) => <option key={k} value={k}>{STATUS_LABEL[k]}</option>)}
+      </select>
+      <textarea value={reason} rows={2} placeholder={status === "aday" ? "Karar yok" : "Neden? (gerekçe zorunlu, demoda profil bazında anlatılır)"}
+        onChange={(e) => setReason(e.target.value)} aria-label={`${r.profile} gerekçesi`} disabled={status === "aday"} />
+      <button type="button" onClick={save} disabled={!dirty || busy} aria-label={`${r.profile} kararını kaydet`}>Kaydet</button>
+      {d.decided_at && <span className="meta">{d.decided_at.slice(0, 16).replace("T", " ")} UTC{d.snapshot ? ` · o günkü toplam ${d.snapshot.total === null ? "—" : tr(d.snapshot.total)}` : ""}</span>}
+      {err && <p className="note err" role="alert">{err}</p>}
+    </div>
+  );
+}
+
+function DecisionPanel({ rows, onSaved }: { rows: MatrixRow[]; onSaved: () => void }) {
+  const [report, setReport] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const show = async () => { try { setReport(await fetchDecisionReport()); setErr(null); } catch (e) { setErr((e as Error).message); } };
+  return (
+    <div className="panel" aria-labelledby="mx-d">
+      <h3 id="mx-d">Profil kararları</h3>
+      <p className="meta">Kıyas koşusundan sonra her profil için Seçildi / Elendi kararı ve gerekçesi buraya yazılır; karar anındaki toplam puan da kaydedilir. Demoda profil bazında anlatılır.</p>
+      {rows.map((r) => <DecisionRow key={r.profile} r={r} onSaved={onSaved} />)}
+      <button type="button" onClick={show}>Demo özetini göster</button>
+      {err && <p className="note err" role="alert">{err}</p>}
+      {report && <pre className="mx-report" data-testid="decision-report">{report}</pre>}
+    </div>
+  );
 }
 
 export function MatrixPage() {
@@ -149,7 +194,8 @@ export function MatrixPage() {
                     <td className="num mx-total">{r.total === null
                       ? <span className="meta" title={`Kapsam en az %${tr(data.min_coverage * 100, 0)} olmalı`}>{r.eliminated ? "elendi" : "yetersiz veri"}</span>
                       : <strong>{tr(r.total)}</strong>}</td>
-                    <td><License r={r} /></td>
+                    <td><License r={r} />{r.decision && r.decision.status !== "aday" && (
+                      <div><span className={`pill ${r.decision.status === "elendi" ? "err" : "ok"}`} title={r.decision.reason}>{STATUS_LABEL[r.decision.status]}</span></div>)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -161,6 +207,8 @@ export function MatrixPage() {
           </ul>
         </div>
       )}
+
+      {data && <DecisionPanel rows={ordered} onSaved={() => load(weights)} />}
     </section>
   );
 }

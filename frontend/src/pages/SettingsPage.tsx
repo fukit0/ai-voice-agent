@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ElevenLabsSettings } from "../ElevenLabsSettings";
 import { useProfile } from "../ProfileContext";
 import { useTheme } from "../theme";
 
@@ -35,12 +36,13 @@ export function SettingsPage() {
         <div>
           <span className="eyebrow">Yapılandırma</span>
           <h2>Ayarlar</h2>
-          <p className="meta">Etkin profil, ortam anahtarları ve konuşma davranışı varsayılanları. Profil seçimi üst çubuktadır.</p>
+          <p className="meta">Etkin profil, ortam anahtarları ve konuşma davranışı varsayılanları. Profil seçimi üst çubuktadır; ElevenLabs modeli ve akışlı TTS bu sayfadadır.</p>
         </div>
       </div>
       <div className="settings-wrap">
         <nav className="settings-nav" aria-label="Ayar bölümleri">
           <a href="#profil">Profil</a>
+          <a href="#ses">Ses (ElevenLabs)</a>
           <a href="#konusma">Konuşma</a>
           <a href="#gorunum">Görünüm</a>
         </nav>
@@ -67,6 +69,12 @@ export function SettingsPage() {
               </dl>
             )}
             <p className="note">Anahtarlar sunucudaki <code>.env</code> dosyasından okunur; tarayıcıdan girilmez ya da gösterilmez.</p>
+          </div>
+
+          <div className="panel" id="ses">
+            <h3>Ses (ElevenLabs)</h3>
+            <p className="meta">Aktif profilin TTS modeli ve akış ayarı. Seçim kalıcıdır, yeni aramalara uygulanır.</p>
+            <dl><ElevenLabsSettings /></dl>
           </div>
 
           <div className="panel" id="konusma">

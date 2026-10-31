@@ -98,3 +98,44 @@ describe("Kıyas matrisi", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Bilinmeyen kriter: x");
   });
 });
+
+
+describe("Profil kararları", () => {
+  it("elemek için gerekçe yazılır, kaydedilir ve demo özeti gösterilir", async () => {
+    let saved: unknown = null;
+    const base = body(DEFAULTS, [ROW({ profile: "L1" }), ROW({ profile: "L4", name: "Alternatif LLM" })]);
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.startsWith("/api/health")) return new Response(JSON.stringify({ status: "ok", version: "0.1.0" }));
+      if (url.startsWith("/api/profiles")) return new Response("[]");
+      if (url === "/api/matrix/decisions/L4") { saved = JSON.parse(String(init?.body)); return new Response(JSON.stringify({ status: "elendi" })); }
+      if (url === "/api/matrix/decisions/report") return new Response("| L4 | Elendi | JSON hatası yüksek |");
+      if (url.startsWith("/api/matrix")) return new Response(JSON.stringify(base));
+      return new Response("", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    open();
+    const sel = await screen.findByLabelText("L4 kararı");
+    fireEvent.change(sel, { target: { value: "elendi" } });
+    fireEvent.change(screen.getByLabelText("L4 gerekçesi"), { target: { value: "JSON hatası yüksek, üretim hızı yetersiz" } });
+    fireEvent.click(screen.getByLabelText("L4 kararını kaydet"));
+    await waitFor(() => expect(saved).toEqual({ status: "elendi", reason: "JSON hatası yüksek, üretim hızı yetersiz" }));
+    fireEvent.click(screen.getByText("Demo özetini göster"));
+    expect((await screen.findByTestId("decision-report")).textContent).toContain("JSON hatası yüksek");
+  });
+
+  it("gerekçe hatası kullanıcıya gösterilir", async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.startsWith("/api/health")) return new Response(JSON.stringify({ status: "ok", version: "0.1.0" }));
+      if (url.startsWith("/api/profiles")) return new Response("[]");
+      if (url === "/api/matrix/decisions/L1") return new Response(JSON.stringify({ detail: { message: "Elendi için gerekçe yazılmalı" } }), { status: 422 });
+      if (url.startsWith("/api/matrix")) return new Response(JSON.stringify(body(DEFAULTS, [ROW({ profile: "L1" })])));
+      return new Response("", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    open();
+    fireEvent.change(await screen.findByLabelText("L1 kararı"), { target: { value: "elendi" } });
+    fireEvent.change(screen.getByLabelText("L1 gerekçesi"), { target: { value: "x" } });
+    fireEvent.click(screen.getByLabelText("L1 kararını kaydet"));
+    expect((await screen.findByText(/gerekçe yazılmalı/)).textContent).toContain("Elendi");
+  });
+});
