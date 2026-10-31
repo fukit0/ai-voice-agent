@@ -403,3 +403,9 @@ agents do not update it automatically.
 - Yapilan: flow.fastpath_obj (yalniz tam-cumle eslesme; belirsizde LLM), FlowDriver.fast_path (profil `fast_path`, yalniz A1S), 'fast_path' olayi; api_voice: STT/TTS isitma kabulden once, LLM isitma arka planda (_BG_TASKS). Etiketli 114+79 ornekte kapsam 23/193, yanlis 0. Backend 669 gecti, 1 atlandi.
 - Karar: bayrak LLM secenegi degil profil alani (LLM ornegi A1 ile paylasilsin, mevcut test bozulmasin).
 - Acik/dogrulanmadi: hizli yolun canli kapsami ve gecikme kazanci olculmedi (etiketli kume zor ornek agirlikli, gercek trafikte kapsam daha yuksek beklenir ama KANITSIZ); arka plan isitma ilk turla yarisirsa LLM soguk kalabilir (olculmedi); 5 gercek arama hala yok. core-027 blocked.
+
+## Session 2026-10-31 (gece 2): core-027 canli olcum + production maliyet tablosu
+- Kanit: evidence/latency-probe-A1S-20261031-195514.json; canli oturumlar 6691940aaf71, a04a5d13893b, af0654aa5741, f6fed9f9d747 (4 arama, 70 tur).
+- Bulgu: ilk ses p50 1,53 sn (hedef 1,2 tutmuyor). LLM'siz turlar 0,78 sn (16 tur, cikarim), LLM'li 1,80, Deepgram yedek 2,79 sn (8 tur). 16 yedek: 8 bos, 5 zaman asimi, 3 dusuk guven.
+- Maliyet (3 tamamlanan arama, 16,9 dk, $0,66): ~$0,039/dk, TTS %94, STT %5, LLM %0,6; 25.000 dk ~ $975 (liste fiyati). Bilinmeyenler tablosu PoC plani eki 2026-10-31-gece'de.
+- Acik: 'fast_path' turda kayitli degil; Deepgram yedek nedenleri; kesilen cumle karakter sayaci; ElevenLabs plan/kredi, telefon operatoru maliyeti. core-027 blocked.
