@@ -1,0 +1,76 @@
+{
+  "profile": "A1",
+  "reps": 5,
+  "clip_seconds": 18.9,
+  "components": {
+    "stt": "deepgram:nova-3",
+    "llm": "anthropic:claude-haiku-5-5",
+    "tts": "elevenlabs:eleven_flash_v2_5"
+  },
+  "stt_batch": {
+    "cold": 2.318,
+    "warm_median": 1.27,
+    "warm_p95": 1.479,
+    "warm_min": 1.085,
+    "warm_max": 1.479,
+    "n_warm": 4,
+    "all": [
+      2.318,
+      1.376,
+      1.164,
+      1.479,
+      1.085
+    ]
+  },
+  "llm": {
+    "cold": 2.624,
+    "warm_median": 0.999,
+    "warm_p95": 1.109,
+    "warm_min": 0.914,
+    "warm_max": 1.109,
+    "n_warm": 4,
+    "all": [
+      2.624,
+      0.955,
+      1.043,
+      1.109,
+      0.914
+    ]
+  },
+  "tts_first_audio": {
+    "cold": 0.645,
+    "warm_median": 0.321,
+    "warm_p95": 0.348,
+    "warm_min": 0.292,
+    "warm_max": 0.348,
+    "n_warm": 4,
+    "all": [
+      0.645,
+      0.305,
+      0.337,
+      0.348,
+      0.292
+    ]
+  },
+  "tts_total": {
+    "cold": 0.645,
+    "warm_median": 0.321,
+    "warm_p95": 0.348,
+    "warm_min": 0.292,
+    "warm_max": 0.348,
+    "n_warm": 4,
+    "all": [
+      0.645,
+      0.305,
+      0.337,
+      0.348,
+      0.292
+    ]
+  },
+  "tts_streaming": false,
+  "stt_streaming": false,
+  "estimated_first_audio_s": 2.59,
+  "note": "Tahmini ilk ses = STT(bitişten sonra) + LLM + TTS(ilk ses), ısınmış medyanlar; VAD bitiş beklemesi (~0,5 sn) dahil değil. Hedef: canlı aramada p50 ≤ 1,2 sn (Aramalar ekranı). Tek ses klibi ve az tekrar: p95 yaklaşıktır.",
+  "clip": "klip.wav",
+  "created_at": "2026-10-31T19:02:21"
+}
