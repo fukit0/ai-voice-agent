@@ -96,10 +96,28 @@ class TTSModelBody(BaseModel):
 @router.get("/tts-models")
 def tts_models() -> dict:
     """ElevenLabs içeren profiller ve seçilebilir modeller (fiyat/gecikme notuyla). Seçim kalıcıdır, tüm ekranlar ve arama kullanır."""
-    profs = [{"id": p.id, "model": p.component("tts")["model"], "default": p.tts_default_model or p.component("tts")["model"]}
+    profs = [{"id": p.id, "model": p.component("tts")["model"], "default": p.tts_default_model or p.component("tts")["model"],
+              "streaming": bool(p.component("tts").get("streaming"))}
              for p in load_profiles(include_studio=True).values()
              if (p.component("tts") or {}).get("provider") == "elevenlabs"]
     return {"profiles": profs, "models": P.eleven_models()}
+
+
+class TTSStreamingBody(BaseModel):
+    streaming: bool | None = None   # None: yaml'daki varsayılana dön
+
+
+@router.put("/{pid}/tts-streaming")
+def set_tts_streaming(pid: str, body: TTSStreamingBody) -> dict:
+    """Akışlı TTS (ses parça parça çalınır, ilk ses ~0,2 sn): ElevenLabs'li profillerde açılıp kapatılır; yeni aramalara uygulanır."""
+    profile = _profile(pid)
+    tts = profile.component("tts")
+    if not tts or tts.get("provider") != "elevenlabs":
+        raise HTTPException(400, {"error": "not_elevenlabs", "profile": pid,
+                                  "message": f"{pid} profilinde ElevenLabs TTS yok; akışlı TTS değiştirilemez."})
+    default = bool(profile.tts_streaming_default) if profile.tts_streaming_default is not None else bool(tts.get("streaming"))
+    P.save_tts_streaming(pid, None if body.streaming in (None, default) else body.streaming)
+    return {"profile": pid, "streaming": default if body.streaming is None else body.streaming, "default": default}
 
 
 @router.put("/{pid}/tts-model")

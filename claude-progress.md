@@ -415,3 +415,9 @@ agents do not update it automatically.
 - Yapilan: profiles.py kalici override (data/profile-tts-models.json; yalniz elevenlabs-models.json'daki gecerli modeller; load_profiles uygular, boylece arama, benchmark, matris, studyo ayni modeli kullanir; streaming bayragi korunur). API: GET /api/profiles/tts-models, PUT /api/profiles/{id}/tts-model (null = varsayilana don). Arayuz: profil seciciye 'ElevenLabs modeli' listesi (fiyat/1k karakter) + 'Varsayilana don'. pricing.json'a eleven_v3 ve eleven_v4 liste fiyati eklendi (dogrulanmadi).
 - Dogrulama: backend 674 gecti, vitest 96, tsc, build. Tarayicida elle denenmedi.
 - Sinirlar: degisiklik yeni aramalara uygulanir (acik arama eski modelle surer); farkli model yeni baglanti/isitma ister; v3 canli hat icin yavas (model matrisi notu).
+
+## Session 2026-10-31 (gece 4): akisli TTS ekrandan ac/kapa
+- Istek: L2-EL'de de streaming acilabilsin, ekrandan.
+- Yapilan: ElevenLabs'li profillerde 'Akisli TTS' kutusu (profil secici). Kalici override data/profile-tts-streaming.json; API PUT /api/profiles/{id}/tts-streaming (null = yaml varsayilani); /api/profiles satirina tts_streaming ve tts_streaming_default. load_profiles(apply_overrides=False) yaml tanimini verir; test_profile_a1s.py artik bunu kullanir (test gevsetilmedi: ayni kontroller, yalniz ekran secimlerinden bagimsiz).
+- Dogrulama: backend 677 gecti, vitest 97, tsc, build. Tarayicida elle denenmedi; L2-EL akisli ilk ses olculmedi.
+- Sinir: yeni aramalara uygulanir; A1 da acilabilir ama o zaman 'akissiz referans' olmaz.

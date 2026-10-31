@@ -11,7 +11,7 @@ from backend.app.providers.fake import FakeLLM
 from backend.app.voice.session import VoiceSession
 
 client = TestClient(app)
-PROFILES = load_profiles()
+PROFILES = load_profiles(apply_overrides=False)   # yaml tanımı; ekrandan yapılan model/akış seçimleri bu testleri etkilemesin
 KEYS = ("DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY")
 
 

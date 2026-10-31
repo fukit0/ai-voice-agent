@@ -50,3 +50,28 @@ def test_rejects_unknown_model_and_non_elevenlabs_profile():
     assert client.put("/api/profiles/A1/tts-model", json={"model": "yok"}).status_code == 400
     assert client.put("/api/profiles/L2/tts-model", json={"model": "eleven_v3"}).status_code == 400
     assert client.put("/api/profiles/ZZZ/tts-model", json={"model": "eleven_v3"}).status_code == 404
+
+
+def test_streaming_toggle_for_elevenlabs_profiles_only_and_resets():
+    assert load_profiles()["L2-EL"].component("tts").get("streaming") is None
+    r = client.put("/api/profiles/L2-EL/tts-streaming", json={"streaming": True})
+    assert r.status_code == 200 and r.json() == {"profile": "L2-EL", "streaming": True, "default": False}
+    assert load_profiles()["L2-EL"].component("tts")["streaming"] is True
+    assert load_profiles()["A1"].component("tts").get("streaming") is None          # başka profil etkilenmez
+    row = next(p for p in client.get("/api/profiles", params={"check": "false"}).json() if p["id"] == "L2-EL")
+    assert row["tts_streaming"] is True and row["tts_streaming_default"] is False
+    client.put("/api/profiles/L2-EL/tts-streaming", json={"streaming": None})
+    assert load_profiles()["L2-EL"].component("tts").get("streaming") is None
+    assert load_profiles(apply_overrides=False)["L2-EL"].component("tts") == {"provider": "elevenlabs", "model": "eleven_v4_turbo"}
+
+
+def test_streaming_can_be_turned_off_for_a1s_and_survives_model_change():
+    client.put("/api/profiles/A1S/tts-streaming", json={"streaming": False})
+    assert load_profiles()["A1S"].component("tts").get("streaming") is False
+    client.put("/api/profiles/A1S/tts-model", json={"model": "eleven_turbo_v2_5"})
+    t = load_profiles()["A1S"].component("tts")
+    assert t["streaming"] is False and t["model"] == "eleven_turbo_v2_5"
+
+
+def test_streaming_rejected_for_non_elevenlabs():
+    assert client.put("/api/profiles/L2/tts-streaming", json={"streaming": True}).status_code == 400

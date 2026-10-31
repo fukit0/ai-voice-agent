@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchElevenModels, setTtsModel, type ElevenModel } from "./api";
+import { fetchElevenModels, setTtsModel, setTtsStreaming, type ElevenModel } from "./api";
 import { useProfile } from "./ProfileContext";
 
 export function ProfileSelector() {
@@ -35,6 +35,17 @@ export function ProfileSelector() {
     }
   };
 
+  const onStreaming = async (value: boolean) => {
+    if (!active) return;
+    setModelError(null);
+    try {
+      await setTtsStreaming(active.id, value);
+      refresh();
+    } catch (err) {
+      setModelError((err as Error).message);
+    }
+  };
+
   return (
     <>
       <label className="profile-select">
@@ -63,6 +74,12 @@ export function ProfileSelector() {
               Varsayılana dön
             </button>
           )}
+        </label>
+      )}
+      {eleven && (
+        <label className="profile-select" title="Ses cümle bitmeden parça parça çalınır; ilk ses daha erken gelir. Yeni aramalara uygulanır.">
+          <input type="checkbox" checked={!!active?.tts_streaming} onChange={(e) => onStreaming(e.target.checked)} aria-label="Akışlı TTS" />
+          Akışlı TTS
         </label>
       )}
       {modelError && <span className="status status-error">Model değiştirilemedi ({modelError})</span>}

@@ -22,6 +22,8 @@ export type ProfileStatus = {
   warm: boolean;
   warmup: WarmupJob | null;
   tts_default_model?: string | null;
+  tts_streaming?: boolean;
+  tts_streaming_default?: boolean | null;
 };
 
 export type WarmupComponent = {
@@ -330,6 +332,16 @@ export async function setTtsModel(profile: string, model: string | null): Promis
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model }),
+  });
+  await json(res);
+}
+
+/** streaming=null: profilin yaml'daki varsayılanına döner. */
+export async function setTtsStreaming(profile: string, streaming: boolean | null): Promise<void> {
+  const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/tts-streaming`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ streaming }),
   });
   await json(res);
 }
