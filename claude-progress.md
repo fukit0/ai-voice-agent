@@ -440,3 +440,10 @@ agents do not update it automatically.
 - Yapilan: scripts/eval_variants.py (profil, surumler, hizli yol on/off [varsayilan KAPALI: surum etkisi izole], telefon filtresi, persona/yol alt kumesi). FlowDriver.prompt_variant (None = aktif sürüm), evalrun.run_call/execute prompt_variant parametresi; oturum kaydindaki flow.prompt hangi surumle yapildigini yazar. Cikti: tablo + evidence/eval-variants-<profil>-<tarih>.json (arama basina musterinin soyledigi, ajanin kaydettigi cevaplar, transkript, tur sureleri).
 - Dogrulama: backend 691 gecti (sahte saglayicilarla script akisi test edildi). GERCEK L2 koşusu yapilmadi.
 - Sinir: her surum seti bir kez kosar (tekrar yok) => tek orneklem, 20 arama/surum; kucuk farklar gurultu olabilir.
+
+## Session 038 - A1 v5 sapmasinin nedeni (2026-11-01)
+- Karar: kullanici "once A1'i yeniden olc" secti (v5 aktivasyonundan once). Not: Haiku thinking duzeltmesi (thinking disabled) zaten olcum 3'ten ONCE uygulanmisti; A1 sapmasinin nedeni thinking degil.
+- Kanit analizi (evidence/eval-prompt-20261029-181602.json holdout, -183538.json ana set; A1 v5): p50 ~1,1 sn, p95 ~15,9 sn. Yavas cagrilar %10-14 (34/237, 37/342), 18-55 sn; hepsinde stop_reason=end_turn, ~16 cikti tokeni, yalniz text blogu -> dusunme/uzun cikti DEGIL; sunucu ya da baglanti takilmasi. Hata/zaman asimi yok (60 sn sinirinin altinda).
+- Sema ihlali: holdout'ta 3/237 (h020 'onay vermiyorum' YesNo icin value '2' dondu, rep 1). Ayri model hatasi, takilmayla ilgisiz.
+- Uretim etkisi: canli cagrida 18-55 sn sessizlik kabul edilemez; aday cozum kisa okuma zaman asimi (~5 sn) + bir kez yeniden deneme (istek idempotent). Henuz uygulanmadi, once neden ayrilacak.
+- Eklendi: scripts/llm_stall_probe.py (paylasilan keep-alive baglanti vs her cagrida yeni baglanti; takilma yalniz 'shared'da ise bayat baglanti). Bulut/VM'den calistirilamadi (API anahtari 401). DOGRULANMADI: gercek kosu. Komut (Mac): ./.venv/bin/python scripts/llm_stall_probe.py A1 --calls 60 ; bayat baglanti icin ayrica --pause 15 --calls 30
