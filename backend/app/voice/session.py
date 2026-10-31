@@ -502,7 +502,9 @@ class VoiceSession:
             reply = self.flow.handle_structured({"intent": "unclear", "value": None}, "")
         else:
             reply = await asyncio.to_thread(self.flow.handle, text)
-        if reply.llm_s is not None:
+        if any(e.get("type") == "fast_path" for e in reply.events):
+            rec["fast_path"] = True        # kural yolu: LLM çağrılmadı; llm_s yazılmaz (LLM süre istatistiğini kirletmesin)
+        elif reply.llm_s is not None:
             rec["llm_s"] = reply.llm_s
             record_call(self.profile_id, "llm", self.llm, reply.llm_s, ok=True, warm=True, chars=len(text), source="voice")
         if turn != self._turn_id:
@@ -707,6 +709,9 @@ class VoiceSession:
             # Aramalar ekranı kıyası (lab-004): hangi bileşen, ton ve hızla konuşuldu (profil kimliği tek başına bunu söylemez)
             "stt": _describe(self.stt), "llm": _describe(self.llm), "tts": _describe(self.tts),
             "tts_tone": self.tts_tone, "tts_speed": self.tts_speed,
+            # Ölçümün hangi ayarla yapıldığı: ayar sonradan değişse de arama kaydı doğru gruba girer (Aramalar > Kıyas > Profil + hızlı yol)
+            "config": {"fast_path": bool(getattr(self.flow, "fast_path", False)) if self.flow else None,
+                       "tts_streaming": self._tts_streaming, "stt_streaming": self._stt_streaming},
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,
                                                     "path": self.flow.path, "answers": self.flow.answers,

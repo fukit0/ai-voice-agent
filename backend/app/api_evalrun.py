@@ -80,7 +80,7 @@ async def start_run(body: RunBody) -> dict:
         raise HTTPException(409, {"error": "set_not_ready", "message": "Persona sesleri hazır değil: önce 'Test setini hazırla'."})
     stt, llm, tts = _providers(profile)
     run = evalrun.new_run(body.profile, body.phone_filter, cfg, body.personas, body.paths)
-    evalrun.start(run, cfg, stt, llm, tts)
+    evalrun.start(run, cfg, stt, llm, tts, fast_path=bool(profile.fast_path))
     return {"run_id": run["id"], "total": run["total"]}
 
 

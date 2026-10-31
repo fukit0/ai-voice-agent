@@ -32,6 +32,7 @@ class Profile:
     notes: str = ""
     tts_default_model: str | None = None   # ElevenLabs TTS modeli ekrandan değiştirildiyse yaml'daki asıl model
     tts_streaming_default: bool | None = None   # akışlı TTS ekrandan değiştirildiyse yaml'daki değer
+    fast_path_default: bool | None = None   # hızlı yol ekrandan değiştirildiyse yaml'daki değer
     fast_path: bool = False   # core-027: kapalı sözlükte LLM'siz yol (flow.fastpath_obj); profil düzeyinde, LLM örneği paylaşımı bozulmasın
 
     def component(self, name: str) -> dict[str, Any] | None:
@@ -72,7 +73,7 @@ class Profile:
             elif key and not os.environ.get(key):
                 missing.add(key)
         return {"id": self.id, "name": self.name, "purpose": self.purpose, "mode": self.mode,
-                "notes": self.notes, "tts_default_model": self.tts_default_model, "tts_streaming": bool((self.components.get("tts") or {}).get("streaming")), "tts_streaming_default": self.tts_streaming_default, "components": comps, "realtime": self.realtime,
+                "notes": self.notes, "tts_default_model": self.tts_default_model, "tts_streaming": bool((self.components.get("tts") or {}).get("streaming")), "tts_streaming_default": self.tts_streaming_default, "fast_path": self.fast_path, "fast_path_default": self.fast_path_default, "components": comps, "realtime": self.realtime,
                 "missing_env": sorted(missing), "issues": issues,
                 # hazır = anahtar eksik değil, bilinen sorun yok, üç bileşen de var (cascade)
                 "ready": (not missing and not issues and (
@@ -140,6 +141,30 @@ def save_tts_streaming(pid: str, value: bool | None) -> None:
     p.write_text(json.dumps(ov, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def fast_path_overrides_path() -> Path:
+    return Path(os.environ.get("SVA_DATA_DIR", ROOT / "data")) / "profile-fast-path.json"
+
+
+def load_fast_path_overrides() -> dict[str, bool]:
+    """Ekrandan seçilen hızlı yol durumu: {profil_id: açık mı}. Dosya yoksa/bozuksa boş (yaml'daki değer geçerli)."""
+    try:
+        d = json.loads(fast_path_overrides_path().read_text(encoding="utf-8"))
+        return {k: v for k, v in d.items() if isinstance(k, str) and isinstance(v, bool)}
+    except (OSError, ValueError, AttributeError):
+        return {}
+
+
+def save_fast_path_override(pid: str, value: bool | None) -> None:
+    ov = load_fast_path_overrides()
+    if value is None:
+        ov.pop(pid, None)
+    else:
+        ov[pid] = value
+    p = fast_path_overrides_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(ov, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def load_profiles(path: Path | None = None, include_studio: bool = False, apply_overrides: bool = True) -> dict[str, Profile]:
     """`include_studio`: yalnızca TTS stüdyosunda kullanılan, listede görünmeyen tek bileşenli profiller de dahil."""
     raw = yaml.safe_load((path or profiles_path()).read_text(encoding="utf-8")) or {}
@@ -156,6 +181,11 @@ def load_profiles(path: Path | None = None, include_studio: bool = False, apply_
         raise ValueError(f"{path or profiles_path()} içinde profil yok")
     if not apply_overrides:       # yaml'daki tanım (testler ve "varsayılan" gösterimi için)
         return out
+    for pid, want in load_fast_path_overrides().items():
+        prof = out.get(pid)
+        if prof and prof.mode == "cascade" and prof.fast_path != want:
+            prof.fast_path_default = prof.fast_path
+            prof.fast_path = want
     for pid, want in load_tts_streaming().items():
         prof = out.get(pid)
         tts = prof.components.get("tts") if prof else None

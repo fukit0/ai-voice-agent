@@ -23,6 +23,8 @@ export type ProfileStatus = {
   warmup: WarmupJob | null;
   tts_default_model?: string | null;
   tts_streaming?: boolean;
+  fast_path?: boolean;
+  fast_path_default?: boolean | null;
   tts_streaming_default?: boolean | null;
 };
 
@@ -342,6 +344,16 @@ export async function setTtsStreaming(profile: string, streaming: boolean | null
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ streaming }),
+  });
+  await json(res);
+}
+
+/** enabled=null: profilin yaml'daki varsayılanına döner. */
+export async function setFastPath(profile: string, enabled: boolean | null): Promise<void> {
+  const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/fast-path`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
   });
   await json(res);
 }

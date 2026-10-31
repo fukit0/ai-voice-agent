@@ -108,8 +108,20 @@ def _usage_group(docs: list[dict]) -> dict:
             "avg_tts_chars": round(statistics.mean([u["items"]["tts_chars"] for u in us])) if us else None}
 
 
+def _fp_state(doc: dict) -> str:
+    """Arama hangi hızlı yol ayarıyla yapıldı: 'acik' | 'kapali' | 'bilinmiyor' (config bloğu yazılmadan önceki eski kayıtlar)."""
+    v = (doc.get("config") or {}).get("fast_path")
+    return "bilinmiyor" if v is None else ("acik" if v else "kapali")
+
+
+FP_LABEL = {"acik": "hızlı yol açık", "kapali": "hızlı yol kapalı", "bilinmiyor": "ayar kaydı yok (eski)"}
+
+
 def _group(key: str, label: str, docs: list[dict]) -> dict:
     turns = [t for d in docs for t in _turns(d)]
+    fast_turns = [t for t in turns if t.get("fast_path")]
+    first_fast = [float(t["first_audio_after_end_s"]) for t in fast_turns if "first_audio_after_end_s" in t]
+    first_llm = [float(t["first_audio_after_end_s"]) for t in turns if not t.get("fast_path") and "llm_s" in t and "first_audio_after_end_s" in t]
     first = [float(t["first_audio_after_end_s"]) for t in turns if "first_audio_after_end_s" in t]
     outcomes: dict[str, int] = {}
     for d in docs:
@@ -119,6 +131,10 @@ def _group(key: str, label: str, docs: list[dict]) -> dict:
     ans = [sum(1 for a in (d.get("flow") or {}).get("answers", []) if not a.get("unanswered")) for d in docs]
     return {
         "key": key, "label": label, "sessions": len(docs), "turns": len(turns),
+        # Hızlı yol etkisi: kural yoluyla (LLM'siz) çözülen tur sayısı ve o turların ilk ses süresi, LLM'li turlarınkiyle yan yana
+        "fast_turns": len(fast_turns), "fast_share": round(len(fast_turns) / len(turns), 3) if turns else None,
+        "first_audio_fast_p50": round(statistics.median(first_fast), 3) if first_fast else None,
+        "first_audio_llm_p50": round(statistics.median(first_llm), 3) if first_llm else None,
         "first_audio": ({"p50": round(statistics.median(first), 3), "p95": round(_pct(first, 0.95), 3),
                          "min": round(min(first), 3), "max": round(max(first), 3)} if first else None),
         "stages": {name: _med([float(t[k]) for t in turns if k in t]) for name, k in STAGES},
@@ -145,6 +161,13 @@ def compare(folder: Path, group: str = "profile", ids: list[str] | None = None, 
         by_id = {d.get("id"): d for d in docs}
         groups = [_group(i, f"{by_id[i]['profile']} · {(by_id[i].get('started_at') or '')[5:16].replace('T', ' ')}", [by_id[i]])
                   for i in wanted if i in by_id]
+    elif group == "variant":
+        by_var: dict[tuple[str, str], list[dict]] = {}
+        for d in docs:
+            by_var.setdefault((d["profile"], _fp_state(d)), []).append(d)
+        order = {"kapali": 0, "acik": 1, "bilinmiyor": 2}
+        groups = [_group(f"{p}|{st}", f"{p} · {FP_LABEL[st]}", ds)
+                  for (p, st), ds in sorted(by_var.items(), key=lambda kv: (kv[0][0], order[kv[0][1]]))]
     else:
         by_profile: dict[str, list[dict]] = {}
         for d in docs:
@@ -152,9 +175,12 @@ def compare(folder: Path, group: str = "profile", ids: list[str] | None = None, 
         groups = [_group(p, p, ds) for p, ds in sorted(by_profile.items())]
     base = next((g for g in groups if g["key"] == baseline), groups[0] if groups else None)
     for g in groups:
-        b50 = (base or {}).get("first_audio") and base["first_audio"]["p50"]
+        ref = base
+        if group == "variant" and not baseline:       # her profilin açık hali kendi kapalı haliyle kıyaslanır
+            ref = None if g["key"].endswith("|bilinmiyor") else next((x for x in groups if x["key"] == f"{g['key'].split('|')[0]}|kapali"), None)
+        b50 = (ref or {}).get("first_audio") and ref["first_audio"]["p50"]
         g50 = g["first_audio"] and g["first_audio"]["p50"]
-        g["is_baseline"] = base is not None and g["key"] == base["key"]
+        g["is_baseline"] = ref is not None and g["key"] == ref["key"]
         g["delta_p50_s"] = round(g50 - b50, 3) if b50 is not None and g50 is not None else None
         g["delta_pct"] = round((g50 - b50) / b50 * 100, 1) if b50 and g50 is not None else None
     return {"group": group, "baseline": base["key"] if base else None, "groups": groups, "p50_target_s": P50_TARGET_S,

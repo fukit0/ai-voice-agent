@@ -1,7 +1,7 @@
 """Aramalar API'si (lab-004): kayıtlı test aramalarının listesi, detayı ve kıyası.
 
 GET /api/calls                 — liste (profil/senaryo/sonuç süzgeci), en yeni üstte
-GET /api/calls/compare         — profil bazlı (group=profile) ya da seçilen aramalar (group=call&ids=a,b) kıyası
+GET /api/calls/compare         — profil bazlı (group=profile), profil + hızlı yol ayarı bazlı (group=variant) ya da seçilen aramalar (group=call&ids=a,b) kıyası
 GET /api/calls/{id}            — transkript, tur gecikmeleri, cevaplar, ses kaydı bağlantısı
 Salt okunur; ses dosyası `GET /api/voice/recordings/{id}.wav` ile iner (silme de orada).
 """
@@ -28,7 +28,7 @@ def list_calls(profile: str | None = None, scenario: str | None = None, outcome:
 
 
 @router.get("/compare")
-def compare(group: str = Query("profile", pattern="^(profile|call)$"), ids: str = "", baseline: str | None = None,
+def compare(group: str = Query("profile", pattern="^(profile|call|variant)$"), ids: str = "", baseline: str | None = None,
             profile: str | None = None, scenario: str | None = None, outcome: str | None = None) -> dict:
     wanted = [i for i in ids.split(",") if i]
     if len(wanted) > 12 or any(not _SID.match(i) for i in wanted):

@@ -272,3 +272,18 @@ def test_api_starts_a_run_reports_progress_and_blocks_a_second_one(ready, monkey
         assert [x["id"] for x in c.get("/api/evalrun/runs").json()] == [rid]
         assert c.post(f"/api/evalrun/runs/{rid}/cancel").status_code == 409                # bitmiş koşu iptal edilmez
     assert evalrun.get_run(rid)["status"] == "done"                                         # diske yazıldı: yeniden başlatmada da görünür
+
+
+def _sessions(tmp):
+    import json
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted((tmp / "voice-sessions").glob("*.json"))]
+
+
+@pytest.mark.parametrize("fp", [True, False])
+def test_run_applies_fast_path_setting_and_records_it_in_sessions(ready, fp):
+    run = run_set(personas=[CFG["personas"][0]["id"]], paths=[CFG["paths"][0]["id"]], fast_path=fp)
+    assert run["fast_path"] is fp and run["status"] in ("done", "finished", "completed", "tamamlandi") or run["done"] == run["total"]
+    docs = _sessions(ready)
+    assert docs and all(d["config"]["fast_path"] is fp for d in docs)           # ölçüm hangi ayarla yapıldığını kendisi söyler
+    fast_turns = sum(1 for d in docs for t in d["turns"] if t.get("fast_path"))
+    assert (fast_turns > 0) is fp                                                # kapalıyken hiçbir tur kural yoluyla çözülmez

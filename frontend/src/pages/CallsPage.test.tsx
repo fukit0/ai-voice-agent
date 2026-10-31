@@ -44,6 +44,13 @@ function mockApi(opts: { empty?: boolean } = {}) {
     const ok = (b: unknown) => new Response(JSON.stringify(b));
     if (url.startsWith("/api/calls/compare")) {
       if (opts.empty) return ok({ ...COMPARE, groups: [] });
+      if (url.includes("group=variant")) return ok({ ...COMPARE, group: "variant", baseline: "L2-EL|kapali", groups: [
+        group({ key: "L2-EL|kapali", label: "L2-EL · hızlı yol kapalı", sessions: 5, turns: 100, fast_turns: 0, fast_share: 0, first_audio: { p50: 1.9, p95: 2.5, min: 1, max: 3 },
+          first_audio_fast_p50: null, first_audio_llm_p50: 1.9 }),
+        group({ key: "L2-EL|acik", label: "L2-EL · hızlı yol açık", sessions: 5, turns: 100, fast_turns: 25, fast_share: 0.25, first_audio: { p50: 1.5, p95: 2.4, min: 0.7, max: 3 },
+          first_audio_fast_p50: 0.8, first_audio_llm_p50: 1.9, is_baseline: false, delta_p50_s: -0.4, delta_pct: -21.1 }),
+        group({ key: "L2-EL|bilinmiyor", label: "L2-EL · ayar kaydı yok (eski)", sessions: 3, turns: 40, first_audio: { p50: 1.7, p95: 2.5, min: 1, max: 3 },
+          is_baseline: false, delta_p50_s: null, delta_pct: null })] });
       if (url.includes("group=call")) return ok({ ...COMPARE, group: "call", baseline: "aaaaaaaaaaa1", groups: [group({ key: "aaaaaaaaaaa1", label: "L2 · 10-30 10:00", sessions: 1 })] });
       return ok(COMPARE);
     }
@@ -59,6 +66,23 @@ function mockApi(opts: { empty?: boolean } = {}) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Aramalar", () => {
+  it("'Profil + hızlı yol' görünümü açık ve kapalı ölçümleri ayrı satırlarda ve farkıyla gösterir; eski kayıt kıyaslanmaz", async () => {
+    const urls = mockApi();
+    render(<CallsPage />);
+    await screen.findByTestId("cmp-L2");
+    fireEvent.click(screen.getByRole("button", { name: "Profil + hızlı yol" }));
+    const on = await screen.findByTestId("cmp-L2-EL|acik");
+    expect(urls.some((u) => u.includes("group=variant"))).toBe(true);
+    expect(on).toHaveTextContent("hızlı yol açık");
+    expect(on).toHaveTextContent("-0.40 sn (-21%)");
+    expect(within(on).getByTestId("fast-cell")).toHaveTextContent("25/100 (%25)");
+    expect(on).toHaveTextContent("0.80 sn / 1.90 sn");
+    expect(within(screen.getByTestId("cmp-L2-EL|kapali")).getByTestId("fast-cell")).toHaveTextContent("0/100 (%0)");
+    const old = screen.getByTestId("cmp-L2-EL|bilinmiyor");
+    expect(old).toHaveTextContent("ayar kaydı yok (eski)");
+    expect(old).not.toHaveTextContent("sn (");                       // fark uydurulmaz
+  });
+
   it("profil bazlı kıyası farkla, hedef rozetiyle ve 'örnek az' uyarısıyla gösterir", async () => {
     mockApi();
     render(<CallsPage />);

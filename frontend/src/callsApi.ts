@@ -41,9 +41,10 @@ export type CompareGroup = {
   outcomes: Record<string, number>; avg_duration_s: number | null; avg_answers: number | null;
   barge_ins_per_call: number; stt_rejected_total: number; tts: string[]; tones: string[]; realtime: boolean;
   usage_calls: number; avg_cost_usd: number | null; cost_complete: boolean; avg_gpu_s: number | null; avg_stt_minutes: number | null; avg_tts_chars: number | null;
+  fast_turns?: number; fast_share?: number | null; first_audio_fast_p50?: number | null; first_audio_llm_p50?: number | null;
   meets_p50_target: boolean; enough_sessions: boolean; is_baseline: boolean; delta_p50_s: number | null; delta_pct: number | null;
 };
-export type CompareResult = { group: "profile" | "call"; baseline: string | null; groups: CompareGroup[]; p50_target_s: number; min_sessions: number; definition: string };
+export type CompareResult = { group: "profile" | "call" | "variant"; baseline: string | null; groups: CompareGroup[]; p50_target_s: number; min_sessions: number; definition: string };
 
 async function callsGet<T>(url: string, signal?: AbortSignal): Promise<T> {
   return json<T>(await fetch(url, { signal }));
@@ -57,6 +58,6 @@ const qs = (o: Record<string, string | number | undefined | null>) => {
 export const fetchCalls = (f: { profile?: string; scenario?: string; outcome?: string } = {}, signal?: AbortSignal) =>
   callsGet<CallList>(`/api/calls${qs(f)}`, signal);
 export const fetchCall = (id: string, signal?: AbortSignal) => callsGet<CallDetail>(`/api/calls/${id}`, signal);
-export const fetchCompare = (q: { group: "profile" | "call"; ids?: string[]; baseline?: string; profile?: string; scenario?: string; outcome?: string },
+export const fetchCompare = (q: { group: "profile" | "call" | "variant"; ids?: string[]; baseline?: string; profile?: string; scenario?: string; outcome?: string },
                              signal?: AbortSignal) =>
   callsGet<CompareResult>(`/api/calls/compare${qs({ ...q, ids: q.ids?.join(",") })}`, signal);

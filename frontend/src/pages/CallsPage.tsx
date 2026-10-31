@@ -45,6 +45,8 @@ function CompareTable({ result, onBaseline }: { result: CompareResult; onBaselin
             <th>p95</th>
             <th>Fark (p50)</th>
             <th>STT</th><th>LLM</th><th>TTS ilk ses</th>
+            <th title="Kural yoluyla (LLM'siz) çözülen turların payı">LLM'siz tur</th>
+            <th title="İlk ses p50: LLM'siz turlar / LLM'li turlar">İlk ses: LLM'siz / LLM'li</th>
             <th>Maliyet / arama</th><th>GPU sn</th>
             <th>Cevap / arama</th>
             <th>Sonuç</th>
@@ -75,6 +77,8 @@ function CompareTable({ result, onBaseline }: { result: CompareResult; onBaselin
               <td>{sec(g.first_audio?.p95)}</td>
               <td><Delta g={g} /></td>
               <td>{sec(g.stages.stt)}</td><td>{sec(g.stages.llm)}</td><td>{sec(g.stages.tts_first)}</td>
+              <td data-testid="fast-cell">{g.fast_share == null ? "—" : `${g.fast_turns}/${g.turns} (%${Math.round(g.fast_share * 100)})`}</td>
+              <td>{g.first_audio_fast_p50 == null && g.first_audio_llm_p50 == null ? "—" : `${sec(g.first_audio_fast_p50)} / ${sec(g.first_audio_llm_p50)}`}</td>
               <td data-testid="cost-cell">{usd(g.avg_cost_usd)}{(g.usage_calls ?? 0) > 0 && !g.cost_complete && <span className="calls-tag bad" title="Bazı kalemlerin fiyatı ya da token sayısı yok">eksik</span>}</td>
               <td>{g.avg_gpu_s == null ? "—" : g.avg_gpu_s.toFixed(1)}</td>
               <td>{g.avg_answers ?? "—"}</td>
@@ -182,7 +186,7 @@ export function CallsPage() {
   const [list, setList] = useState<CallList | null>(null);
   const [filters, setFilters] = useState<{ profile: string; scenario: string; outcome: string }>({ profile: "", scenario: "", outcome: "" });
   const [selected, setSelected] = useState<string[]>([]);
-  const [mode, setMode] = useState<"profile" | "call">("profile");
+  const [mode, setMode] = useState<"profile" | "call" | "variant">("profile");
   const [baseline, setBaseline] = useState<string | undefined>(undefined);
   const [result, setResult] = useState<CompareResult | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -200,7 +204,7 @@ export function CallsPage() {
     if (tab !== "compare") return;
     if (mode === "call" && !selected.length) { setResult(null); return; }
     const ac = new AbortController();
-    fetchCompare({ group: mode, ids: mode === "call" ? selected : undefined, baseline, ...(mode === "profile" ? filters : {}) }, ac.signal)
+    fetchCompare({ group: mode, ids: mode === "call" ? selected : undefined, baseline, ...(mode !== "call" ? filters : {}) }, ac.signal)
       .then((r) => { setResult(r); setErr(null); })
       .catch((e) => { if (!ac.signal.aborted) setErr(String(e.message ?? e)); });
     return () => ac.abort();
@@ -247,11 +251,12 @@ export function CallsPage() {
           <div className="calls-modebar">
             <div className="calls-seg" role="group" aria-label="Kıyas türü">
               <button aria-pressed={mode === "profile"} onClick={() => { setMode("profile"); setBaseline(undefined); }}>Profil bazlı</button>
+              <button aria-pressed={mode === "variant"} onClick={() => { setMode("variant"); setBaseline(undefined); }} title="Aynı profilin hızlı yol açık ve kapalı aramaları ayrı satırlarda">Profil + hızlı yol</button>
               <button aria-pressed={mode === "call"} onClick={() => { setMode("call"); setBaseline(undefined); }}>Seçilen aramalar ({selected.length})</button>
             </div>
             {mode === "call" && !selected.length && <span className="calls-muted">“Aramalar” sekmesinden karşılaştırmak istediklerinizi işaretleyin.</span>}
           </div>
-          {result ? <CompareTable result={result} onBaseline={setBaseline} /> : mode === "profile" && !err ? <p className="calls-muted">Yükleniyor…</p> : null}
+          {result ? <CompareTable result={result} onBaseline={setBaseline} /> : mode !== "call" && !err ? <p className="calls-muted">Yükleniyor…</p> : null}
         </div>
       )}
 

@@ -103,6 +103,23 @@ def tts_models() -> dict:
     return {"profiles": profs, "models": P.eleven_models()}
 
 
+class FastPathBody(BaseModel):
+    enabled: bool | None = None   # None: yaml'daki varsayılana dön
+
+
+@router.put("/{pid}/fast-path")
+def set_fast_path(pid: str, body: FastPathBody) -> dict:
+    """Hızlı yol (kapalı sözlükte LLM'siz cevap anlama): cascade profillerde açılıp kapatılır; yeni aramalara uygulanır.
+    Aramalar kayda hangi ayarla yapıldığını yazar, ölçümler Aramalar > Kıyas > 'Profil + hızlı yol' ile ayrı görülür."""
+    profile = _profile(pid)
+    if profile.mode != "cascade":
+        raise HTTPException(400, {"error": "not_cascade", "profile": pid,
+                                  "message": f"{pid} realtime profil; cevabı tek model anlar, hızlı yol uygulanmaz."})
+    default = profile.fast_path_default if profile.fast_path_default is not None else profile.fast_path
+    P.save_fast_path_override(pid, None if body.enabled in (None, default) else body.enabled)
+    return {"profile": pid, "enabled": default if body.enabled is None else body.enabled, "default": default}
+
+
 class TTSStreamingBody(BaseModel):
     streaming: bool | None = None   # None: yaml'daki varsayılana dön
 
