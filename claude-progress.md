@@ -409,3 +409,9 @@ agents do not update it automatically.
 - Bulgu: ilk ses p50 1,53 sn (hedef 1,2 tutmuyor). LLM'siz turlar 0,78 sn (16 tur, cikarim), LLM'li 1,80, Deepgram yedek 2,79 sn (8 tur). 16 yedek: 8 bos, 5 zaman asimi, 3 dusuk guven.
 - Maliyet (3 tamamlanan arama, 16,9 dk, $0,66): ~$0,039/dk, TTS %94, STT %5, LLM %0,6; 25.000 dk ~ $975 (liste fiyati). Bilinmeyenler tablosu PoC plani eki 2026-10-31-gece'de.
 - Acik: 'fast_path' turda kayitli degil; Deepgram yedek nedenleri; kesilen cumle karakter sayaci; ElevenLabs plan/kredi, telefon operatoru maliyeti. core-027 blocked.
+
+## Session 2026-10-31 (gece 3): ElevenLabs modelini ekrandan degistirme
+- Istek: ElevenLabs iceren tum profillerde (L2-EL, A1, A1S) model ekrandan degissin.
+- Yapilan: profiles.py kalici override (data/profile-tts-models.json; yalniz elevenlabs-models.json'daki gecerli modeller; load_profiles uygular, boylece arama, benchmark, matris, studyo ayni modeli kullanir; streaming bayragi korunur). API: GET /api/profiles/tts-models, PUT /api/profiles/{id}/tts-model (null = varsayilana don). Arayuz: profil seciciye 'ElevenLabs modeli' listesi (fiyat/1k karakter) + 'Varsayilana don'. pricing.json'a eleven_v3 ve eleven_v4 liste fiyati eklendi (dogrulanmadi).
+- Dogrulama: backend 674 gecti, vitest 96, tsc, build. Tarayicida elle denenmedi.
+- Sinirlar: degisiklik yeni aramalara uygulanir (acik arama eski modelle surer); farkli model yeni baglanti/isitma ister; v3 canli hat icin yavas (model matrisi notu).

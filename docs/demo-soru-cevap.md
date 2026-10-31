@@ -350,3 +350,5 @@ S38 ek 2 (2026-10-31 gece): Kapali sozlukte ('evet', 'hayir', 'tamam olur', tek 
 
 ## S39 - Production'da dakika basi maliyet ne ve neyi bilmiyoruz? (2026-10-31)
 Olcum (A1S, 3 tamamlanan canli arama, 16,9 dk, liste fiyati): ~$0,039/dk; TTS %94, STT %5, LLM %0,6. 25.000 dk/ay ~ $975. Maliyeti belirleyen ajanin konusma miktaridir (~920 karakter/dk), model secimi degil. BILINMEYENLER (demoda saklanmaz): ElevenLabs gercek plan/kredi fiyati, telefon operatoru ucreti (hesapta yok), kesilen cumlelerin faturalanmasi, kurumsal indirimler, A2/A3 gercek maliyeti. Canli gecikme: ilk ses p50 1,53 sn (hedef 1,2); LLM'siz turlarda 0,78 sn; Deepgram yedegine dusen turlar 2,79 sn. Sinir: 3-4 arama, tek kisi.
+
+S39 ek (2026-10-31 gece): ElevenLabs modeli ekrandan secilir (profil seciciden, L2-EL/A1/A1S); secim kalicidir ve o profilin tum ekranlarini ve yeni aramalari etkiler, acik arama eski modelle surer. Her modelin 1.000 karakter fiyati listede gorunur: TTS maliyetin %94'u oldugu icin (S39) model secimi maliyetin ana kaldiracidir (Flash/Turbo $0,04, Multilingual v2 ve v3 $0,08 => ~2 kat). Sinir: v3 canli hat icin yavas; v3/v4 fiyatlari liste fiyatidir, dogrulanmadi.

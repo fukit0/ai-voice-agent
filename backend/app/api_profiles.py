@@ -10,6 +10,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from . import warmup
+from . import profiles as P
 from .profiles import Profile, load_profiles
 from .providers import ProviderError, ProviderNotReady, get_provider, record_call
 from .providers.audio import decode_audio, encode_wav
@@ -86,6 +87,35 @@ def list_profiles(check: bool = True) -> list[dict]:
         status["warmup"] = job.to_dict() if job else None
         out.append(status)
     return out
+
+
+class TTSModelBody(BaseModel):
+    model: str | None = None   # None: yaml'daki varsayılana dön
+
+
+@router.get("/tts-models")
+def tts_models() -> dict:
+    """ElevenLabs içeren profiller ve seçilebilir modeller (fiyat/gecikme notuyla). Seçim kalıcıdır, tüm ekranlar ve arama kullanır."""
+    profs = [{"id": p.id, "model": p.component("tts")["model"], "default": p.tts_default_model or p.component("tts")["model"]}
+             for p in load_profiles(include_studio=True).values()
+             if (p.component("tts") or {}).get("provider") == "elevenlabs"]
+    return {"profiles": profs, "models": P.eleven_models()}
+
+
+@router.put("/{pid}/tts-model")
+def set_tts_model(pid: str, body: TTSModelBody) -> dict:
+    profile = _profile(pid)
+    tts = profile.component("tts")
+    if not tts or tts.get("provider") != "elevenlabs":
+        raise HTTPException(400, {"error": "not_elevenlabs", "profile": pid,
+                                  "message": f"{pid} profilinde ElevenLabs TTS yok; model değiştirilemez."})
+    valid = {m["id"] for m in P.eleven_models()}
+    if body.model is not None and body.model not in valid:
+        raise HTTPException(400, {"error": "unknown_model", "message": f"Bilinmeyen ElevenLabs modeli: {body.model}",
+                                  "available": sorted(valid)})
+    default = profile.tts_default_model or tts.get("model")
+    P.save_tts_override(pid, None if body.model in (None, default) else body.model)
+    return {"profile": pid, "model": body.model or default, "default": default}
 
 
 @router.post("/{pid}/warmup", status_code=202)

@@ -14,6 +14,8 @@ type ProfileState = {
   job: WarmupJob | null;
   prepare: () => Promise<void>;
   prepareError: string | null;
+  /** Profil listesini yeniden yükler (örn. ElevenLabs modeli değişince). */
+  refresh: () => void;
 };
 
 const Ctx = createContext<ProfileState>({
@@ -24,6 +26,7 @@ const Ctx = createContext<ProfileState>({
   job: null,
   prepare: async () => {},
   prepareError: null,
+  refresh: () => {},
 });
 
 const POLL_MS = 1000;
@@ -78,6 +81,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       error,
       job: activeJob,
       prepareError,
+      refresh: () => setReload((n) => n + 1),
       prepare: async () => {
         if (!active) return;
         setPrepareError(null);

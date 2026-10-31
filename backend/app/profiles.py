@@ -1,6 +1,7 @@
 """Profil yapılandırması: config/profiles.yaml okunur, her bileşenin hazır olup olmadığı raporlanır."""
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +30,7 @@ class Profile:
     components: dict[str, dict[str, Any] | None] = field(default_factory=dict)
     realtime: dict[str, Any] | None = None
     notes: str = ""
+    tts_default_model: str | None = None   # ElevenLabs TTS modeli ekrandan değiştirildiyse yaml'daki asıl model
     fast_path: bool = False   # core-027: kapalı sözlükte LLM'siz yol (flow.fastpath_obj); profil düzeyinde, LLM örneği paylaşımı bozulmasın
 
     def component(self, name: str) -> dict[str, Any] | None:
@@ -69,7 +71,7 @@ class Profile:
             elif key and not os.environ.get(key):
                 missing.add(key)
         return {"id": self.id, "name": self.name, "purpose": self.purpose, "mode": self.mode,
-                "notes": self.notes, "components": comps, "realtime": self.realtime,
+                "notes": self.notes, "tts_default_model": self.tts_default_model, "components": comps, "realtime": self.realtime,
                 "missing_env": sorted(missing), "issues": issues,
                 # hazır = anahtar eksik değil, bilinen sorun yok, üç bileşen de var (cascade)
                 "ready": (not missing and not issues and (
@@ -77,6 +79,40 @@ class Profile:
                 # sıcak = bileşenlerin hepsi yüklü ve ısınmış; ölçümler yalnızca sıcak profilde yapılır (ADR 0001)
                 "warm": (self.mode == "cascade" and any(comps.values())
                          and all(c.get("warm") for c in comps.values() if c))}
+
+
+def eleven_models_path() -> Path:
+    return Path(os.environ.get("SVA_ELEVEN_MODELS", ROOT / "config" / "elevenlabs-models.json"))
+
+
+def eleven_models() -> list[dict]:
+    p = eleven_models_path()
+    return json.loads(p.read_text(encoding="utf-8")).get("models", []) if p.is_file() else []
+
+
+def tts_overrides_path() -> Path:
+    return Path(os.environ.get("SVA_DATA_DIR", ROOT / "data")) / "profile-tts-models.json"
+
+
+def load_tts_overrides() -> dict[str, str]:
+    """Ekrandan seçilen ElevenLabs modeli: {profil_id: model}. Dosya yoksa/bozuksa boş (yaml'daki model geçerli)."""
+    p = tts_overrides_path()
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        return {k: v for k, v in d.items() if isinstance(k, str) and isinstance(v, str)}
+    except (OSError, ValueError, AttributeError):
+        return {}
+
+
+def save_tts_override(pid: str, model: str | None) -> None:
+    ov = load_tts_overrides()
+    if model is None:
+        ov.pop(pid, None)
+    else:
+        ov[pid] = model
+    p = tts_overrides_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(ov, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 def load_profiles(path: Path | None = None, include_studio: bool = False) -> dict[str, Profile]:
@@ -93,6 +129,13 @@ def load_profiles(path: Path | None = None, include_studio: bool = False) -> dic
                            components={c: cfg.get(c) for c in COMPONENTS})
     if not out:
         raise ValueError(f"{path or profiles_path()} içinde profil yok")
+    valid = {m["id"] for m in eleven_models()}
+    for pid, model in load_tts_overrides().items():
+        prof = out.get(pid)
+        tts = prof.components.get("tts") if prof else None
+        if tts and tts.get("provider") == "elevenlabs" and model in valid and model != tts.get("model"):
+            prof.tts_default_model = tts.get("model")
+            prof.components["tts"] = {**tts, "model": model}
     return out
 
 

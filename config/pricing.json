@@ -3,16 +3,64 @@
   "note": "Liste fiyatlari; plan, kota, kurumsal anlasma ve kur farkli olabilir. Faturayi gercek hesapta dogrulayin. Yerel (self-host) bilesenler API ucreti almaz; maliyetleri GPU saniyesiyle ayri izlenir (donanim/enerji maliyeti bu dosyada yok).",
   "checked": "2026-10-31",
   "stt": {
-    "deepgram:nova-3": {"unit": "minute", "usd": 0.0092, "source": "deepgram.com/pricing (pay-as-you-go, streaming, multilingual)", "verified": true}
+    "deepgram:nova-3": {
+      "unit": "minute",
+      "usd": 0.0092,
+      "source": "deepgram.com/pricing (pay-as-you-go, streaming, multilingual)",
+      "verified": true
+    }
   },
   "llm": {
-    "anthropic:claude-haiku-5-5": {"input_per_mtok": 0.10, "output_per_mtok": 0.50, "source": "ucuncu taraf blog (dev.to/hassann); 100K token alti istem fiyati. Resmi Anthropic sayfasindan dogrulanmadi", "verified": false}
+    "anthropic:claude-haiku-5-5": {
+      "input_per_mtok": 0.1,
+      "output_per_mtok": 0.5,
+      "source": "ucuncu taraf blog (dev.to/hassann); 100K token alti istem fiyati. Resmi Anthropic sayfasindan dogrulanmadi",
+      "verified": false
+    }
   },
   "tts": {
-    "elevenlabs:eleven_flash_v2_5": {"unit": "1k_chars", "usd": 0.04, "source": "config/elevenlabs-models.json (liste fiyati)", "verified": false},
-    "elevenlabs:eleven_turbo_v2_5": {"unit": "1k_chars", "usd": 0.04, "source": "config/elevenlabs-models.json", "verified": false},
-    "elevenlabs:eleven_v4_turbo": {"unit": "1k_chars", "usd": 0.04, "source": "config/elevenlabs-models.json", "verified": false},
-    "elevenlabs:eleven_multilingual_v2": {"unit": "1k_chars", "usd": 0.08, "source": "config/elevenlabs-models.json", "verified": false}
+    "elevenlabs:eleven_flash_v2_5": {
+      "unit": "1k_chars",
+      "usd": 0.04,
+      "source": "config/elevenlabs-models.json (liste fiyati)",
+      "verified": false
+    },
+    "elevenlabs:eleven_turbo_v2_5": {
+      "unit": "1k_chars",
+      "usd": 0.04,
+      "source": "config/elevenlabs-models.json",
+      "verified": false
+    },
+    "elevenlabs:eleven_v4_turbo": {
+      "unit": "1k_chars",
+      "usd": 0.04,
+      "source": "config/elevenlabs-models.json",
+      "verified": false
+    },
+    "elevenlabs:eleven_multilingual_v2": {
+      "unit": "1k_chars",
+      "usd": 0.08,
+      "source": "config/elevenlabs-models.json",
+      "verified": false
+    },
+    "elevenlabs:eleven_v3": {
+      "unit": "1k_chars",
+      "usd": 0.08,
+      "source": "config/elevenlabs-models.json (liste fiyati)",
+      "verified": false
+    },
+    "elevenlabs:eleven_v4": {
+      "unit": "1k_chars",
+      "usd": 0.08,
+      "source": "config/elevenlabs-models.json (liste fiyati)",
+      "verified": false
+    }
   },
-  "local_providers": ["mlx_whisper", "hf_whisper", "ollama", "ema", "chatterbox"]
+  "local_providers": [
+    "mlx_whisper",
+    "hf_whisper",
+    "ollama",
+    "ema",
+    "chatterbox"
+  ]
 }

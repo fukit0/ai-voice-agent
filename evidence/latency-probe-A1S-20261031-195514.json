@@ -1,0 +1,101 @@
+{
+  "profile": "A1S",
+  "reps": 5,
+  "clip_seconds": 18.9,
+  "components": {
+    "stt": "deepgram:nova-3",
+    "llm": "anthropic:claude-haiku-5-5",
+    "tts": "elevenlabs:eleven_flash_v2_5"
+  },
+  "stt_batch": {
+    "cold": 1.17,
+    "warm_median": 3.293,
+    "warm_p95": 5.308,
+    "warm_min": 1.558,
+    "warm_max": 5.308,
+    "n_warm": 4,
+    "all": [
+      1.17,
+      5.308,
+      1.558,
+      4.783,
+      1.804
+    ]
+  },
+  "stt_stream_after_speech": {
+    "cold": 0.244,
+    "warm_median": 0.218,
+    "warm_p95": 0.262,
+    "warm_min": 0.168,
+    "warm_max": 0.262,
+    "n_warm": 4,
+    "all": [
+      0.244,
+      0.168,
+      0.192,
+      0.244,
+      0.262
+    ]
+  },
+  "llm": {
+    "cold": 0.957,
+    "warm_median": 1.029,
+    "warm_p95": 1.287,
+    "warm_min": 0.882,
+    "warm_max": 1.287,
+    "n_warm": 4,
+    "all": [
+      0.957,
+      0.882,
+      0.937,
+      1.287,
+      1.122
+    ]
+  },
+  "tts_first_audio": {
+    "cold": 0.324,
+    "warm_median": 0.197,
+    "warm_p95": 0.203,
+    "warm_min": 0.184,
+    "warm_max": 0.203,
+    "n_warm": 4,
+    "all": [
+      0.324,
+      0.196,
+      0.184,
+      0.198,
+      0.203
+    ]
+  },
+  "tts_total": {
+    "cold": 0.462,
+    "warm_median": 0.283,
+    "warm_p95": 0.3,
+    "warm_min": 0.277,
+    "warm_max": 0.3,
+    "n_warm": 4,
+    "all": [
+      0.462,
+      0.283,
+      0.277,
+      0.3,
+      0.284
+    ]
+  },
+  "tts_streaming": true,
+  "stt_streaming": true,
+  "estimated_first_audio_s": 1.444,
+  "note": "Tahmini ilk ses = STT(bitişten sonra) + LLM + TTS(ilk ses), ısınmış medyanlar; VAD bitiş beklemesi (~0,5 sn) dahil değil. Hedef: canlı aramada p50 ≤ 1,2 sn (Aramalar ekranı). Tek ses klibi ve az tekrar: p95 yaklaşıktır.",
+  "prewarm_s": {
+    "deepgram:nova-3": 0.662,
+    "anthropic:claude-haiku-5-5": 1.894,
+    "elevenlabs:eleven_flash_v2_5": 0.475
+  },
+  "llm_prompt_cache": false,
+  "llm_cache_tokens": {
+    "creation": 0,
+    "read": 0
+  },
+  "clip": "klip.wav",
+  "created_at": "2026-10-31T19:55:14"
+}

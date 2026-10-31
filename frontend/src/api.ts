@@ -21,6 +21,7 @@ export type ProfileStatus = {
   ready: boolean;
   warm: boolean;
   warmup: WarmupJob | null;
+  tts_default_model?: string | null;
 };
 
 export type WarmupComponent = {
@@ -315,3 +316,20 @@ export const runTtsLab = (b: { text: string; model: string; voice_id?: string | 
 export const fetchTones = () => personaCall<ToneInfo>("/api/persona/tones");
 export const runToneDemo = (body: { profile: string; text: string; model?: string | null; seed?: number | null; tones?: string[] }) =>
   personaCall<ToneDemoResult>("/api/persona/tone-demo", "POST", body);
+
+export type ElevenModel = { id: string; label: string; price_per_1k_usd: number; latency_note: string; tags: boolean; notes: string };
+
+export async function fetchElevenModels(signal?: AbortSignal): Promise<ElevenModel[]> {
+  const res = await fetch("/api/profiles/tts-models", { signal });
+  return (await json<{ models: ElevenModel[] }>(res)).models;
+}
+
+/** model=null: profilin yaml'daki varsayılanına döner. */
+export async function setTtsModel(profile: string, model: string | null): Promise<void> {
+  const res = await fetch(`/api/profiles/${encodeURIComponent(profile)}/tts-model`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model }),
+  });
+  await json(res);
+}
