@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ from ..providers import record_call
 from ..providers.audio import resample
 from . import phone
 from . import sttguard
+from .streamaudio import ChunkPipeline
 from .. import usage as usage_mod
 from .flow import prompt_info
 from .silence import SilenceGuard
@@ -83,6 +85,56 @@ def to_int16(audio: np.ndarray) -> np.ndarray:
     return (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)
 
 
+def _billed(stream) -> float:
+    try:
+        return float(stream.billed_seconds())
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+class _LiveUtterance:
+    """Tek konuşmanın canlı STT akışı + akışa ön ek olarak yollanan bekletilmiş ses (`held`: kimlik karşılaştırması için)."""
+
+    def __init__(self, stream, held):
+        self.stream = stream
+        self.held = held
+        self.samples = 0
+
+    def send(self, audio: np.ndarray) -> None:
+        if len(audio) == 0:
+            return
+        self.samples += len(audio)
+        try:
+            self.stream.send(to_int16(audio).astype("<i2").tobytes())
+        except Exception:  # noqa: BLE001 — gönderim hatası finish()'te görünür ve yedek yola düşülür
+            pass
+
+    @property
+    def sent_s(self) -> float:
+        return self.samples / SAMPLE_RATE
+
+
+class _TTSStreamHandle:
+    """Akışlı TTS okuyucu iş parçacığı ile olay döngüsü arasındaki köprü: kuyruk + durdurma bayrağı."""
+
+    def __init__(self, loop: asyncio.AbstractEventLoop):
+        self.loop = loop
+        self.q: asyncio.Queue = asyncio.Queue()
+        self.cancel = threading.Event()
+
+    def put(self, item: tuple) -> None:
+        """İş parçacığından güvenli ekleme; döngü kapanmışsa (oturum bitti) sessizce bırakılır."""
+        try:
+            self.loop.call_soon_threadsafe(self.q.put_nowait, item)
+        except RuntimeError:
+            pass
+
+    def stop(self) -> None:
+        """Olay döngüsü iş parçacığından: okuyucuya dur de ve bekleyen tüketiciyi hemen uyandır."""
+        self.cancel.set()
+        self.q.put_nowait(("cancelled", None))
+
+
 class VoiceSession:
     def __init__(self, sid: str, profile_id: str, stt, llm, tts, out, send_event: Callable[[dict], None],
                  endpointer: Endpointer | None = None, persona: str = PERSONA, greeting: str = GREETING,
@@ -92,6 +144,17 @@ class VoiceSession:
         self.tts_tone = tts_tone if tts_tone and "tone" in inspect.signature(tts.synthesize).parameters else None
         self.sid, self.profile_id = sid, profile_id
         self.stt, self.llm, self.tts, self.out = stt, llm, tts, out
+        # Faz 2 (isteğe bağlı): TTS `synthesize_stream` sunuyor VE profilde `streaming: true` ise cümle sesi parça parça çalınır.
+        # Diğer tüm profillerde (A1 dahil) eski yol: cümle sesi tamamlanınca itilir.
+        self._tts_streaming = callable(getattr(tts, "synthesize_stream", None)) and bool(
+            (getattr(tts, "options", None) or {}).get("streaming"))
+        self._tts_streams: set[_TTSStreamHandle] = set()
+        # Faz 3 (isteğe bağlı): STT `open_stream` sunuyor VE profilde `streaming: true` ise konuşma SÜRERKEN ses canlı bağlantıya
+        # akıtılır (konuşma başına bir bağlantı). Toplu `transcribe` her zaman yedektir. Diğer profillerde eski yol.
+        self._stt_streaming = callable(getattr(stt, "open_stream", None)) and bool(
+            (getattr(stt, "options", None) or {}).get("streaming"))
+        self._live: _LiveUtterance | None = None
+        self._live_failed: str | None = None     # bu konuşmada canlı akış açılamadıysa nedeni (yedek sayımı için)
         self.emit = send_event
         self.vad = endpointer or Endpointer()
         self.silence = SilenceGuard()      # core-022: sessiz hat bekçisi
@@ -190,6 +253,8 @@ class VoiceSession:
         self.stats["frames_in"] += 1
         self.stats["seconds_in"] = round(self.stats["frames_in"] * FRAME / SAMPLE_RATE, 2)
         events = self.vad.feed(frame)
+        if self._live is not None:          # süren konuşmanın çerçevesi (bitiş çerçevesi dahil): canlı STT'ye
+            self._live.send(frame)
         self.stats["peak_in_db"] = round(max(self.stats["peak_in_db"], self.vad.level), 1)
         if self.state in ("thinking", "speaking"):
             verdict = self._barge_gate.update(frame, time.perf_counter())
@@ -202,18 +267,35 @@ class VoiceSession:
         else:
             self._barge_gate.reset()
         for kind, payload in events:
+            if kind == "start" and self._stt_streaming:
+                self._open_live()
             if kind == "end":
+                live, self._live = self._live, None
+                live_failed, self._live_failed = self._live_failed, None
                 if self.state in ("thinking", "speaking"):
                     self.stats["dropped"] += 1  # ajan konuşurken kısa gürültü/yankı: söz kesme değil
+                    self._abort_live(live)
                     continue
                 self.stats["utterances"] += 1
                 audio = payload
+                held = self._held
                 if self._held is not None:   # önceki cümle yarımdı: devam geldi, iki konuşmayı birleştir
                     audio = np.concatenate([self._held[0], payload])
                     self._clear_hold()
                     self.stats["merged"] += 1
-                self._spawn(self._respond(audio, t_end=time.perf_counter()))
+                if live is not None and live.held is not held:
+                    # canlı akışın içeriği bu sesle aynı değil (bekletme konuşma sürerken doldu ya da sonradan başladı):
+                    # akış kullanılmaz, eski yol (toplu) birebir uygulanır
+                    self._abort_live(live)
+                    self._count("stt_stream_merge_batch")
+                    live = None
+                elif live is None and live_failed:   # akış hiç açılamadı: toplu yol = yedek
+                    self._count("stt_stream_fallbacks")
+                    self.stats.setdefault("stt_stream_fallback_reasons", []).append(live_failed[:160])
+                self._spawn(self._respond(audio, t_end=time.perf_counter(), live=live))
             elif kind == "drop":
+                self._abort_live(self._live)
+                self._live, self._live_failed = None, None
                 self.stats["dropped"] += 1
                 if self.state == "listening":
                     self.silence.note_drop()      # kısa ses denemesi oldu ama duyulmadı: sessizlik bekleme süresi kısalır
@@ -235,6 +317,7 @@ class VoiceSession:
         cut_ms = round((time.perf_counter() - self._barge_t0) * 1000)   # ilk yüksek sesten ajan çıkışının boşaltılmasına
         self._barge = 0
         self._turn_id += 1          # süren tur sonuçları artık atılır
+        self._stop_tts_streams()
         self.out.flush()
         self._synth_done = True
         self.stats["barge_ins"] += 1
@@ -251,18 +334,21 @@ class VoiceSession:
             self._set_state("listening")
 
     # ---- tur ------------------------------------------------------------------------------------
-    async def _respond(self, audio: np.ndarray, t_end: float) -> None:
+    async def _respond(self, audio: np.ndarray, t_end: float, live: _LiveUtterance | None = None) -> None:
         turn = self._next_turn()
         self._set_state("thinking")
         rec: dict[str, Any] = {"turn": turn, "user_seconds": round(len(audio) / SAMPLE_RATE, 2),
                                "endpoint_wait_ms": self.vad.end_frames * 20}
         try:
             t0 = time.perf_counter()
-            stt_res = await asyncio.to_thread(self.stt.transcribe, audio, SAMPLE_RATE, "tr")
-            rec["stt_s"] = round(time.perf_counter() - t0, 3)
-            self.usage.add_stt(rec["user_seconds"], rec["stt_s"])
-            record_call(self.profile_id, "stt", self.stt, rec["stt_s"], ok=True, warm=True,
-                        audio_seconds=rec["user_seconds"], chars=len(stt_res.text), source="voice")
+            if live is not None:
+                stt_res = await self._transcribe_live(live, audio, rec, t0)
+            else:
+                stt_res = await asyncio.to_thread(self.stt.transcribe, audio, SAMPLE_RATE, "tr")
+                rec["stt_s"] = round(time.perf_counter() - t0, 3)
+                self.usage.add_stt(rec["user_seconds"], rec["stt_s"])
+                record_call(self.profile_id, "stt", self.stt, rec["stt_s"], ok=True, warm=True,
+                            audio_seconds=rec["user_seconds"], chars=len(stt_res.text), source="voice")
             if turn != self._turn_id:
                 return
             text = stt_res.text.strip()
@@ -289,6 +375,75 @@ class VoiceSession:
             self.emit({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
             if turn == self._turn_id:
                 self._set_state("listening")
+
+    # ---- akışlı STT (faz 3) ----------------------------------------------------------------------------------------
+    def _open_live(self) -> None:
+        """VAD konuşma başlangıcı: canlı bağlantıyı aç, ön kaydı (ve bekletilen yarım cümleyi) hemen yolla."""
+        if self._live is not None:             # olmamalı (her start'ı end/drop izler); savunma
+            self._abort_live(self._live)
+            self._live = None
+        self._live_failed = None
+        stream = None
+        try:
+            stream = self.stt.open_stream(SAMPLE_RATE, "tr")
+            stream.open()
+            live = _LiveUtterance(stream, self._held)
+            if self._held is not None:         # birleşme olursa akıştaki ses = bekletilen + yeni konuşma (toplu yolla aynı ses)
+                live.send(self._held[0])
+            live.send(self.vad.pending_audio())
+        except Exception as exc:  # noqa: BLE001 — açılamazsa bu konuşma toplu yolla çözülür
+            if stream is not None:
+                self._abort_live(_LiveUtterance(stream, None))
+            self._count("stt_stream_open_failed")
+            self._live_failed = f"open_failed: {type(exc).__name__}: {exc}"
+            self.emit({"type": "stt_stream", "event": "open_failed", "message": f"{type(exc).__name__}: {exc}"[:200]})
+            return
+        self._live = live
+
+    def _abort_live(self, live: _LiveUtterance | None) -> None:
+        if live is None:
+            return
+        try:
+            live.stream.abort()
+        except Exception:  # noqa: BLE001
+            pass
+        self.usage.add_stt_stream(live.sent_s, 0.0, _billed(live.stream), aborted=True)
+
+    async def _transcribe_live(self, live: _LiveUtterance, audio: np.ndarray, rec: dict, t0: float):
+        """Canlı akışın son transkripti; açılamadı / zaman aşımı / boş / STT geçidinden geçmeyen çıktıda konuşmanın TAMAMI
+        toplu `transcribe` ile yeniden çözülür (yedek). Hangisi kullanıldıysa sonuç odur; yedek oturum istatistiğine yazılır."""
+        reason, res = None, None
+        try:
+            res = await asyncio.to_thread(live.stream.finish)
+            text = (res.text or "").strip()
+            if not text:
+                reason = "empty"
+            else:
+                ok, why = sttguard.check(text, res.extra)
+                if not ok:
+                    reason = f"guard:{why}"
+        except Exception as exc:  # noqa: BLE001
+            reason = f"{type(exc).__name__}: {exc}"
+        dt = time.perf_counter() - t0
+        self.usage.add_stt_stream(live.sent_s, dt, _billed(live.stream))
+        record_call(self.profile_id, "stt", self.stt, dt, ok=reason is None, warm=True, audio_seconds=rec["user_seconds"],
+                    chars=len(res.text) if res is not None else 0, source="voice", stream=True,
+                    **({"error": reason[:300]} if reason else {}))
+        rec["stt_stream"] = True
+        if reason is None:
+            rec["stt_s"] = round(dt, 3)
+            return res
+        self._count("stt_stream_fallbacks")
+        self.stats.setdefault("stt_stream_fallback_reasons", []).append(reason[:160])
+        rec["stt_fallback"] = reason[:160]
+        t1 = time.perf_counter()
+        res = await asyncio.to_thread(self.stt.transcribe, audio, SAMPLE_RATE, "tr")
+        batch_s = time.perf_counter() - t1
+        self.usage.add_stt(rec["user_seconds"], batch_s)
+        record_call(self.profile_id, "stt", self.stt, batch_s, ok=True, warm=True, audio_seconds=rec["user_seconds"],
+                    chars=len(res.text), source="voice", fallback=True)
+        rec["stt_s"] = round(time.perf_counter() - t0, 3)       # bekleme + yedek: müşterinin gerçekten beklediği süre
+        return res
 
     async def _commit(self, text: str, turn: int, t_end: float, rec: dict) -> None:
         """Müşterinin tamamlanmış cümlesi: transkripte yaz, cevabı üret, konuş."""
@@ -368,12 +523,31 @@ class VoiceSession:
         self._synth_done = False
         first_audio: float | None = None
         tts_total = 0.0
+
+        def mark_first(tts_first_s: float) -> None:
+            nonlocal first_audio
+            if first_audio is None:
+                first_audio = time.perf_counter() - t_end
+                rec["tts_first_s"] = round(tts_first_s, 3)
+                rec["first_audio_after_end_s"] = round(first_audio, 3)
+                self._set_state("speaking")
+
         try:
             for sentence in split_sentences(text) or [text]:
                 spoken = trnorm.normalize(sentence)
                 t0 = time.perf_counter()
                 extra = (self.tts_speed,) if self.tts_speed != 1.0 else ()   # hız yalnız değişmişse iletilir
                 kw = {"tone": self.tts_tone} if self.tts_tone else {}
+                if self._tts_streaming:
+                    status, dt = await self._speak_sentence_stream(spoken, extra, kw, turn, t0, mark_first)
+                    if status != "fallback":
+                        tts_total += dt
+                        if turn != self._turn_id:
+                            return
+                        continue
+                    if turn != self._turn_id:   # hata ile söz kesme yarıştı: yedek üretime gerek yok
+                        return
+                    # akış ilk parçadan önce başarısız: bu cümle eski (akışsız) yolla üretilir; süre ilk denemeyi de kapsar
                 res = await asyncio.to_thread(lambda: self.tts.synthesize(spoken, "tr", *extra, **kw))
                 dt = time.perf_counter() - t0
                 tts_total += dt
@@ -383,13 +557,8 @@ class VoiceSession:
                     return
                 audio = phone.apply(res.audio, res.sample_rate) if self.phone_filter else res.audio
                 pcm = to_int16(resample(audio, res.sample_rate, OUT_RATE))
-                if first_audio is None:
-                    first_audio = time.perf_counter() - t_end
-                    rec["tts_first_s"] = round(dt, 3)
-                    rec["first_audio_after_end_s"] = round(first_audio, 3)
-                    self._set_state("speaking")
-                self.stats["agent_seconds_out"] = round(self.stats["agent_seconds_out"] + len(pcm) / OUT_RATE, 2)
-                self.out.push(pcm)
+                mark_first(dt)
+                self._push_out(pcm)
         finally:
             if turn == self._turn_id:
                 self._synth_done = True
@@ -401,6 +570,104 @@ class VoiceSession:
         self.emit({"type": "turn", **rec})
         if self.flow is not None and self.flow.finished and turn == self._turn_id:
             self.emit({"type": "finished", "outcome": self.flow.outcome})
+
+    def _push_out(self, pcm: np.ndarray) -> None:
+        self.stats["agent_seconds_out"] = round(self.stats["agent_seconds_out"] + len(pcm) / OUT_RATE, 2)
+        self.out.push(pcm)
+
+    def _stop_tts_streams(self) -> None:
+        """Söz kesme / kapanış: süren akışlı TTS isteklerine dur de (okuyucu iş parçacığı bir sonraki parçada HTTP'yi kapatır)."""
+        for h in list(self._tts_streams):
+            h.stop()
+
+    def _count(self, key: str) -> None:
+        self.stats[key] = self.stats.get(key, 0) + 1
+
+    async def _speak_sentence_stream(self, spoken: str, extra: tuple, kw: dict, turn: int, t0: float,
+                                     mark_first: Callable[[float], None]) -> tuple[str, float]:
+        """Bir cümleyi akışlı üretip parçalar geldikçe çalar. Dönüş: (durum, süre).
+
+        durum: "ok" | "cancelled" (söz kesme/kapanış) | "partial" (ilk parçadan SONRA hata: cümle temiz biter, hata fırlatılmaz)
+        | "fallback" (ilk parçadan ÖNCE hata ya da boş akış: çağıran aynı cümleyi akışsız `synthesize` ile üretir).
+        Ölçüm: tts_first_s = istekten İLK PARÇAYA kadar; kullanım = karakter + alınan toplam örnek süresi."""
+        loop = asyncio.get_running_loop()
+        h = _TTSStreamHandle(loop)
+        tts = self.tts
+
+        def produce() -> None:
+            stream = None
+            try:
+                stream = tts.synthesize_stream(spoken, "tr", *extra, **kw)
+                h.put(("rate", stream.sample_rate))
+                for chunk in stream:
+                    if h.cancel.is_set():
+                        break
+                    h.put(("chunk", chunk))
+                h.put(("end", None))
+            except BaseException as exc:  # noqa: BLE001 — tüketiciye iletilir
+                h.put(("error", exc))
+            finally:
+                if stream is not None:
+                    try:
+                        stream.close()
+                    except Exception:  # noqa: BLE001
+                        pass
+
+        self._tts_streams.add(h)
+        threading.Thread(target=produce, name="tts-stream", daemon=True).start()
+        pipe: ChunkPipeline | None = None
+        rate, samples, first_s = 0, 0, None
+        status, err = "ok", None
+        try:
+            while True:
+                kind, val = await h.q.get()
+                if kind == "rate":
+                    rate = int(val)
+                    pipe = ChunkPipeline(rate, OUT_RATE, phone_filter=self.phone_filter)
+                    continue
+                if kind == "cancelled" or turn != self._turn_id:
+                    status = "cancelled"
+                    break
+                if kind == "chunk":
+                    if first_s is None:
+                        first_s = time.perf_counter() - t0
+                    samples += len(val)
+                    pcm = pipe.feed(val)
+                    if len(pcm):
+                        mark_first(first_s)
+                        self._push_out(pcm)
+                    continue
+                if kind == "error":
+                    err = val
+                if samples == 0:          # hiç ses gelmedi (hata ya da boş gövde): akışsız yola düş
+                    status = "fallback"
+                    break
+                if kind == "error":
+                    status = "partial"
+                tail = pipe.finish()
+                if len(tail):
+                    mark_first(first_s)
+                    self._push_out(tail)
+                break
+        finally:
+            h.cancel.set()
+            self._tts_streams.discard(h)
+        dt = time.perf_counter() - t0
+        if status == "fallback":
+            self._count("tts_stream_fallbacks")
+            record_call(self.profile_id, "tts", tts, dt, ok=False, warm=True, chars=len(spoken), source="voice", stream=True,
+                        error=(f"{type(err).__name__}: {err}" if err is not None else "bos akis")[:300])
+            return status, dt
+        audio_s = samples / rate if rate else 0.0
+        self.usage.add_tts(len(spoken), audio_s, dt)
+        fields = {"stream": True, "first_chunk_s": None if first_s is None else round(first_s, 3)}
+        if status == "partial":
+            self._count("tts_stream_errors")
+            fields["error"] = f"{type(err).__name__}: {err}"[:300]
+        if status == "cancelled":
+            fields["cancelled"] = True
+        record_call(self.profile_id, "tts", tts, dt, ok=status != "partial", warm=True, chars=len(spoken), source="voice", **fields)
+        return status, dt
 
     def _say(self, role: str, text: str) -> None:
         item = {"role": role, "text": text, "t": round((datetime.now(timezone.utc) - self.started_at).total_seconds(), 2)}
@@ -424,6 +691,9 @@ class VoiceSession:
         if self._hold_task is not None:
             self._hold_task.cancel()
         self._turn_id += 1
+        self._stop_tts_streams()
+        self._abort_live(self._live)
+        self._live = None
         self.out.flush()
         for task in list(self._tasks):
             task.cancel()

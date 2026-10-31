@@ -384,3 +384,10 @@ agents do not update it automatically.
 - Kanit: test_usage.py 11, CallsPage.test.tsx +3; backend 558, vitest 94, build, playwright lab 6; evidence/eval-003-20261031.json (sahte saglayicilar).
 - Acik: gercek API/yerel aramada dogrulama; Haiku fiyati resmi sayfadan; realtime oturumlari olculmuyor; kiyas matrisi kaynak kriteri; Mac'te commit.
 - Sonraki: eval-002 (secilen yigin kaydi), lab-005 matrisine kaynak kriterini baglamak.
+
+## Session 2026-10-31 (gun): maliyet projeksiyonu + A1S streaming (core-027, blocked: gercek olcum bekliyor)
+- Kullanici: aylik 25.000 dk icin tum profillerin maliyeti; kurumsal fiyat; production gecikme. Maliyet tablosu sohbette verildi (A1 ~$710-1.230, A2 ~$830-1.000 (en kotu $6.700), A3 ~$490-2.150, yerel $0 API + GPU; kurumsal teklif yok, tahmin).
+- Bulgu: her API cagrisi yeni TLS baglantisi aciyordu; Deepgram toplu REST, ElevenLabs tam cumle bekliyordu => A1 p50 3,29 sn (L2 1,42 sn). Karsilastirma adil degildi.
+- Yapilan (Opus alt ajani + ben): ortak httpx.Client, ElevenLabs akisli TTS, Deepgram canli STT + toplu yedek, A1S profili, usage akis suresi, scripts/latency_probe.py. Backend 631, vitest 94, playwright 6.
+- Duzeltme: cloud kopyasi Mac'ten eskiydi; tar trnorm.py/test_trnorm.py'yi geriletti, git checkout ile geri alindi ve bulut kopyasi Mac'ten esitlendi.
+- Acik: gercek ortamda olcum (latency_probe A1 vs A1S, sonra 5 gercek arama); Anthropic prompt caching yapilmadi; A2/A3 usage sayaci yok.

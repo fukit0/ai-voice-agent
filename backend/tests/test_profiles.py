@@ -118,7 +118,7 @@ def calls(tmp_path):
 
 def test_real_config_defines_plan_profiles():
     profiles = load_profiles()
-    assert list(profiles) == ["L1", "L2", "L2-EL", "L3", "L4", "L5", "A1", "A2", "A3"]
+    assert list(profiles) == ["L1", "L2", "L2-EL", "L3", "L4", "L5", "A1", "A1S", "A2", "A3"]
     # L2-EL: L2 ile aynı STT ve LLM (bellekte paylaşılır), yalnızca TTS ElevenLabs
     assert profiles["L2-EL"].component("stt") == profiles["L2"].component("stt")
     assert profiles["L2-EL"].component("llm") == profiles["L2"].component("llm")

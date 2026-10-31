@@ -119,6 +119,11 @@ class Endpointer:
             out.append(("end", audio) if enough else ("drop", None))
         return out
 
+    def pending_audio(self) -> np.ndarray:
+        """Toplanmakta olan konuşmanın şu ana kadarki sesi (ön kayıt dahil). Akışlı STT (faz 3) "start" anında bunu yollar;
+        "end" ile verilen ses = bu + sonraki çerçeveler (aynı örnekler)."""
+        return np.concatenate(self._frames) if self._frames else np.zeros(0, np.float32)
+
     def reset(self) -> None:
         self.collecting = False
         self._run = 0

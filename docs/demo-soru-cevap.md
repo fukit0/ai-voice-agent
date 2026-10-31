@@ -333,3 +333,9 @@ Kısa cevap: Referans arayüzün yapısını (gruplu menü, kart/tablo düzeni, 
 - 'GPU saniyesi' yerel model cagri sure toplamidir, GPU doluluk yuzdesi degil; eszamanli aramalarda ayni GPU paylasilir. Donanim, enerji ve telefon (operator) maliyeti yok.
 - Realtime profiller (A2/A3) icin sayac yok; Aramalar'da '—' gorunur. Token vermeyen saglayicida kalem bos ve maliyet 'eksik' isaretlenir.
 - Kiyas matrisinin 'kaynak kullanimi' kriteri henuz bu veriden beslenmiyor (lab-005 hala 'olculmedi' der); veri artik var, baglanti bir sonraki is.
+
+## S38 - Aylik 25.000 dakikada maliyet ve neden A1 yavas gorunuyor? (2026-10-31)
+**Maliyet (liste fiyatlari, tahmin):** A1 ~$710-1.230/ay (TTS maliyetin buyuk kismi; ElevenLabs Business plani $990 sabit olabilir), A2 ~$830-1.000 (onbellek tutmazsa $6.700'e kadar), A3 ~$490-2.150 (Gemini 3.8 Live fiyati yayimlanmamis, 3.1 Flash Live baz alindi), yerel profiller API ucreti $0 ama GPU gerekir (L2 ~51 saat/ay, L3 ~82). Kurumsal indirimler bilinmiyor; teklif gelince config/pricing.json'a girilir.
+**Gecikme (Mac, tek arama):** L2 1,42 sn, A3 1,43, L2-EL 2,5, A2 2,62, L3 2,92, A1 3,29. A1'in yavasligi adil degildi: her cagri yeni TLS baglantisi aciyordu, Deepgram toplu cagriliyordu, ElevenLabs tum cumleyi bekliyordu.
+**A1S profili** bu uc sorunu giderir; bulutta yalnizca sahte sunucularla test edildi.
+**Demoda durust olunacak sinirlar:** (1) A1S'in gecikme kazanci henuz GERCEK API ile olculmedi; once `python scripts/latency_probe.py --profile A1` ve `--profile A1S`. (2) Yerel hiz sonuclari Apple Silicon Mac'e ozel; sunucuda (CUDA) MLX-Whisper calismaz, EMA'nin Linux'ta calistigi dogrulanmadi, eszamanli yuk olculmedi. (3) Bos transkript (oksuruk) toplu yedege duser, o konuda ek gecikme olur. (4) Canli STT tum baglanti suresini faturalar; usage artik akis suresini yazar. (5) Anthropic prompt caching yapilmadi.

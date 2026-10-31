@@ -55,6 +55,14 @@ profiles:
     llm: {provider: anthropic, model: claude-haiku-5-5}
     tts: {provider: elevenlabs, model: eleven_flash_v2_5}
 
+  A1S:
+    name: API referansı (streaming)
+    purpose: A1 ile aynı modeller; üretim benzeri gecikme (canlı STT + akışlı TTS + bağlantı yeniden kullanımı)
+    stt: {provider: deepgram, model: nova-3, streaming: true}
+    llm: {provider: anthropic, model: claude-haiku-5-5}
+    tts: {provider: elevenlabs, model: eleven_flash_v2_5, streaming: true}
+    notes: "STT: konuşma sürerken ses Deepgram canlı WebSocket'ine akar (konuşma başına bir bağlantı); bitişe yerel VAD karar verir, Finalize ile son metin alınır. Bağlantı açılamaz, zaman aşımı olur, boş ya da STT geçidinden geçmeyen metin gelirse konuşmanın tamamı toplu (A1 ile aynı) çağrıyla yeniden çözülür (stats.stt_stream_fallbacks). TTS: /stream uç noktası, ses parça parça çalınır; ilk parçadan önce hata olursa cümle akışsız üretilir. LLM A1 ile aynı örnek. Gecikme kazancı bulutta ölçülemedi; scripts/latency_probe.py ile Mac'te ölçülür."
+
   A2:
     name: Realtime referansı
     purpose: Tek modelli hattın doğallığı ve gecikmesi

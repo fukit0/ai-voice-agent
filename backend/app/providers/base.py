@@ -6,7 +6,7 @@ Ses her yerde mono float32 numpy dizisi ([-1, 1]) + örnekleme hızı olarak ta�
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Iterator
 
 import numpy as np
 
@@ -59,6 +59,51 @@ class TTSResult:
     @property
     def rtf(self) -> float | None:
         return self.seconds / self.audio_seconds if self.audio_seconds else None
+
+
+class TTSStream:
+    """Akışlı TTS çıktısı (A1 gecikme işi, faz 2): mono float32 ([-1, 1]) parçalar üreten yinelenebilir + örnekleme hızı.
+
+    `close()` alttaki HTTP akışını kapatır (söz kesmede kalan gövde okunmaz). Aynı iş parçacığında yinelenip kapatılmalıdır."""
+
+    def __init__(self, chunks: Iterator[np.ndarray], sample_rate: int):
+        self._chunks = chunks
+        self.sample_rate = sample_rate
+
+    def __iter__(self) -> Iterator[np.ndarray]:
+        return iter(self._chunks)
+
+    def close(self) -> None:
+        close = getattr(self._chunks, "close", None)
+        if close is not None:
+            close()
+
+
+class StreamingSTT:
+    """Akışlı STT oturumu (A1 gecikme işi, faz 3): TEK müşteri konuşması için canlı bağlantı.
+
+    Sözleşme (VoiceSession olay döngüsünden çağrılır; `send`/`abort`/`open` BLOKLAMAZ, `finish` iş parçacığında çağrılır):
+    - open(): bağlantıyı arka planda açmaya başlar; bağlantı kurulmadan gelen ses sıraya alınır (ön kayıt kaybolmaz).
+    - send(pcm16): 16 kHz mono little-endian int16 baytları.
+    - finish() -> STTResult: sesin bittiğini bildirir, son transkripti kısa bir zaman aşımıyla bekler; başarısızlıkta ProviderError.
+    - abort(): konuşma sayılmadı (gürültü/düştü); bağlantıyı kapatır, sonuç beklenmez.
+    - billed_seconds(): faturaya esas bağlantı süresi (sn).
+    """
+
+    def open(self) -> None:
+        raise NotImplementedError
+
+    def send(self, pcm16: bytes) -> None:
+        raise NotImplementedError
+
+    def finish(self) -> STTResult:
+        raise NotImplementedError
+
+    def abort(self) -> None:
+        raise NotImplementedError
+
+    def billed_seconds(self) -> float:
+        return 0.0
 
 
 class Provider:

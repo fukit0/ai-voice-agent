@@ -38,6 +38,23 @@ class UsageMeter:
         self.stt["audio_s"] += audio_s
         self.stt["seconds"] += seconds
 
+    def add_stt_stream(self, audio_s: float, seconds: float, stream_s: float, aborted: bool = False) -> None:
+        """Akışlı STT (faz 3, A1S): canlı bağlantı süresince faturalanır. `stream_s` = bağlantının açık kaldığı süre
+        (muhafazakâr üst sınır; Deepgram akışta gönderilen ses süresini faturalıyorsa gerçek ücret `stream_audio_s`'e yakındır).
+        `aborted`: konuşma sayılmayan (kısa gürültü, ajan konuşurken düşen) akış: çağrı sayılmaz ama süresi faturaya girer.
+        Toplu (batch) çağrılar `add_stt` ile ayrı sayılır; akış yokken bu alanlar oluşmaz ve rapor eskisiyle birebir aynıdır."""
+        st = self.stt
+        for k in ("stream_calls", "stream_aborted", "stream_s", "stream_audio_s"):
+            st.setdefault(k, 0 if k in ("stream_calls", "stream_aborted") else 0.0)
+        if aborted:
+            st["stream_aborted"] += 1
+        else:
+            st["calls"] += 1
+            st["stream_calls"] += 1
+            st["seconds"] += seconds
+        st["stream_s"] += max(0.0, stream_s)
+        st["stream_audio_s"] += max(0.0, audio_s)
+
     def add_llm(self, res: Any, seconds: float) -> None:
         self.llm["calls"] += 1
         self.llm["seconds"] += seconds
@@ -91,15 +108,22 @@ def report(meter: UsageMeter, *, duration_s: float, user_speech_s: float, agent_
         missing.append("llm_tokens")
     gpu_s = sum(m["seconds"] for kind, m in (("stt", meter.stt), ("llm", meter.llm), ("tts", meter.tts))
                 if (components.get(kind) or {}).get("provider") in local)
+    streamed = "stream_s" in meter.stt                 # akışlı STT kullanıldı mı (yoksa rapor eskisiyle aynı)
+    stt_billed_s = meter.stt["audio_s"] + (meter.stt["stream_s"] if streamed else 0.0)   # toplu ses + akış bağlantı süresi
     items = {
         "duration_s": round(duration_s, 2), "user_speech_s": round(user_speech_s, 2), "agent_speech_s": round(agent_speech_s, 2),
         "speech_share": round(min(1.0, (user_speech_s + agent_speech_s) / duration_s), 3) if duration_s > 0 else None,
-        "stt_minutes": round(meter.stt["audio_s"] / 60, 4), "stt_calls": meter.stt["calls"],
+        "stt_minutes": round(stt_billed_s / 60, 4), "stt_calls": meter.stt["calls"],
         "llm_calls": meter.llm["calls"], "llm_input_tokens": meter.llm["input_tokens"] if "llm_tokens" not in missing else None,
         "llm_output_tokens": meter.llm["output_tokens"] if "llm_tokens" not in missing else None,
         "tts_chars": meter.tts["chars"], "tts_calls": meter.tts["calls"], "tts_audio_s": round(meter.tts["audio_s"], 2),
         "gpu_s": round(gpu_s, 2),
     }
+    if streamed:
+        items.update({"stt_stream_minutes": round(meter.stt["stream_s"] / 60, 4),
+                      "stt_stream_audio_minutes": round(meter.stt["stream_audio_s"] / 60, 4),
+                      "stt_batch_minutes": round(meter.stt["audio_s"] / 60, 4),
+                      "stt_stream_calls": meter.stt["stream_calls"], "stt_stream_aborted": meter.stt["stream_aborted"]})
     cost: dict[str, float | None] = {}
     unpriced: list[str] = []
     verified = True
@@ -117,7 +141,7 @@ def report(meter: UsageMeter, *, duration_s: float, user_speech_s: float, agent_
             continue
         verified = verified and bool(p.get("verified"))
         if kind == "stt":
-            cost[kind] = meter.stt["audio_s"] / 60 * p["usd"]
+            cost[kind] = stt_billed_s / 60 * p["usd"]
         elif kind == "tts":
             cost[kind] = meter.tts["chars"] / 1000 * p["usd"]
         elif items["llm_input_tokens"] is None:
@@ -129,4 +153,5 @@ def report(meter: UsageMeter, *, duration_s: float, user_speech_s: float, agent_
     return {"items": items, "missing": missing,
             "cost": {"currency": pricing.get("currency", "USD"), "by_component": {k: None if v is None else round(v, 6) for k, v in cost.items()},
                      "total": round(sum(priced), 6) if priced else None, "complete": not unpriced, "unpriced": unpriced,
-                     "prices_verified": verified, "note": "yerel bilesenler 0 (API ucreti yok); donanim/enerji dahil degil"}}
+                     "prices_verified": verified, "note": "yerel bilesenler 0 (API ucreti yok); donanim/enerji dahil degil"
+                     + ("; akisli STT: stt_minutes = toplu ses + canli baglanti suresi (muhafazakar ust sinir)" if streamed else "")}}

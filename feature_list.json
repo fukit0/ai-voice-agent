@@ -1364,6 +1364,27 @@
         "evidence/ui-001-lab-home.png"
       ],
       "notes": "Karar: referanstan YAPI/görünüm alındı (menü grupları, kart ve tablo düzeni, tema), onun senaryo/çağrı-listesi (kuyruk, geri arama, canlı izleme, KVKK) özellikleri alınmadı: bizde backend karşılığı yok, sahte sayfa yapılmadı. Ayarlar salt okunur özet (tek düzenlenebilir: tema); kalıcı ayar deposu yok. Doğrulanmadı/açık: (1) Mac'te gerçek oturum verisiyle Genel Bakış görseli; (2) mevcut sayfaların (TTS/STT/LLM/Persona/Playground) her biri tek tek göz kontrolünden geçmedi, yalnız tema devraldı, Senaryolar ve Aramalar ekranına bakıldı; (3) e2e voice projesi: 3 test başarısız (Ayşe/Elif ajan adı beklentisi core-005 persona değişikliğinden eski kalmış, kabuktan bağımsız; 3 test geçti) henüz düzeltilmedi; (4) Canlı İzleme, Kuyruk, Geri Aramalar, Başarı Kriterleri (dinleyici değerlendirme formu), Görüşme detayında dalga formu/hız seçici yok: ayrı feature gerektirir. Mac'te App.tsx yazılamadığı için eski dosya .git/stage-retune/ altına taşınıp yenisi konuldu."
+    },
+    {
+      "id": "core-027",
+      "plan_ref": "F1.2 / F6.3 (production gecikme ve maliyet)",
+      "priority": 92,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "must",
+      "title": "API profilleri için üretim benzeri gecikme (streaming STT/TTS, bağlantı yeniden kullanımı)",
+      "user_visible_behavior": "A1S profili A1 ile aynı modelleri canlı STT (WebSocket), akışlı TTS ve yeniden kullanılan bağlantılarla çalıştırır; gecikme ve maliyet production koşullarına yakın ölçülür.",
+      "status": "blocked",
+      "verification": [
+        "scripts/latency_probe.py ile A1 ve A1S gerçek API'lerle ölçülür (Mac, anahtarlar .env'de); bileşen medyanları kayda geçer.",
+        "A1S ile en az 5 gerçek aramada ilk ses p50 Aramalar ekranında A1'den düşük ve hedef (≤ 1,2 sn) ile karşılaştırılır.",
+        "Streaming STT yedek yolu (toplu çağrı) gerçek ağda bir kez tetiklenip doğrulanır."
+      ],
+      "evidence": [
+        "backend/tests/test_streaming_tts.py, test_streaming_stt.py, test_remote_pool.py, test_profile_a1s.py, test_latency_probe.py",
+        "backend 631 geçti, vitest 94, playwright lab 6 (bulut, sahte sunucularla)"
+      ],
+      "notes": "2026-10-31: UYGULANDI, GERÇEK ÖLÇÜM YOK. Faz 1: remote.py ortak httpx.Client (bağlantı yeniden kullanımı; önceden her çağrı yeni TLS). Faz 2: ElevenLabs /stream, ChunkPipeline (durumlu yeniden örnekleme + telefon filtresi, parça sınırında tık yok). Faz 3: Deepgram canlı WebSocket, konuşma sürerken ses akar, VAD bitişinde Finalize; boş/zaman aşımı/STT geçidi/açılamama durumunda konuşmanın tamamı toplu çağrıyla yeniden çözülür (stats.stt_stream_fallbacks). Faz 4 (Anthropic prompt caching) YAPILMADI. Faz 5: profil A1S (A1 değişmedi). Faz 6: scripts/latency_probe.py. Sınırlar: boş transkript (öksürük/gürültü) de toplu yedeğe düşer, o konuşmada ek gecikme olur; telefon filtresi açıkken akışlı çıktı akışsızla örnek örnek aynı değil (genlik aynı, faz farklı); canlı STT faturası bağlı kalınan süredir (usage.stt_minutes artık akış süresi); gecikme kazancı sahte sunucularla ölçülemez. Gerçek sayılar için Mac'te: python scripts/latency_probe.py --profile A1 --wav <klip> ; ... --profile A1S ..."
     }
   ]
 }
