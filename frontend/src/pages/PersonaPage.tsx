@@ -82,9 +82,17 @@ export function PersonaPage() {
     <section className="screen" data-testid="persona-page">
       <h2>Persona</h2>
       <p className="meta">
-        Ajanın kim olduğunu ve nasıl konuştuğunu belirleyin. Ad senaryo metinlerindeki {"{ASISTAN}"} olur; onay sözleri kademeli hatta
-        her cevaptan sonra söylenir; istem serbest sohbette kullanılır. Gerçek aramalarda cümle uzunluğu aşağıdaki raporla denetlenir.
+        Ajanın kim olduğunu ve nasıl konuştuğunu belirleyin. Ad senaryo metinlerindeki {"{ASISTAN}"} olur; onay sözleri ve tepkiler
+        kademeli hatta her cevaptan sonra söylenir. Gerçek aramalarda cümle uzunluğu aşağıdaki raporla denetlenir.
       </p>
+      <div className="persona-scope" data-testid="persona-scope" role="note">
+        <b>Neye etki eder?</b>
+        <ul>
+          <li><b>Anket aramalarında</b> (senaryo seçili): ad, açılış cümlesi, onay/tepki sözleri, konuşma hızı ve ses. Akışı kod yönetir; LLM yalnızca cevabı anlar, konuşacağı metni üretmez.</li>
+          <li><b>Yalnızca serbest sohbette</b> (Playground'da senaryo "Serbest sohbet" seçiliyken, kademeli profiller): ton üslubu, hitap, cümle sınırları, kullanılmayacak kalıplar, ek kurallar ve aşağıdaki "Oluşan istem".</li>
+          <li><b>Realtime profillerde</b> (A2, A3): yalnızca ad; istem ve ses ayarları uygulanmaz, model kendi sabit talimatıyla konuşur.</li>
+        </ul>
+      </div>
       <p className="meta" data-testid="persona-voice-note">
         <b>Not:</b> Ton hem söz üslubunu hem sesin söyleyişini etkiler; etkisi TTS sağlayıcısına bağlıdır (EMA yalnız hız, Chatterbox ifade gücü,
         ElevenLabs kararlılık/hız ve v3/v4'te ses etiketleri). Sesleri ve tonları denemek için <b>Ses stüdyosu</b>nu açın.
@@ -95,22 +103,22 @@ export function PersonaPage() {
           <form className="persona-form" onSubmit={(e) => { e.preventDefault(); void save(); }} aria-label="Persona girişi">
             <label htmlFor="p-name"><b>Ajanın adı</b></label>
             <input id="p-name" value={form.name} onChange={(e) => set("name", e.target.value)} />
-            <label htmlFor="p-tone"><b>Ton (söz üslubu)</b> <span className="meta">söz üslubu + söyleyiş</span></label>
+            <label htmlFor="p-tone"><b>Ton (söz üslubu)</b> <span className="meta">söyleyiş (anket) · söz üslubu (yalnız serbest sohbet)</span></label>
             <select id="p-tone" value={form.tone} onChange={(e) => set("tone", e.target.value)}>
               {view.options.tone.map((t) => <option key={t} value={t}>{TONE_LABEL[t] ?? t}</option>)}
             </select>
-            <label htmlFor="p-address"><b>Hitap tarzı</b></label>
+            <label htmlFor="p-address"><b>Hitap tarzı</b> <span className="meta">yalnız serbest sohbet</span></label>
             <select id="p-address" value={form.address} onChange={(e) => set("address", e.target.value)}>
               {view.options.address.map((t) => <option key={t} value={t}>{ADDRESS_LABEL[t] ?? t}</option>)}
             </select>
             <div className="persona-row">
               <div>
-                <label htmlFor="p-sent"><b>En çok cümle</b></label>
+                <label htmlFor="p-sent"><b>En çok cümle</b> <span className="meta">yalnız serbest sohbet</span></label>
                 <input id="p-sent" type="number" min={1} max={5} value={form.max_sentences}
                   onChange={(e) => set("max_sentences", Number(e.target.value))} />
               </div>
               <div>
-                <label htmlFor="p-words"><b>Cümle başına en çok kelime</b></label>
+                <label htmlFor="p-words"><b>Cümle başına en çok kelime</b> <span className="meta">yalnız serbest sohbet</span></label>
                 <input id="p-words" type="number" min={5} max={40} value={form.max_words_per_sentence}
                   onChange={(e) => set("max_words_per_sentence", Number(e.target.value))} />
               </div>
@@ -132,9 +140,9 @@ export function PersonaPage() {
                 <textarea id={`p-rx-${b}`} rows={3} value={rx[b] ?? ""} onChange={(e) => setRx((r) => ({ ...r, [b]: e.target.value }))} />
               </div>
             ))}
-            <label htmlFor="p-avoid"><b>Kullanılmayacak kalıplar</b> <span className="meta">her satıra bir tane</span></label>
+            <label htmlFor="p-avoid"><b>Kullanılmayacak kalıplar</b> <span className="meta">her satıra bir tane · yalnız serbest sohbet</span></label>
             <textarea id="p-avoid" rows={3} value={avoid} onChange={(e) => setAvoid(e.target.value)} />
-            <label htmlFor="p-extra"><b>Ek kurallar</b> <span className="meta">{form.extra_rules.length}/600</span></label>
+            <label htmlFor="p-extra"><b>Ek kurallar</b> <span className="meta">{form.extra_rules.length}/600 · yalnız serbest sohbet</span></label>
             <textarea id="p-extra" rows={3} value={form.extra_rules} onChange={(e) => set("extra_rules", e.target.value)} />
             {problems.length > 0 && <ul className="error persona-problems" role="alert">{problems.map((p) => <li key={p}>{p}</li>)}</ul>}
             <div className="persona-actions">
@@ -153,6 +161,7 @@ export function PersonaPage() {
             <h3 className="sub">Onay sözleri (sırayla)</h3>
             <p>{view.preview_ack.length ? view.preview_ack.join("  ·  ") : "Onay sözü yok."}</p>
             <h3 className="sub">Oluşan istem</h3>
+            <p className="meta">Yalnızca serbest sohbette (senaryosuz, kademeli profil) LLM'e gönderilir. Anket aramalarında ve realtime profillerde kullanılmaz.</p>
             <pre className="persona-prompt" data-testid="persona-prompt">{view.prompt}</pre>
           </aside>
         </div>

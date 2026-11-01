@@ -32,6 +32,15 @@ function mockApi() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Persona ekranı (core-005)", () => {
+  it("neye etki ettiğini açıkça söyler: anket, yalnız serbest sohbet, realtime", async () => {
+    mockApi();
+    render(<PersonaPage />);
+    const scope = await screen.findByTestId("persona-scope");
+    expect(scope).toHaveTextContent("Anket aramalarında");
+    expect(scope).toHaveTextContent("Yalnızca serbest sohbette");
+    expect(scope).toHaveTextContent("Realtime profillerde");
+    expect(await screen.findByText(/Anket aramalarında ve realtime profillerde kullanılmaz/)).toBeInTheDocument();
+  });
   it("persona alanlarını gösterir, ad değişince açılış cümlesi ve istem güncellenir, kaydeder", async () => {
     const calls = mockApi();
     render(<PersonaPage />);
