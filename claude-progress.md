@@ -472,3 +472,9 @@ agents do not update it automatically.
 - Testler: eski iki test (parse_weights, gecersiz agirlik 422) kriter listesi 6'ya ciktigi icin GIRDIsi guncellendi (completion:0 eklendi), amaci ayni; 2 yeni test (beklenen sonuc sayimi, tamamlayamayan profil dusuyor). 708 backend + 105 frontend gecti.
 - Duzeltme: sunumdaki "L1, L4 icin kayitli arama yok" ifadesi YANLISTI; ikisinin de Kiyas kosusu var (L1 6/20, L4 0/30). Sunum duzeltildi.
 - Hala bos: L3/L5/A1S/A2/A3 tamamlama (Kiyas kosusu yok), L5 gecikme+kaynak, L3/A2/A3 kaynak, L2-EL/A2/A3 dogallik (dinleme puani).
+
+## Session 043 - core-010: STT'siz hat (L5) kodu (2026-11-01)
+- Kullanici: L5 hazirlanamiyor; sebep: STT'siz profilde sesli arama ve Kiyas kosusu bilerek reddediliyordu (core-010 baslamamisti). Karar (kullanici): "1'i yap" = core-010'u gercekten yap.
+- Yapildi: bkz. feature_list core-010 notlari. Ses OpenAI uyumlu uc noktadan input_audio olarak gider; model JSON'a transcript ekler, ayni korumalar (enjeksiyon, olumsuz evet/hayir, kimlik sorusu) transkript uzerinde calisir; bos transkript = anlasilmadi. 718 backend test gecti (10 yeni), 1 regresyon yakalanip duzeltildi (offer dogrulamasi LLM ornegi yerine profil bayragina bakiyor).
+- Dogrulanmadi / acik: Ollama'nin bu modelle ses kabul edigi (varsayim), dogruluk, gecikme kazanci, gurultude metin uydurma (STT gecidi yok; tek savunma istem). core-010 'passing' DEGIL.
+- Not: backend/app/providers/base.py, local.py?, config/profiles.yaml Mac klasorunde yerinde yazmaya kapaliydi; kopyala-yeniden adlandir ile guncellendi (icerik ayni, yalniz bu degisiklikler).

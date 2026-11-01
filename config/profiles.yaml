@@ -45,7 +45,7 @@ profiles:
     name: Sesli LLM
     purpose: STT'siz hattın gecikme kazancı (ses doğrudan LLM'e; core-010)
     stt: null
-    llm: {provider: ollama, model: "gemma4:12b"}
+    llm: {provider: ollama, model: "gemma4:12b", audio: true}   # audio: ses OpenAI uyumlu uçtan input_audio ile gider (core-010; Ollama'nın kabulü Mac'te doğrulanacak)
     tts: {provider: ema}
 
   A1:

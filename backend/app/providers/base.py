@@ -161,6 +161,16 @@ class STTProvider(Provider):
 class LLMProvider(Provider):
     component = "llm"
 
+    @property
+    def accepts_audio(self) -> bool:
+        """core-010: ses doğrudan LLM'e verilebilir mi (STT'siz hat)? Varsayılan hayır; sağlayıcı açıkça destekler."""
+        return False
+
+    def complete_audio(self, messages: list[dict[str, str]], audio: Any, sample_rate: int, max_tokens: int = 256,
+                       temperature: float = 0.0) -> LLMResult:
+        """Müşterinin sesini (mono float32) metin mesajlarıyla birlikte modele verir; yanıt metni `complete` ile aynı biçimdedir."""
+        raise ProviderError(f"{self.kind} ses girdisini desteklemiyor (core-010: STT'siz hat yalnızca ses girdili LLM ile).")
+
     def warmup_call(self):
         return self.complete([{"role": "user", "content": "Tek kelimeyle cevap ver: hazır mısın?"}],
                              max_tokens=8, temperature=0)

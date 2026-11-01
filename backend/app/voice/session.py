@@ -341,6 +341,9 @@ class VoiceSession:
                                "endpoint_wait_ms": self.vad.end_frames * 20}
         try:
             t0 = time.perf_counter()
+            if self.stt is None:                       # core-010: STT'siz hat, ses doğrudan LLM'e
+                await self._respond_audio(audio, turn, t_end, rec)
+                return
             if live is not None:
                 stt_res = await self._transcribe_live(live, audio, rec, t0)
             else:
@@ -375,6 +378,17 @@ class VoiceSession:
             self.emit({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
             if turn == self._turn_id:
                 self._set_state("listening")
+
+    async def _respond_audio(self, audio: np.ndarray, turn: int, t_end: float, rec: dict) -> None:
+        if self.flow is None or not getattr(self.llm, "accepts_audio", False):
+            raise RuntimeError("STT'siz profil için senaryo ve ses girdili bir LLM gerekir (core-010).")
+        rec["audio_in"] = True
+        reply = await asyncio.to_thread(self.flow.handle_audio, audio, SAMPLE_RATE)
+        if turn != self._turn_id:
+            return
+        if reply.heard:
+            self._say("user", reply.heard)
+        await self._flow_reply(reply, reply.heard or "", turn, t_end, rec)
 
     # ---- akışlı STT (faz 3) ----------------------------------------------------------------------------------------
     def _open_live(self) -> None:
@@ -502,6 +516,9 @@ class VoiceSession:
             reply = self.flow.handle_structured({"intent": "unclear", "value": None}, "")
         else:
             reply = await asyncio.to_thread(self.flow.handle, text)
+        await self._flow_reply(reply, text, turn, t_end, rec)
+
+    async def _flow_reply(self, reply, text: str, turn: int, t_end: float, rec: dict) -> None:
         if any(e.get("type") == "fast_path" for e in reply.events):
             rec["fast_path"] = True        # kural yolu: LLM çağrılmadı; llm_s yazılmaz (LLM süre istatistiğini kirletmesin)
         elif reply.llm_s is not None:

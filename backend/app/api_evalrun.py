@@ -32,7 +32,7 @@ class RunBody(BaseModel):
 
 def _providers(profile):
     """(stt, llm, tts): soğuksa 409, yoksa 400 (api_voice ile aynı kural). Testler burayı sahteyle değiştirir."""
-    return tuple(_provider(profile, c) for c in ("stt", "llm", "tts"))
+    return tuple(_provider(profile, c) if profile.component(c) else None for c in ("stt", "llm", "tts"))   # STT'siz hat (L5): stt=None
 
 
 @router.get("/set")

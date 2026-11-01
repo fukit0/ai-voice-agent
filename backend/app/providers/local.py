@@ -139,6 +139,39 @@ class HfWhisperSTT(STTProvider):
 class OllamaLLM(LLMProvider):
     kind = "ollama"
 
+    @property
+    def accepts_audio(self) -> bool:
+        return bool(self.options.get("audio"))      # profilde `audio: true` (core-010; Ollama'nın ses kabul ettiği DOĞRULANMADI: scripts/audio_llm_probe.py)
+
+    def complete_audio(self, messages, audio, sample_rate, max_tokens=256, temperature=0.0):
+        """Ses OpenAI uyumlu uç noktadan `input_audio` parçası olarak (base64 WAV) gider. Bu biçimin kabul edilip edilmediği Mac'te
+        scripts/audio_llm_probe.py ile ölçülür; kabul edilmezse Ollama HTTP hatası döner ve ProviderError olarak görünür."""
+        import base64
+
+        import httpx
+
+        from .audio import encode_wav
+
+        if not self.accepts_audio:
+            return super().complete_audio(messages, audio, sample_rate, max_tokens, temperature)
+        wav = base64.b64encode(encode_wav(audio, sample_rate)).decode("ascii")
+        body_msgs = [dict(m) for m in messages]
+        last = body_msgs[-1]
+        last["content"] = [{"type": "text", "text": last["content"]}, {"type": "input_audio", "input_audio": {"data": wav, "format": "wav"}}]
+        t0 = time.perf_counter()
+        try:
+            res = httpx.post(f"{OLLAMA_URL}/v1/chat/completions", timeout=120, json={
+                "model": self.model, "messages": body_msgs, "stream": False, "max_tokens": max_tokens, "temperature": temperature})
+            res.raise_for_status()
+        except Exception as exc:
+            raise ProviderError(f"Ollama ses çağrısı başarısız ({self.model}): {exc}") from exc
+        body = res.json()
+        choices = body.get("choices") or [{}]
+        usage = body.get("usage") or {}
+        return LLMResult(text=(choices[0].get("message", {}).get("content") or "").strip(),
+                         seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
+                         output_tokens=usage.get("completion_tokens"), input_tokens=usage.get("prompt_tokens"), extra={"audio": True})
+
     @staticmethod
     def loaded_models() -> set[str] | None:
         """Ollama'da şu an bellekte olan modeller (/api/ps). Ulaşılamazsa None."""

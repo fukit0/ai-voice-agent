@@ -56,10 +56,10 @@ async def offer(req: OfferRequest) -> dict:
         if missing:
             raise HTTPException(400, {"error": "missing_env", "profile": req.profile, "missing_env": missing,
                                       "message": f"{req.profile} için ortam değişkeni eksik: {', '.join(missing)} (.env)."})
-    elif not profile.component("stt"):
+    elif not profile.component("stt") and not ((profile.component("llm") or {}).get("audio") and req.scenario):
         raise HTTPException(400, {"error": "component_unavailable", "profile": req.profile,
-                                  "message": f"{req.profile} profilinde STT yok (ses doğrudan LLM'e gider, core-010); "
-                                             "sesli konuşma için STT'li bir profil seçin."})
+                                  "message": f"{req.profile} profilinde STT yok: ses doğrudan LLM'e gitmesi için LLM'de audio: true ve bir senaryo gerekir "
+                                             "(core-010); aksi halde STT'li bir profil seçin."})
     try:  # aiortc opsiyonel: yoksa yalnızca sesli konuşma kapanır, diğer ekranlar çalışır
         from .voice.rtc import RtcVoiceConnection
     except ImportError as exc:
@@ -74,7 +74,7 @@ async def offer(req: OfferRequest) -> dict:
         except ValueError as exc:
             raise HTTPException(400, {"error": "unknown_realtime_provider", "message": str(exc)}) from exc
     else:
-        stt, llm, tts = (_provider(profile, c) for c in ("stt", "llm", "tts"))  # soğuksa 409
+        stt, llm, tts = (_provider(profile, c) if profile.component(c) else None for c in ("stt", "llm", "tts"))  # soğuksa 409; STT'siz hat (L5): core-010
     for sid in [k for k, v in CONNECTIONS.items() if v.closed]:
         CONNECTIONS.pop(sid, None)
     if len(CONNECTIONS) >= MAX_SESSIONS:

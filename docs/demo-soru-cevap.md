@@ -379,3 +379,7 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Kısa cevap:** İlk matris yalnızca hız, ses, doğruluk ve maliyeti puanlıyordu; L1 hızlı ve ucuz olduğu için 2. sıradaydı ama ankete verilen "Hayır, katılmadım." cevabını anlamayıp aramayı kapatıyordu. Bu bir eksik kriterdi, bahane değil: bulduk, "Anket tamamlama" kriterini ekledik (Kıyas koşularında yolun beklenen sonucuna ulaşan çağrı oranı, ağırlık 25).
 **Gerçek sonuç:** L2 77/77, L2-EL 58/60, A1 30/30, L1 6/20 (yalnızca geri arama yolu bitiyor), L4 0/30. L1 83,5 → 72,8 (2. → 4. sıra).
 **Sınırlar:** (1) Koşular farklı kod sürümleriyle yapıldı. (2) Tamamlama yalnızca Kıyas koşusu olan profillerde var; L3, L5, A1S, A2, A3 için yok. (3) "Belirsiz" yolu sayılmıyor, çünkü sonucu tanım gereği belirsiz. (4) Ağırlık 25 benim önerimdir; ekranda değiştirilebilir.
+
+## S46 — L5 (sesli LLM, STT'siz) neden matriste boş / çalışıyor mu? (2026-11-01)
+**Kısa cevap:** L5'te ses önce yazıya çevrilmeden doğrudan Gemma'ya gidiyor; amaç STT süresini (~0,5 sn) kazanmak. Kod yazıldı ve sahte modelle test edildi, ama Ollama'nın gerçekten ses kabul ettiği henüz Mac'te doğrulanmadı. Doğrulanana kadar L5 için hiçbir gecikme ya da doğruluk iddiası yok.
+**Bilinen sınırlar:** (1) STT geçidi yok: gürültüde modelin metin uydurmasını yalnızca istem engelliyor; Deepgram'da bu geçit var. (2) Yazıya dökümü model yapıyor, ayrı doğruluk ölçümü (WER) yok. (3) Ses OpenAI uyumlu uçtan gönderiliyor; Ollama kabul etmezse alternatif taşıma gerekir.

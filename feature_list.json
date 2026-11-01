@@ -645,12 +645,12 @@
       "moscow": "could",
       "title": "Gemma 4 ile STT'siz ses girdisi deneyi",
       "user_visible_behavior": "L5 profili sesi doğrudan LLM'e verir; gecikme kazancı ölçülür.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "L5 profiliyle 5 test araması yapılır ve gecikme L1 ile karşılaştırılır."
       ],
       "evidence": [],
-      "notes": ""
+      "notes": "2026-11-01: KOD HAZIR, DOGRULANMADI. Eklenenler: LLMProvider.complete_audio/accepts_audio, OllamaLLM ses yolu (OpenAI uyumlu /v1/chat/completions, input_audio base64 WAV; profilde audio:true), build_audio_messages + FlowDriver.handle_audio (model JSON'a transcript ekler), VoiceSession STT'siz yol (stt=None), api_voice/api_evalrun STT'siz profile izin, L5 profiline audio:true, scripts/audio_llm_probe.py. Testler: backend/tests/test_audio_llm.py (10, sahte ses-girdili LLM); 718 backend gecti. DOGRULANMAYAN: Ollama'nin gemma4:12b ile ses kabul edip etmedigi (bu biçim varsayim), cevap dogrulugu, gecikme kazanci, gurultude uydurma (sttguard yok). Siradaki (Mac): ./.venv/bin/python scripts/audio_llm_probe.py --clips data/stt-clips --limit 5 --model gemma4:12b --step musaitlik; ardindan L5 Hazirla + Kiyas kosusu. Ollama 400 donerse BLOCKED."
     },
     {
       "id": "scn-001",

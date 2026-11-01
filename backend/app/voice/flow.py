@@ -52,6 +52,7 @@ class Reply:
     finished: bool = False
     outcome: str | None = None
     llm_s: float | None = None
+    heard: str | None = None      # core-010: ses doğrudan LLM'e gittiyse modelin yazıya döktüğü müşteri sözü
 
 
 def value_rule(step: dict) -> str:
@@ -370,6 +371,18 @@ def build_messages(step: dict, question: str, utterance: str, score_policy: str 
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+def build_audio_messages(step: dict, question: str, score_policy: str = "free", variant: str | None = None) -> list[dict]:
+    """core-010: aynı ayrıştırıcı istemi, ama müşteri sözü metin değil ekteki ses; model JSON'a `transcript` ekler (kayıt ve korumalar için)."""
+    msgs = build_messages(step, question, "", score_policy, variant)
+    msgs[0]["content"] += (
+        "\nMüşterinin cevabı SES KAYDI olarak ekte; metin olarak verilmedi. JSON nesnesine bir de \"transcript\" alanı ekle: müşterinin "
+        "söylediği sözün aynen yazıya dökümü (küçük harf, noktalamasız). Ses boşsa, sadece gürültü/öksürük ise ya da anlaşılmıyorsa "
+        "transcript boş metin, intent=unclear olsun. Seste duymadığın hiçbir şeyi yazma, uydurma.")
+    user = msgs[1]["content"].split("\nMüşteri:", 1)[0]
+    msgs[1]["content"] = user + "\nMüşterinin cevabı ekteki ses kaydındadır."
+    return msgs
+
+
 def _is_int(v: Any) -> bool:
     return not isinstance(v, bool) and (isinstance(v, int) or (isinstance(v, float) and v.is_integer()))
 
@@ -503,6 +516,33 @@ class FlowDriver:
         if self.last_fast:
             reply.events.append({"type": "fast_path", "step": key, "text": utterance})
         return self.handle_structured(obj, utterance, reply)
+
+    def handle_audio(self, audio, sample_rate: int) -> Reply:
+        """core-010 (STT'siz hat): müşterinin sesi doğrudan LLM'e gider; model hem yapılandırılmış cevabı hem transkripti döndürür.
+        Transkript boşsa cevap 'anlaşılmadı' sayılır. Aynı korumalar (enjeksiyon, olumsuz evet/hayır, kimlik sorusu) transkript üstünde çalışır.
+        SINIR: STT geçidi (sttguard: güven skoru, yabancı yazı) yok; gürültüde modelin metin uydurmasına karşı tek savunma istemdir."""
+        reply = Reply()
+        if self.finished or self.current is None:
+            return reply
+        key = self.current
+        step = self.steps[key]
+        t0 = time.perf_counter()
+        res = self.llm.complete_audio(build_audio_messages(step, self.text_of(key), self.score_policy, self.prompt_variant), audio, sample_rate, 160, 0.0)
+        obj, _ = parse_output(res.text)
+        reply.llm_s = round(time.perf_counter() - t0, 3)
+        heard = ""
+        if obj is not None:
+            raw = obj.pop("transcript", "")
+            heard = raw.strip() if isinstance(raw, str) else ""
+        reply.heard = heard
+        if not heard:
+            obj = {"intent": "unclear", "value": None}
+        elif step["kind"] == "OpenText" and obj and obj.get("intent") == "answer":
+            obj["value"] = heard
+        reply.events.append({"type": "audio_heard", "step": key, "text": heard})
+        if heard and self.identity_asks < MAX_IDENTITY_ASKS and identity_question(heard):
+            return self._identity(key, heard, reply)
+        return self.handle_structured(obj, heard, reply)
 
     def _identity(self, key: str, utterance: str, reply: Reply) -> Reply:
         """'Bot musun?' (core-006): insan taklidi yapılmaz. Dürüst cevap + bekleyen soru yeniden sorulur; cevap sayılmaz, deneme hakkı harcanmaz."""
