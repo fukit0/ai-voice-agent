@@ -32,10 +32,12 @@ def main() -> int:
     ap.add_argument("--model", default="gemma4:12b")
     ap.add_argument("--step", default="musaitlik")
     ap.add_argument("--reps", type=int, default=3)
+    ap.add_argument("--category", choices=["evet_hayir", "rakam"], help="manifestten bu kategorideki klipleri çalıştır; beklenen cevap ve adım otomatik (evet_hayir -> musaitlik, rakam -> q2)")
+    ap.add_argument("--manifest", default="data/stt-clips/manifest.json")
     ap.add_argument("--expect", help="beklenen value (true/false/sayı/metin); yoksa yalnız JSON geçerliliği ölçülür")
     a = ap.parse_args()
-    if not a.wav and not a.clips:
-        ap.error("--wav ya da --clips verin")
+    if not a.wav and not a.clips and not a.category:
+        ap.error("--wav, --clips ya da --category verin")
 
     from backend.app import scenario as S
     from backend.app.providers.audio import decode_audio, resample
@@ -43,13 +45,28 @@ def main() -> int:
     from backend.app.providers.local import OllamaLLM
     from backend.app.voice.flow import FlowDriver, build_audio_messages, parse_output
 
-    files = [Path(a.wav)] if a.wav else sorted(Path(a.clips).glob("*.wav"))[: a.limit]
+    jobs: list[tuple[Path, str, object, str | None]] = []        # (dosya, adım, beklenen value, beklenen metin)
+    if a.category:
+        man = Path(a.manifest)
+        words = {"sıfır": 0, "bir": 1, "iki": 2, "üç": 3, "dört": 4, "beş": 5, "altı": 6, "yedi": 7, "sekiz": 8, "dokuz": 9, "on": 10}
+        yn = {"evet": True, "hayır": False, "evet evet": True}
+        for it in json.loads(man.read_text(encoding="utf-8")):
+            if it["category"] != a.category:
+                continue
+            exp = (yn if a.category == "evet_hayir" else words).get(it["text"])
+            if exp is None:                                   # 'yok', 'olabilir' gibi belirsiz klipler değerlendirilmez
+                continue
+            jobs.append((man.parent / it["file"], "musaitlik" if a.category == "evet_hayir" else "q2", exp, it["text"]))
+        jobs = jobs[: a.limit]
+    else:
+        expect0 = a.expect
+        for f in ([Path(a.wav)] if a.wav else sorted(Path(a.clips).glob("*.wav"))[: a.limit]):
+            jobs.append((f, a.step, None, None))
+    files = [j[0] for j in jobs]
     if not files:
         print("Klip bulunamadı.")
         return 2
     flow = FlowDriver(S.get("anket"), None, None)
-    step = flow.steps[a.step]
-    msgs = build_audio_messages(step, flow.text_of(a.step))
     llm = OllamaLLM(a.model, audio=True)
     issues = llm.readiness_issues()
     if issues:
@@ -58,7 +75,10 @@ def main() -> int:
     expect = None if a.expect is None else (json.loads(a.expect) if a.expect.lower() in ("true", "false") or a.expect.replace(".", "").isdigit() else a.expect)
 
     rows, secs = [], []
-    for f in files:
+    for f, step_key, exp_value, exp_text in jobs:
+        msgs = build_audio_messages(flow.steps[step_key], flow.text_of(step_key))
+        if exp_value is not None:
+            expect = exp_value
         audio, rate = decode_audio(f.read_bytes(), "left")
         audio = resample(audio, rate, 16000)
         for i in range(a.reps):
@@ -75,7 +95,9 @@ def main() -> int:
             row = {"diag": {k: diag.get(k) for k in ("finish_reason", "reasoning_chars", "message_keys")}, "input_tokens": res.input_tokens,
                    "output_tokens": res.output_tokens, "clip": f.name, "rep": i + 1, "seconds": round(dt, 3), "json_ok": obj is not None, "intent": (obj or {}).get("intent"),
                    "value": (obj or {}).get("value"), "transcript": (obj or {}).get("transcript"), "raw": res.text[:200],
-                   "match": None if expect is None else (obj or {}).get("value") == expect}
+                   "expected": expect, "expected_text": exp_text, "step": step_key,
+                   "match": None if expect is None else (obj or {}).get("value") == expect,
+                   "transcript_match": None if exp_text is None else _norm((obj or {}).get("transcript")) == _norm(exp_text)}
             rows.append(row)
             secs.append(dt)
             if not res.text:
@@ -84,10 +106,15 @@ def main() -> int:
             print(f"{f.name:30s} #{i + 1} {dt:5.2f}s json={row['json_ok']} intent={row['intent']} value={row['value']} heard={row['transcript']!r}")
     warm = secs[1:] or secs
     summ = {"n": len(rows), "json_ok_rate": round(sum(r["json_ok"] for r in rows) / len(rows), 3), "p50_s": round(statistics.median(warm), 3),
-            "cold_s": round(secs[0], 3), "match_rate": None if expect is None else round(sum(bool(r["match"]) for r in rows) / len(rows), 3)}
+            "cold_s": round(secs[0], 3), "match_rate": None if expect is None else round(sum(bool(r["match"]) for r in rows) / len(rows), 3),
+            "transcript_match_rate": None if not a.category else round(sum(bool(r["transcript_match"]) for r in rows) / len(rows), 3)}
     print("\nÖzet:", summ)
     _save(a.model, rows, None, summ)
     return 0
+
+
+def _norm(t) -> str:
+    return " ".join(str(t or "").lower().replace("İ", "i").replace(".", " ").replace(",", " ").split())
 
 
 def _save(model: str, rows: list, error: str | None, summary: dict | None = None) -> None:
