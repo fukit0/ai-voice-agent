@@ -1414,7 +1414,7 @@
         "eval-001 koşusunda 20 aramanın cevapları kaydedilir ve diğer profillerle aynı ölçütlerle karşılaştırılır; kanıt evidence/ altında."
       ],
       "evidence": [],
-      "notes": "Kullanıcı 2026-11-01'de ayrı faza taşınmasını istedi. Ayrıntı ve kurulum notları: docs/faz-elevenlabs-agent.md. Girdi bekleniyor: agent kimliği, araç tanımı. Başlamadı; Faz 1 işleri (core-027, core-012) bitmeden aktif özellik yapılmaz."
+      "notes": "Kullanıcı 2026-11-01'de ayrı faza taşınmasını istedi. Ayrıntı ve kurulum notları: docs/faz-elevenlabs-agent.md. Girdi bekleniyor: agent kimliği, araç tanımı. Başlamadı; Faz 1 işleri (core-027, core-012) bitmeden aktif özellik yapılmaz. | 2026-11-01 FİYAT (kullanıcının ekran görüntüleri, hesap > Subscription > ElevenAgents): barındırma $0,08/dk (tüm planlarda aynı), LLM token ve telefon sağlayıcısı ayrıca kullanım bazlı; plana dahil dakika Free 15 / Starter 75 / Creator 275 / Pro 1.238 / Scale 3.738 / Business 12.375; ek dakika $0,08, burst $0,16/dk; eşzamanlı çağrı 4/6/10/20/30/40; Enterprise: yüksek eşzamanlılık, ölçekte önemli indirim. Karşılaştırma (A1S canlı ort. $0,0353/dk, TTS+STT+LLM dahil): ElevenAgents tek başına barındırma $0,08/dk, LLM ve telefon hariç. Faz 3'te bu iki yaklaşımın maliyet farkı aynı arama süresi ve senaryo ile ölçülmeli."
     },
     {
       "id": "hum-001",
