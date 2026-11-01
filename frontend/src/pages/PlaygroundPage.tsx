@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ActiveProfile } from "../ActiveProfile";
+import { CopyIdButton } from "../CopyIdButton";
 import { fetchScenarios, type ScenarioSummary } from "../api";
 import { useProfile } from "../ProfileContext";
 import { dbToMeter, startVoice, type ScorePolicy, type VoiceEvent, type VoiceHandle } from "../voice";
@@ -157,6 +158,7 @@ export function PlaygroundPage() {
           <audio controls src={`/api/voice/recordings/${recording}.wav`} data-testid="recording-audio" />
           <a href={`/api/voice/recordings/${recording}.wav`} download>İndir</a>
           <button type="button" onClick={deleteRecording}>Sil</button>
+          <code className="meta">{recording}</code><CopyIdButton id={recording} />
           <span className="meta" title={`Sol kanal: siz, sağ kanal: ajan · data/voice-sessions/${recording}.wav`}>Kayıt hazır</span>
         </div>
       )}

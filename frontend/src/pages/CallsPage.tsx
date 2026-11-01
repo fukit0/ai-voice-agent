@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchCall, fetchCalls, fetchCompare } from "../callsApi";
 import type { CallDetail, CallUsage, CallList, CallRow, CompareGroup, CompareResult } from "../callsApi";
+import { CopyIdButton } from "../CopyIdButton";
 import "../calls.css";
 
 /** Aramalar (lab-004): kayıtlı test aramalarının listesi/detayı ve profil ya da seçilen aramalar bazında kıyası.
@@ -127,7 +128,7 @@ function CallDetailPanel({ id, onClose }: { id: string; onClose: () => void }) {
   return (
     <aside className="calls-detail" aria-label="Arama detayı" data-testid="call-detail">
       <div className="calls-detail-head">
-        <h3>Arama {id.slice(0, 6)}</h3>
+        <h3>Arama {id.slice(0, 6)} <CopyIdButton id={id} /></h3>
         <button className="calls-x" onClick={onClose} aria-label="Detayı kapat">×</button>
       </div>
       {err && <p role="alert" className="calls-bad">{err}</p>}
@@ -271,7 +272,7 @@ export function CallsPage() {
             {list && list.calls.length > 0 && (
               <div className="calls-scroll">
                 <table className="calls-table" data-testid="call-list">
-                  <thead><tr><th><span className="sr-only">Seç</span></th><th>Zaman</th><th>Profil</th><th>Sonuç</th><th>Tur</th><th>İlk ses p50</th><th>TTS</th><th>Ses</th></tr></thead>
+                  <thead><tr><th><span className="sr-only">Seç</span></th><th>Zaman</th><th>Profil</th><th>Sonuç</th><th>Tur</th><th>İlk ses p50</th><th>TTS</th><th>Ses</th><th><span className="sr-only">Kimlik</span></th></tr></thead>
                   <tbody>
                     {list.calls.map((c: CallRow) => (
                       <tr key={c.id} className={open === c.id ? "is-open" : ""} data-testid={`call-${c.id}`}>
@@ -283,6 +284,7 @@ export function CallsPage() {
                         <td>{sec(c.first_audio_p50_s)}</td>
                         <td className="calls-wrap">{ttsLabel(c)}</td>
                         <td>{c.has_audio ? "var" : "yok"}</td>
+                        <td><CopyIdButton id={c.id} /></td>
                       </tr>
                     ))}
                   </tbody>
