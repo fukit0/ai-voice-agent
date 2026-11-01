@@ -375,8 +375,9 @@ def build_audio_messages(step: dict, question: str, score_policy: str = "free", 
     """core-010: aynı ayrıştırıcı istemi, ama müşteri sözü metin değil ekteki ses; model JSON'a `transcript` ekler (kayıt ve korumalar için)."""
     msgs = build_messages(step, question, "", score_policy, variant)
     msgs[0]["content"] += (
-        "\nMüşterinin cevabı SES KAYDI olarak ekte; metin olarak verilmedi. JSON nesnesine bir de \"transcript\" alanı ekle: müşterinin "
-        "söylediği sözün aynen yazıya dökümü (küçük harf, noktalamasız). Ses boşsa, sadece gürültü/öksürük ise ya da anlaşılmıyorsa "
+        "\nMüşterinin cevabı SES KAYDI olarak ekte; metin olarak verilmedi. JSON nesnesine bir de \"transcript\" alanı ekle ve onu İLK alan "
+        "yap: önce müşterinin söylediği sözü aynen yazıya dök (küçük harf, noktalamasız), sonra intent ve value'yu YAZDIĞIN metne bakarak ver. "
+        "Şema: {\"transcript\": \"...\", \"intent\": \"...\", \"value\": ...}. Ses boşsa, sadece gürültü/öksürük ise ya da anlaşılmıyorsa "
         "transcript boş metin, intent=unclear olsun. Seste duymadığın hiçbir şeyi yazma, uydurma.")
     user = msgs[1]["content"].split("\nMüşteri:", 1)[0]
     msgs[1]["content"] = user + "\nMüşterinin cevabı ekteki ses kaydındadır."
@@ -542,6 +543,13 @@ class FlowDriver:
         reply.events.append({"type": "audio_heard", "step": key, "text": heard})
         if heard and self.identity_asks < MAX_IDENTITY_ASKS and identity_question(heard):
             return self._identity(key, heard, reply)
+        # Canlı L5 oturumları (6d28a83dcdf0, 64e95f4331c8, f42e5b67185e): transkript 'hayır' iken model value=true döndürdü. Transkript kapalı
+        # sözlükteki bir cevapsa (evet/hayır/tek puan) değeri modele değil kurala bırakırız; model ancak transkripti doğru yazdığında kurtarır.
+        rule = fastpath_obj(step, heard) if heard else None
+        if rule is not None and (obj is None or obj.get("intent") != rule["intent"] or obj.get("value") != rule["value"]):
+            reply.events.append({"type": "audio_override", "step": key, "text": heard,
+                                 "model": None if obj is None else {"intent": obj.get("intent"), "value": obj.get("value")}, "rule": rule})
+            obj = rule
         return self.handle_structured(obj, heard, reply)
 
     def _identity(self, key: str, utterance: str, reply: Reply) -> Reply:

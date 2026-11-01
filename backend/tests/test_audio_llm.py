@@ -98,6 +98,34 @@ def test_handle_audio_advances_with_model_answer_and_records_transcript():
     assert d.answers[0]["utterance"] == "hayır devam edelim"
 
 
+def test_closed_vocabulary_transcript_overrides_a_contradicting_model_value():
+    """Canlı L5 oturumu f42e5b67185e: transkript 'hayır', model value=true. Kural transkripti esas alır."""
+    d, _ = driver({"transcript": "devam", "intent": "answer", "value": "devam"}, {"transcript": "evet", "intent": "answer", "value": True},
+                  {"transcript": "hayır", "intent": "answer", "value": True})
+    d.start()
+    d.handle_audio(AUDIO, 16000)
+    d.handle_audio(AUDIO, 16000)
+    r = d.handle_audio(AUDIO, 16000)                                   # q3, YesNo
+    assert d.answers[-1]["step"] == "q3" and d.answers[-1]["value"] is False
+    ev = next(e for e in r.events if e["type"] == "audio_override")
+    assert ev["model"]["value"] is True and ev["rule"]["value"] is False and ev["text"] == "hayır"
+
+
+def test_rule_does_not_touch_open_phrases_or_agreeing_answers():
+    d, _ = driver({"transcript": "devam", "intent": "answer", "value": "devam"}, {"transcript": "evet müsaitim", "intent": "answer", "value": True})
+    d.start()
+    d.handle_audio(AUDIO, 16000)
+    r = d.handle_audio(AUDIO, 16000)
+    assert d.answers[-1]["value"] is True and not any(e["type"] == "audio_override" for e in r.events)
+
+
+def test_audio_prompt_puts_transcript_first():
+    d, _ = driver()
+    d.start()
+    sys_msg = build_audio_messages(d.steps[d.current], d.text_of(d.current))[0]["content"]
+    assert "İLK alan" in sys_msg and sys_msg.index('{"transcript"') > 0
+
+
 def test_empty_transcript_is_unclear_even_if_model_claims_an_answer():
     d, _ = driver({"intent": "answer", "value": "devam", "transcript": "  "})
     d.start()
