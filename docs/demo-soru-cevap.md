@@ -409,3 +409,13 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Kısa cevap:** Liste fiyatıyla evet, A1S'ten pahalı: barındırma tek başına **$0,08/dk**; LLM token'ı ve telefon sağlayıcısı üstüne ayrıca eklenir. A1S'te TTS+STT+LLM toplamı canlı ölçümde **~$0,035/dk**. Aynı 3,2 dakikalık ortalama arama için ElevenAgents ≥ ~$0,26, A1S ~$0,11. 25.000 dk/ay için ≥ ~$2.000 (A1S ~$880).
 **Dayanak (hesap ekranı, 2026-11-01):** Barındırma $0,08/dk tüm planlarda; plana dahil dakika Pro 1.238, Scale 3.738, Business 12.375 (yani plan ücreti ≈ $0,08/dk; ek dakika $0,08, burst $0,16/dk). Eşzamanlı çağrı: Free 4, Starter 6, Creator 10, Pro 20, Scale 30, Business 40; Enterprise "yüksek eşzamanlılık" ve ölçekte indirim. TTS API: v4 Turbo $0,04, v4 $0,08 / 1.000 karakter (Pro 2,475M v4 Turbo karakteri).
 **Sınırlar:** (1) "Barındırma $0,08" içine ses üretimi dahil mi kesin değil; ekranda yalnızca LLM ve telefon ayrı kalem olarak görünüyor, dahil varsaydım. (2) LLM ve telefon maliyeti eklenmedi. (3) Enterprise indirimi bilinmiyor; Faz 3'te teklifle yeniden hesaplanır. (4) Ajan davranışı (insansılık, akış kontrolü) maliyetten ayrı bir kıyas konusu.
+
+
+## S52 — Demo rakamları 1 Kasım'da neden değişti? (maliyet, gecikme)
+- Maliyet: ElevenLabs hesap sayfasından liste fiyatı doğrulandı (v4 Turbo $0,04/1K karakter). Dakika maliyeti $0,039 → $0,035 (17 canlı A1S araması, 54,2 dk, $1,91). Önceki sayı 3 aramaya dayanıyordu.
+- Arama başına: en iyi ~$0,03 (geri arama yolu, ~800 karakter), ortalama ~$0,11 (~2.690 karakter), en kötü ~$0,23 (sonuna kadar, ~5.500 karakter). Gerçek müşterilerin dağılımı bilinmiyor; en büyük belirsizlik bu.
+- Gecikme: A1S p50 1,56 sn (canlı 17 arama, 172 tur). Kıyas koşusundaki simüle aramalar akışlı STT kullanmadığı için p50 ~2,7 sn çıkıyor; bu sayı A1S gecikmesine katılmadı. Matriste A1S gecikme hücresi simüle aramaları içeriyorsa daha yüksek görünebilir: sorulursa bu açıklama.
+- ElevenLabs hesabı Starter planda (119.319/140.000 kredi kullanıldı, 15 Kasım'da yenilenir, 6 eşzamanlı çağrı). Production için Pro/Business ya da kurumsal teklif gerekir. Demo öncesi kredi ekle.
+- ElevenLabs Agents alternatifi: $0,08/dk barındırma + LLM + telefon; A1S'in ~2,3 katı (ses üretiminin dahil olduğu varsayıldı, doğrulanmadı).
+- Telefon operatörü ücreti zaten ödendiği için bilinmeyenler listesinden çıkarıldı.
+- Seçenek (doğrulanmadı): Scribe v2 Realtime STT $0,39/saat; Türkçe kalitesi ölçülmedi.
