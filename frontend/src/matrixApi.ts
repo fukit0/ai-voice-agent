@@ -8,6 +8,7 @@ export type Decision = { status: DecisionStatus; reason: string; decided_at: str
 export type MatrixRow = {
   profile: string; name: string; mode: string; components: { kind: string; provider: string; model: string }[];
   metrics: Record<CriterionId, Metric | null>; total: number | null; coverage: number; missing: CriterionId[];
+  not_applicable?: Partial<Record<CriterionId, string>>;
   decision?: Decision; eliminated: boolean; license: LicenseInfo[]; license_unknown: string[]; rank: number | null;
 };
 export type Matrix = {

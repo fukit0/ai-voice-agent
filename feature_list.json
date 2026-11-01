@@ -587,7 +587,7 @@
         "evidence/lab-005-desktop.png, evidence/lab-005-mobile.png (sentetik demo verisiyle)",
         "backend 491 geçti, vitest 86 geçti, playwright lab 6 geçti"
       ],
-      "notes": "Açık: gerçek Mac verisiyle ekran doğrulanmadı (ekran görüntüleri sentetik veri). Kaynak kullanımı kriteri ölçülmüyor (eval-003) → her satırda eksik. Lisans tablosu config/matrix.json model kartlarından doğrulanmadı (verified=false). TTS dinleme puanı bu ekran için eşleşme join ile; gerçek bir dinleme oturumuyla denenmedi."
+      "notes": "Açık: gerçek Mac verisiyle ekran doğrulanmadı (ekran görüntüleri sentetik veri). Kaynak kullanımı kriteri ölçülmüyor (eval-003) → her satırda eksik. Lisans tablosu config/matrix.json model kartlarından doğrulanmadı (verified=false). TTS dinleme puanı bu ekran için eşleşme join ile; gerçek bir dinleme oturumuyla denenmedi. | 2026-11-01: Cevap dogrulugu (evidence import) ve Kaynak kullanimi (arama basi $ + varsayilan GPU fiyati) eklendi; uygulanamaz ayrimi. Hala bos: L3/L4/L5 kaynak, L4/L5 gecikme, L2-EL/A2/A3 dogallik, A2/A3 kaynak. Anket tamamlama kriteri yok (L1 tamamlayamiyor ama 83,5)."
     },
     {
       "id": "core-011",

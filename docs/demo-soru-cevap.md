@@ -369,3 +369,8 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 - **Cevap:** Hayır, bilinçli hibrit. Akışı (adım, dal, kayıt, DNC) kod yönetir; LLM yalnız cümle doğallığını artırır. Sebep: insansılığı çoğunlukla gecikme, ses ve cümle çeşitliliği belirler; akışı LLM'e vermek adım atlama/yanlış kayıt riskini ve her turdaki LLM gecikmesini getirir, anketin asıl çıktısı doğru cevaplardır. ADR 0009.
 - **Bugün ne yapıldı:** Cevaba bağlı tepkiler (yüksek puana "Çok sevindim", düşüğe "Geri bildiriminiz için teşekkürler"), aramada tekrarsız, bazen sessiz; çalışma anında LLM çağrısı yok, gecikme maliyeti sıfır.
 - **Dürüst durum:** "Daha insansı" iddiası henüz dinleme testiyle ölçülmedi. Plan dışı sorulara canlı LLM cevabı sonraki adım. Karşı tez (akış LLM'de) Faz 3'te aynı 5 persona x 4 yolla ölçülecek.
+
+## S44 — Kıyas matrisinde neden hâlâ boş hücre var, "uygulanamaz" ne demek? (2026-11-01)
+**Kısa cevap:** Boş hücreyi sayı uydurarak doldurmadık. Üç ayrım var: ölçüldü; uygulanamaz (profilde o bileşen yok: L5 ve realtime'da STT yok, realtime'da ayrı LLM yok; bu hücre ağırlık paydasından çıkar); ölçülmedi (bileşen var, kayıt yok).
+**Kaynak kullanımı** = arama başına API maliyeti + GPU saniyesi × GPU saat fiyatı. GPU saat fiyatı (1 $/sa) bir varsayımdır, doğrulanmadı; sunucu teklifi gelince config/matrix.json'da değişir. Demoda "yerel profil bedava değil, ama fiyatı henüz bilmiyoruz" diye anlat.
+**Bilinen sınırlar:** (1) Kalan boşlar yeni arama ya da insan dinleme puanı ister. (2) Dinleme puanları n=2-3: ince. (3) Matris anket tamamlamayı puanlamıyor: L1 (gemma4:e4b) "Hayır, katılmadım" cevabını anlamayıp aramayı kapatıyor ama matriste 83,5 alıyor. Bunu "ilk yükleme" bahanesi yapma, eksik kriter diye anlat.

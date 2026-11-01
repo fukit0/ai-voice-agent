@@ -4,7 +4,7 @@ import type { CriterionId, DecisionStatus, Matrix, MatrixRow, Metric, Weights } 
 
 /** Kıyas matrisi (lab-005, plan F7.5). Puanlar ve toplam backend'de hesaplanır (GET /api/matrix) — tek doğruluk kaynağı.
  *  Ekran: ağırlık kaydırıcıları → yeniden hesap (kısa gecikmeli); "Yenile" ve pencereye dönüş → yeni koşu/arama/puan görünür.
- *  Veri olmayan kriter "ölçülmedi" gösterilir, sayı uydurulmaz. */
+ *  Veri olmayan kriter "ölçülmedi" gösterilir, sayı uydurulmaz; profilde bileşen yoksa "uygulanamaz" (ağırlık paydasından çıkar). */
 
 const STORE = "sva.matrix.weights";
 const IDS: CriterionId[] = ["latency", "naturalness", "accuracy", "wer", "resources"];
@@ -22,11 +22,13 @@ function show(id: CriterionId, m: Metric) {
   if (id === "latency") return `${tr(m.value, 2)} sn`;
   if (id === "naturalness") return `${tr(m.value, 2)}/5`;
   if (id === "wer") return `WER %${tr(m.value * 100)}`;
+  if (id === "resources") return `$${tr(m.value, 3)}/arama`;
   return `%${tr(m.value * 100, 0)} doğru`;
 }
 
-function Cell({ id, m }: { id: CriterionId; m: MatrixRow["metrics"][CriterionId] }) {
-  if (!m) return <td className="num mx-missing" title={id === "resources" ? "Ölçülmüyor (eval-003)" : "Bu profil için kayıt yok"}>ölçülmedi</td>;
+function Cell({ id, m, na }: { id: CriterionId; m: MatrixRow["metrics"][CriterionId]; na?: string }) {
+  if (!m && na) return <td className="num mx-na" title={na}>uygulanamaz</td>;
+  if (!m) return <td className="num mx-missing" title="Bileşen var ama bu profil için kayıt yok">ölçülmedi</td>;
   return (
     <td className="num">
       <strong>{tr(m.score, 0)}</strong> <span className="meta">{show(id, m)}</span>
@@ -189,7 +191,7 @@ export function MatrixPage() {
                     <td className="num">{r.rank ?? "—"}</td>
                     <td><strong>{r.profile}</strong> <span className="meta">{r.name}</span>
                       <div className="meta">{r.components.map((c) => `${c.kind}: ${(c.model || c.provider).split("/").pop()}`).join(" · ")}</div></td>
-                    {IDS.map((id) => <Cell key={id} id={id} m={r.metrics[id]} />)}
+                    {IDS.map((id) => <Cell key={id} id={id} m={r.metrics[id]} na={r.not_applicable?.[id]} />)}
                     <td className="num" title={`Eksik: ${r.missing.join(", ") || "yok"}`}>%{tr(r.coverage * 100, 0)}</td>
                     <td className="num mx-total">{r.total === null
                       ? <span className="meta" title={`Kapsam en az %${tr(data.min_coverage * 100, 0)} olmalı`}>{r.eliminated ? "elendi" : "yetersiz veri"}</span>

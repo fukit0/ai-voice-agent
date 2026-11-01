@@ -162,3 +162,34 @@ def test_corrupt_llm_run_does_not_break(data):
     (data / "llm-evals").mkdir()
     (data / "llm-evals" / "bad.json").write_text("{", encoding="utf-8")
     assert client.get("/api/matrix").status_code == 200
+
+
+# ---- kaynak kullanımı ve uygulanamaz kriter ----
+def test_resources_score_rule():
+    assert matrix.resources_score(0.02, 0.02, 0.20) == 100 and matrix.resources_score(0.25, 0.02, 0.20) == 0
+    assert matrix.resources_score(0.11, 0.02, 0.20) == 50
+    with pytest.raises(ValueError):
+        matrix.resources_score(0.1, 0.2, 0.2)
+
+
+def test_not_applicable_criteria_leave_the_denominator():
+    na = matrix.not_applicable(PROFILES["A2"])
+    assert set(na) == {"wer", "accuracy"} and set(matrix.not_applicable(PROFILES["L5"])) == {"wer"} and matrix.not_applicable(PROFILES["L2"]) == {}
+    w = {"latency": 30, "naturalness": 25, "accuracy": 25, "wer": 10, "resources": 10}
+    r = matrix.combine({"latency": 100, "naturalness": 100, "accuracy": None, "wer": None, "resources": 100}, w, 0.5, na)
+    assert r["total"] == 100 and r["coverage"] == 1.0 and r["missing"] == []      # accuracy/wer ne eksik ne ağırlık
+    assert matrix.combine({"latency": 100, "naturalness": 100, "accuracy": None, "wer": None, "resources": 100}, w, 0.5)["missing"] == ["accuracy", "wer"]
+
+
+def test_resources_from_usage_with_gpu_assumption(data):
+    sid = "r1"
+    doc = {"id": sid, "profile": "L2", "started_at": "2026-10-30T10:00:00", "stats": {"seconds_in": 30.0},
+           "turns": [{"turn": 1, "first_audio_after_end_s": 1.0}], "transcript": [], "phone_filter": False,
+           "flow": {"scenario": "anket", "outcome": "completed", "path": [], "answers": []},
+           "usage": {"items": {"duration_s": 30.0, "gpu_s": 36.0, "stt_minutes": 0.5, "stt_calls": 1, "llm_calls": 1, "llm_input_tokens": 10, "llm_output_tokens": 5, "tts_chars": 100, "tts_calls": 1, "tts_audio_s": 5.0}, "missing": [], "cost": {"total": 0.05, "complete": True, "unpriced": []}}}
+    (data / "voice-sessions" / f"{sid}.json").write_text(json.dumps(doc), encoding="utf-8")
+    m = row(client.get("/api/matrix").json(), "L2")["metrics"]["resources"]
+    assert m is not None and m["unit"] == "$/arama" and m["n"] == 1
+    assert m["value"] == pytest.approx(0.05 + 36 / 3600 * matrix.load_config()["resources"]["gpu_usd_per_hour"], abs=1e-4)
+    assert "varsayım" in m["note"]
+    assert row(client.get("/api/matrix").json(), "A2")["not_applicable"].keys() == {"wer", "accuracy"}

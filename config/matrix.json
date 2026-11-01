@@ -3,6 +3,7 @@
   "weights": {"latency": 30, "naturalness": 25, "accuracy": 25, "wer": 10, "resources": 10},
   "min_coverage": 0.5,
   "latency": {"full_score_s": 1.2, "zero_score_s": 3.0},
+  "resources": {"gpu_usd_per_hour": 1.0, "full_score_usd": 0.02, "zero_score_usd": 0.20, "_doc": "GPU saat fiyatı VARSAYIMDIR, ölçülmedi ve doğrulanmadı; gerçek sunucu teklifi gelince değiştirin. Puan: arama başı (API $ + GPU sn × saat fiyatı) ≤ full → 100, ≥ zero → 0."},
   "license": {
     "mlx_whisper:mlx-community/whisper-large-v3-turbo": {"license": "MIT (OpenAI Whisper)", "commercial_ok": true, "verified": false},
     "hf_whisper:BuzzASR/turkish": {"license": "Belirsiz", "commercial_ok": null, "verified": false},

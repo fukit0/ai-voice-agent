@@ -46,6 +46,15 @@ describe("Kıyas matrisi", () => {
     expect(screen.getByTestId("row-L1")).toHaveTextContent("yetersiz veri");
   });
 
+  it("bileşeni olmayan kriter 'uygulanamaz' gösterilir, 'ölçülmedi' değil", async () => {
+    mock(() => body(DEFAULTS, [ROW({ not_applicable: { wer: "STT yok: ses doğrudan LLM'e gidiyor" } })]));
+    open();
+    const r = await screen.findByTestId("row-L1");
+    expect(within(r).getAllByText("uygulanamaz")).toHaveLength(1);
+    expect(within(r).getAllByText("ölçülmedi")).toHaveLength(4);
+    expect(within(r).getByText("uygulanamaz")).toHaveAttribute("title", "STT yok: ses doğrudan LLM'e gidiyor");
+  });
+
   it("yeni koşu sonrası Yenile ekranı günceller", async () => {
     let calls = 0;
     mock(() => body(DEFAULTS, [ROW(++calls === 1 ? {} : {

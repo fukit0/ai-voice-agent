@@ -8,7 +8,10 @@ Kriter ← kaynak ← 0-100 puan kuralı
 - naturalness ← data/tts-sessions kör dinleme puanları (naturalness 1-5)   ← (ortalama-1)/4×100; profilin TTS'iyle (provider+model, ya da kimlik) eşleşen puanlar
 - accuracy    ← data/llm-evals (summary.full_rate, en yeni koşu)           ← full_rate×100; profilin LLM'iyle (provider+model) eşleşen
 - wer         ← data/stt-runs (ok sonuçların wer ortalaması)               ← (1-WER)×100, 0'a kırpılır; profilin STT'siyle (provider+model, "+ ipucu" varyantı hariç) eşleşen
-- resources   ← ölçülmüyor (eval-003 başlamadı)                            ← her zaman eksik
+- resources   ← data/voice-sessions usage (calls.compare: arama başı API $ + GPU sn) ← arama başı maliyet ≤ 0,02 $ → 100, ≥ 0,20 $ → 0
+              GPU saati fiyatı bir VARSAYIMDIR (config/matrix.json resources.gpu_usd_per_hour, doğrulanmadı); hücre notunda gösterilir.
+Uygulanamaz: profilde o bileşen yoksa (L5 ve realtime'da STT → WER; realtime'da ayrı LLM → doğruluk) kriter ilgili satırda "uygulanamaz"
+dır; "ölçülmedi" değildir ve o satırın ağırlık paydasından çıkar.
 Lisans eleme: profilin herhangi bir bileşeni için config'te commercial_ok=false ise satır elenir; null/yok = belirsiz uyarısı (elenmez).
 Sıralama: yalnızca elenmemiş ve kapsamı ≥ min_coverage olan satırlar sıralanır; diğerlerinde toplam yoktur (az veriyle birinci olamasın).
 """
@@ -31,7 +34,7 @@ CRITERIA: list[dict[str, str]] = [
     {"id": "naturalness", "label": "Doğallık (kör dinleme)", "source": "TTS stüdyosu dinleyici puanları", "rule": "(ortalama−1)/4×100"},
     {"id": "accuracy", "label": "Cevap doğruluğu", "source": "LLM testi (tam doğru oranı)", "rule": "oran×100"},
     {"id": "wer", "label": "STT hatası (WER)", "source": "STT test koşuları", "rule": "(1−WER)×100"},
-    {"id": "resources", "label": "Kaynak kullanımı", "source": "ölçülmüyor (eval-003)", "rule": "—"},
+    {"id": "resources", "label": "Kaynak kullanımı", "source": "Aramalar (arama başı API $ + GPU sn)", "rule": "≤ 0,02 $ → 100, ≥ 0,20 $ → 0"},
 ]
 IDS = [c["id"] for c in CRITERIA]
 
@@ -46,6 +49,7 @@ def load_config() -> dict[str, Any]:
     cfg.setdefault("min_coverage", 0.5)
     cfg.setdefault("latency", {"full_score_s": 1.2, "zero_score_s": 3.0})
     cfg.setdefault("license", {})
+    cfg.setdefault("resources", {"gpu_usd_per_hour": 1.0, "full_score_usd": 0.02, "zero_score_usd": 0.20})
     return cfg
 
 
@@ -92,8 +96,28 @@ def accuracy_score(rate: float) -> float:
     return round(clamp(rate * 100), 1)
 
 
-def combine(scores: dict[str, float | None], weights: dict[str, float], min_coverage: float) -> dict[str, Any]:
-    """Ağırlıklı toplam yalnızca verisi olan kriterler üzerinden; `coverage` = verisi olan ağırlık / toplam ağırlık."""
+def resources_score(usd_per_call: float, full_usd: float, zero_usd: float) -> float:
+    if zero_usd <= full_usd:
+        raise ValueError("zero_score_usd, full_score_usd'den büyük olmalı")
+    return round(clamp((zero_usd - usd_per_call) / (zero_usd - full_usd) * 100), 1)
+
+
+def not_applicable(prof: Any) -> dict[str, str]:
+    """Profilde bileşeni olmayan kriterler (neden metniyle). Realtime: tek model, ayrı STT/LLM yok; L5: ses doğrudan LLM'e."""
+    na: dict[str, str] = {}
+    if prof.mode == "realtime":
+        na["wer"] = "Realtime: ayrı STT yok"
+        na["accuracy"] = "Realtime: ayrı LLM yok"
+    elif not prof.components.get("stt"):
+        na["wer"] = "STT yok: ses doğrudan LLM'e gidiyor"
+    return na
+
+
+def combine(scores: dict[str, float | None], weights: dict[str, float], min_coverage: float,
+            na: dict[str, str] | None = None) -> dict[str, Any]:
+    """Ağırlıklı toplam yalnızca verisi olan kriterler üzerinden; `coverage` = verisi olan ağırlık / toplam ağırlık.
+    `na` (uygulanamaz) kriterler hem paydadan hem eksik listesinden çıkar."""
+    weights = {k: v for k, v in weights.items() if k not in (na or {})}
     total_w = sum(weights.values())
     have = {k: s for k, s in scores.items() if s is not None and weights.get(k, 0) > 0}
     avail_w = sum(weights[k] for k in have)
@@ -127,7 +151,7 @@ def stt_results() -> list[dict]:
 
 
 def llm_runs() -> list[dict]:
-    root = stt_runs.data_dir() / "llm-evals"
+    root = stt_runs.data_dir() / "llm-evals"      # evidence/eval-llm-*.json için: scripts/import_llm_evidence.py
     if not root.is_dir():
         return []
     runs = []
@@ -185,6 +209,15 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
                     metrics["accuracy"] = {"value": rate, "unit": "oran", "score": accuracy_score(rate), "n": run.get("n_samples"),
                                            "note": f"koşu {run.get('id')}"}
                     break
+        g_res = latency.get(pid)
+        if g_res and g_res.get("usage_calls") and g_res.get("cost_complete") and g_res.get("avg_cost_usd") is not None:
+            rc = cfg["resources"]
+            api, gpu_s = g_res["avg_cost_usd"], g_res.get("avg_gpu_s") or 0
+            per_call = api + gpu_s / 3600 * rc["gpu_usd_per_hour"]
+            metrics["resources"] = {"value": round(per_call, 4), "unit": "$/arama", "score": resources_score(per_call, rc["full_score_usd"], rc["zero_score_usd"]),
+                                    "n": g_res["usage_calls"],
+                                    "note": f"API ${api:.3f}" + (f" + GPU {gpu_s:.0f} sn (varsayım ${rc['gpu_usd_per_hour']:g}/sa)" if gpu_s else "")}
+        na = not_applicable(prof)
         comps = [("STT", stt), ("LLM", llm), ("TTS", prof.components.get("tts"))] if prof.mode != "realtime" else [("Realtime", prof.realtime)]
         components, lic = [], []
         for kind, spec in comps:
@@ -197,9 +230,9 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
                         "commercial_ok": (entry or {}).get("commercial_ok"), "verified": bool((entry or {}).get("verified"))})
         eliminated = any(x["commercial_ok"] is False for x in lic)
         unknown = [x["model"] for x in lic if x["commercial_ok"] is None]
-        res = combine({i: (metrics[i] or {}).get("score") for i in IDS}, weights, cfg["min_coverage"])
+        res = combine({i: (metrics[i] or {}).get("score") for i in IDS}, weights, cfg["min_coverage"], na)
         rows.append({"profile": pid, "name": prof.name, "mode": prof.mode, "components": components, "metrics": metrics,
-                     "total": None if eliminated else res["total"], "coverage": res["coverage"], "missing": res["missing"],
+                     "total": None if eliminated else res["total"], "coverage": res["coverage"], "missing": res["missing"], "not_applicable": na,
                      "eliminated": eliminated, "license": lic, "license_unknown": unknown, "rank": None})
 
     from . import decisions
@@ -213,5 +246,6 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
     return {"criteria": [{**c, "weight": weights[c["id"]], "weight_pct": pct[c["id"]]} for c in CRITERIA], "weights": weights,
             "defaults": cfg["weights"], "min_coverage": cfg["min_coverage"], "rows": rows,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "notes": ["Kaynak kullanımı ölçülmüyor (eval-003 başlamadı): bu kriter her satırda eksiktir ve toplam kalan ağırlığa bölünür.",
+            "notes": ["Kaynak kullanımı = arama başı API maliyeti + GPU saniyesi × varsayılan GPU saat fiyatı (config/matrix.json, doğrulanmadı); API fiyatları liste fiyatıdır.",
+                      "Uygulanamaz: profilde o bileşen yok (L5/realtime'da STT, realtime'da ayrı LLM); ağırlık paydasından çıkar. Ölçülmedi: bileşen var ama kayıt yok.",
                       "Lisans tablosu model kartlarından canlı doğrulanmadı; yalnızca açıkça commercial_ok=false olan eler."]}

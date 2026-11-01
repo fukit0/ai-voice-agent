@@ -459,3 +459,9 @@ agents do not update it automatically.
 - Yapildi (hum-001): persona.reaction/bucket_of, reaction_rate, reactions havuzu (config/persona.json: 6 kova, 3-4 cumle), FlowDriver tepki secimi (rng, tekrarsiz, 'reaction' olayi), Persona ekraninda kova ve oran duzenleme. 703 backend + 104 frontend test gecti, tsc ve build temiz.
 - Dogrulanmadi: gercek aramada dinleme; 'daha insansi' iddiasi olculmedi. Cumle havuzu henuz kullanici gozden gecirmesinden gecmedi. hum-001 BLOCKED.
 - Siradaki (onay bekliyor): calisma anı LLM uretimi (plan disi soru, anlasilmayan cevapta tekrar); A1 v5 olcumunun yeniden alinmasi (eval_prompt.py A1 --variants v5, ana set + holdout).
+
+## Session 041 - Kiyas matrisi bosluklari (2026-11-01)
+- Kullanici: "olculmedi olan alan kalmamali, gercek matrisi gorelim". Gercek veriyle matris hesaplandi: Cevap dogrulugu hicbir profilde yoktu (kosular evidence/'taydi, matris data/llm-evals/ okuyordu) ve Kaynak kullanimi hic hesaplanmiyordu.
+- Yapildi: scripts/import_llm_evidence.py (6 gercek LLM kosusu data/llm-evals/'e alindi, yeni sayi uretmez); Kaynak kullanimi = arama basi API $ + GPU sn x varsayilan GPU saat fiyati (config/matrix.json, 1 $/sa VARSAYIM, dogrulanmadi); "uygulanamaz" (L5/realtime'da STT, realtime'da ayri LLM) olculmedi'den ayrildi ve agirlik paydasindan cikar. 706 backend + 105 frontend test gecti.
+- Matris sonrasi KALAN BOS (9 hucre, yeni olcum gerekir): L3/L4/L5 kaynak (yeni arama), L4/L5 gecikme (yeni arama), L2-EL/A2/A3 dogallik (insan dinleme puani), A2/A3 kaynak (realtime kullanim kaydi + fiyat yok). Dogallik n=2-3, L3 WER n=2: ince.
+- L1 kosusu (kullanici, 26/40 iptal): q3'te "Hayir, katilmadim." gemma4:e4b tarafindan 3 kez anlasilmadi -> sistem_sonlandirdi; tamamlanan 26 cagrida >2 cevap yok. LLM testi (%76,7) ile tutarli. Matriste L1 83,5 puanla ust sirada: matris anket TAMAMLAMA'yi olcmuyor (kriter eksik, oneri).
