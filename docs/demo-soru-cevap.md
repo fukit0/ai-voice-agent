@@ -364,3 +364,8 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 ## S42 — ElevenLabs'ın kendi agent'ı ile fark ne? (2026-11-01)
 - **Cevap:** Faz 3'te ayrı bir referans olarak ele alınacak (docs/faz-elevenlabs-agent.md, ea-001). Bizim hatta akışı kod belirler, LLM yalnız cevabı ayrıştırır; ElevenLabs Agent'ta akışı LLM prompta bakarak yönetir. Esneklik/doğallık artar, adım atlama ve yanlış kayıt riski artar.
 - **Dürüst durum:** Henüz ölçülmedi; "agent daha iyi/kötü" denmez. Ölçüm Faz 3'te aynı 5 persona x 4 yol ile yapılacak.
+
+## S43 — Ajanı daha insansı yapmak için akışı LLM'e vermediniz mi? (2026-11-01)
+- **Cevap:** Hayır, bilinçli hibrit. Akışı (adım, dal, kayıt, DNC) kod yönetir; LLM yalnız cümle doğallığını artırır. Sebep: insansılığı çoğunlukla gecikme, ses ve cümle çeşitliliği belirler; akışı LLM'e vermek adım atlama/yanlış kayıt riskini ve her turdaki LLM gecikmesini getirir, anketin asıl çıktısı doğru cevaplardır. ADR 0009.
+- **Bugün ne yapıldı:** Cevaba bağlı tepkiler (yüksek puana "Çok sevindim", düşüğe "Geri bildiriminiz için teşekkürler"), aramada tekrarsız, bazen sessiz; çalışma anında LLM çağrısı yok, gecikme maliyeti sıfır.
+- **Dürüst durum:** "Daha insansı" iddiası henüz dinleme testiyle ölçülmedi. Plan dışı sorulara canlı LLM cevabı sonraki adım. Karşı tez (akış LLM'de) Faz 3'te aynı 5 persona x 4 yolla ölçülecek.

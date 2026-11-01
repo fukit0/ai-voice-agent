@@ -65,13 +65,13 @@ class _LLM:   # her cevabı answer olarak döndürür
 
 def test_ack_is_spoken_before_next_question_only_when_persona_given(data):
     sc = S.get("anket")
-    for persona, expect in ((None, False), (valid(acknowledgements=["Anladım."]), True)):
+    for persona, expect in ((None, False), (valid(acknowledgements=["Anladım."], reactions={}, reaction_rate=1.0), True)):
         fd = FlowDriver(sc, _LLM(), persona=persona)
         fd.start()
         rep = fd.handle_structured({"intent": "answer", "value": "devam"}, "devam")
         assert (rep.utterances[0] == "Anladım.") is expect, rep.utterances
         assert len(rep.utterances) >= 1
-    fd = FlowDriver(sc, _LLM(), persona=valid(acknowledgements=["Anladım."]))
+    fd = FlowDriver(sc, _LLM(), persona=valid(acknowledgements=["Anladım."], reactions={}, reaction_rate=1.0))
     fd.start()
     fd.coerce = True   # realtime yolu: onay sözü eklenmez
     assert "Anladım." not in fd.handle_structured({"intent": "answer", "value": "devam"}, "devam").utterances
@@ -143,3 +143,61 @@ def test_elevenlabs_sends_speed_only_when_changed(monkeypatch):
     assert "voice_settings" not in sent[0]
     assert sent[1]["voice_settings"] == {"speed": 1.1} and sent[2]["voice_settings"] == {"speed": 1.2}   # sınırlanır
 
+
+
+# --- hum-001: cevaba bağlı tepki (hibrit konuşma katmanı: akışı kod yönetir, LLM değil; tepki cümleleri havuzdan) ---
+import random
+
+STEP_SCORE = {"kind": "Score", "code": "Q2", "min": 1, "max": 10}
+
+
+def test_bucket_of_uses_score_range_and_yesno():
+    b = lambda step, v: P.bucket_of(step, v)   # noqa: E731
+    assert [b(STEP_SCORE, v) for v in (1, 4, 5, 7, 8, 10)] == ["score_low", "score_low", "score_mid", "score_mid", "score_high", "score_high"]
+    assert b({"kind": "Score", "code": "Q12", "min": 1, "max": 10}, 0) == "score_low"      # Q12 aralığı 0-10
+    assert (b({"kind": "YesNo"}, True), b({"kind": "YesNo"}, False), b({"kind": "Choice"}, "x")) == ("yes", "no", "other")
+
+
+def test_reaction_depends_on_answer_and_never_repeats_within_call():
+    p = valid(reaction_rate=1.0, reactions={"score_high": ["A.", "B.", "C."], "score_low": ["L."]})
+    used, rng = [], random.Random(1)
+    got = [P.reaction(p, STEP_SCORE, 10, used, rng)[0] for _ in range(3)]
+    assert sorted(got) == ["A.", "B.", "C."]                                   # havuz bitene kadar tekrar yok
+    assert P.reaction(p, STEP_SCORE, 2, used, rng) == ("L.", "score_low")      # düşük puan başka kovadan
+    nxt = [P.reaction(p, STEP_SCORE, 9, used, rng)[0] for _ in range(6)]       # havuz bitince: art arda aynı cümle olmaz
+    assert all(a != b for a, b in zip([got[-1]] + nxt, nxt))
+
+
+def test_reaction_rate_skips_some_and_falls_back_to_acks_without_pool():
+    p = valid(reaction_rate=0.5, reactions={"yes": ["Y."]})
+    rng = random.Random(7)
+    outs = [P.reaction(p, {"kind": "YesNo"}, True, [], rng)[0] for _ in range(200)]
+    assert 60 < sum(o is None for o in outs) < 140                              # yaklaşık yarısı sessiz
+    q = valid(reaction_rate=1.0, reactions={}, acknowledgements=["Anladım."])
+    assert P.reaction(q, STEP_SCORE, 9, [], random.Random(), 0) == ("Anladım.", "ack")   # eski davranış korunur
+    assert P.reaction(valid(reaction_rate=1.0, reactions={}, acknowledgements=[]), STEP_SCORE, 9, [], random.Random()) == (None, None)
+
+
+@pytest.mark.parametrize("bad", [
+    {"reaction_rate": 1.5}, {"reaction_rate": True}, {"reactions": {"x": ["a."]}}, {"reactions": {"yes": ["Peki mi?"]}},
+    {"reactions": {"yes": [" "]}}, {"reactions": {"yes": ["Sayın müşterimiz teşekkürler."]}},
+    {"reactions": {"yes": ["bir iki üç dört beş altı yedi sekiz dokuz on on bir on iki on üç on dört on beş"]}},
+])
+def test_reaction_validation_rejects_bad_pools(bad):
+    assert P.validate(valid(**bad)), bad
+
+
+def test_default_reactions_are_valid_and_cover_every_bucket(data):
+    p = P.load()
+    assert P.validate(p) == [] and set(p["reactions"]) == set(P.REACTION_BUCKETS)
+    assert all(len(v) >= 3 for k, v in p["reactions"].items() if k != "no")
+
+
+def test_flow_speaks_bucketed_reaction_event_and_varies_across_a_call(data):
+    sc = S.get("anket")
+    p = valid(reaction_rate=1.0, reactions={"yes": ["Y1.", "Y2."], "other": ["O1.", "O2."]})
+    fd = FlowDriver(sc, _LLM(), persona=p, rng=random.Random(3))
+    fd.start()
+    rep = fd.handle_structured({"intent": "answer", "value": "devam"}, "devam")
+    ev = [e for e in rep.events if e["type"] == "reaction"]
+    assert ev and ev[0]["bucket"] == "other" and ev[0]["text"] in ("O1.", "O2.") and ev[0]["text"] in rep.utterances

@@ -4,7 +4,54 @@
   "address": "bey_hanim",
   "max_sentences": 2,
   "max_words_per_sentence": 14,
-  "acknowledgements": ["Anladım.", "Teşekkür ederim.", "Peki, tamamdır.", "Not aldım."],
-  "avoid_phrases": ["Sayın müşterimiz", "bilgilerinize sunarız", "tarafımızdan"],
-  "extra_rules": ""
+  "acknowledgements": [
+    "Anladım.",
+    "Teşekkür ederim.",
+    "Peki, tamamdır.",
+    "Not aldım."
+  ],
+  "avoid_phrases": [
+    "Sayın müşterimiz",
+    "bilgilerinize sunarız",
+    "tarafımızdan"
+  ],
+  "extra_rules": "",
+  "reaction_rate": 0.8,
+  "reactions": {
+    "score_high": [
+      "Çok sevindim, teşekkür ederim.",
+      "Ne güzel, bunu duymak iyi geldi.",
+      "Harika, sağ olun.",
+      "Sevindim, not aldım."
+    ],
+    "score_mid": [
+      "Anladım, teşekkür ederim.",
+      "Peki, not aldım.",
+      "Tamam, teşekkürler.",
+      "Anlıyorum, sağ olun."
+    ],
+    "score_low": [
+      "Anlıyorum, geri bildiriminiz için teşekkürler.",
+      "Bunu bilmek bizim için önemli, sağ olun.",
+      "Anladım, açık olduğunuz için teşekkürler.",
+      "Not aldım, teşekkür ederim."
+    ],
+    "yes": [
+      "Güzel, teşekkürler.",
+      "Tamamdır.",
+      "Peki, teşekkür ederim.",
+      "Süper."
+    ],
+    "no": [
+      "Anladım, sorun değil.",
+      "Tamam, teşekkürler.",
+      "Peki, not aldım."
+    ],
+    "other": [
+      "Anladım, teşekkürler.",
+      "Tamam, not aldım.",
+      "Peki, sağ olun.",
+      "Anlıyorum, teşekkür ederim."
+    ]
+  }
 }

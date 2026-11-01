@@ -35,6 +35,12 @@ DEFAULT: dict = {
     "acknowledgements": ["Anladım.", "Teşekkür ederim.", "Peki, tamamdır.", "Not aldım."],
     "avoid_phrases": ["Sayın müşterimiz", "bilgilerinize sunarız", "tarafımızdan"],
     "extra_rules": "",
+    "reaction_rate": 1.0,    # cevaptan sonra tepki söyleme olasılığı (1.0 = her cevaptan sonra; insanlar her cevaba tepki vermez)
+    "reactions": {},         # kova -> tepki cümleleri (boşsa yalnız acknowledgements sırayla döner)
+}
+REACTION_BUCKETS = {
+    "score_low": "düşük puan (aralığın alt %40'ı)", "score_mid": "orta puan", "score_high": "yüksek puan (aralığın üst %25'i)",
+    "yes": "evet cevabı", "no": "hayır cevabı", "other": "seçenek, süre, serbest metin",
 }
 _LIMITS = {"name": (1, 30), "max_sentences": (1, 5), "max_words_per_sentence": (5, 40)}
 _SENT = re.compile(r"(?<=[.!?…])\s+")
@@ -74,6 +80,24 @@ def validate(p: dict) -> list[str]:
         v = p.get(k)
         if not isinstance(v, list) or not all(isinstance(x, str) and x.strip() for x in v) or len(v) > 12:
             errs.append(f"{k}: en çok 12 boş olmayan metin listesi olmalı.")
+    rr = p.get("reaction_rate", 1.0)
+    if isinstance(rr, bool) or not isinstance(rr, (int, float)) or not 0 <= rr <= 1:
+        errs.append("Tepki oranı 0-1 arasında olmalı (1 = her cevaptan sonra).")
+    rx = p.get("reactions", {})
+    if not isinstance(rx, dict) or set(rx) - set(REACTION_BUCKETS):
+        errs.append(f"reactions: kovalar şunlardan olmalı: {', '.join(REACTION_BUCKETS)}.")
+    else:
+        for b, items in rx.items():
+            if not isinstance(items, list) or not all(isinstance(x, str) and x.strip() for x in items) or len(items) > 12:
+                errs.append(f"reactions.{b}: en çok 12 boş olmayan metin listesi olmalı.")
+                continue
+            for x in items:
+                if "?" in x:
+                    errs.append(f"Tepki soru içeremez (sıradaki soruyla karışır): '{x}'")
+                if isinstance(p.get("max_words_per_sentence"), int) and len(_WORD.findall(x)) > p["max_words_per_sentence"]:
+                    errs.append(f"Tepki cümle sınırını aşıyor: '{x}'")
+                if any(a.casefold() in x.casefold() for a in (p.get("avoid_phrases") or []) if isinstance(a, str) and a.strip()):
+                    errs.append(f"Tepki yasak kalıp içeriyor: '{x}'")
     sp = p.get("speed", 1.0)
     if isinstance(sp, bool) or not isinstance(sp, (int, float)) or not 0.7 <= sp <= 1.3:
         errs.append("Konuşma hızı 0,7-1,3 arasında olmalı (1,0 = normal).")
@@ -105,6 +129,7 @@ def save(p: dict) -> dict:
     merged["name"] = str(merged["name"]).strip()
     merged["acknowledgements"] = [a.strip() for a in merged["acknowledgements"]]
     merged["avoid_phrases"] = [a.strip() for a in merged["avoid_phrases"]]
+    merged["reactions"] = {b: [x.strip() for x in v] for b, v in (merged.get("reactions") or {}).items()}
     path = _override_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -150,6 +175,38 @@ def ack(p: dict | None, n: int) -> str | None:
     """n. cevaptan sonra söylenecek onay sözü (sırayla döner; liste boşsa None)."""
     acks = (p or load())["acknowledgements"]
     return acks[n % len(acks)] if acks else None
+
+
+def bucket_of(step: dict, value) -> str:
+    """Kabul edilen cevabın tepki kovası. Puan aralığa göre: alt %40 düşük, üst %25 yüksek, arası orta."""
+    kind = step.get("kind")
+    if kind == "YesNo":
+        return "yes" if value is True else "no" if value is False else "other"
+    if kind == "Score" and isinstance(value, (int, float)) and not isinstance(value, bool):
+        lo = 0 if step.get("code") == "Q12" else step.get("min", 1)
+        hi = step.get("max", 10)
+        frac = (value - lo) / (hi - lo) if hi > lo else 1.0
+        return "score_low" if frac < 0.4 else "score_high" if frac >= 0.75 else "score_mid"
+    return "other"
+
+
+def reaction(p: dict | None, step: dict, value, used: list[str], rng, n: int = 0) -> tuple[str | None, str | None]:
+    """Cevaptan sonra söylenecek kısa tepki: (metin, kova). Cevaba bağlı kovadan seçilir, aynı aramada tekrar etmez;
+    reaction_rate'e göre bazen hiç söylenmez. Kova tanımsızsa eski davranış: acknowledgements sırayla döner."""
+    p = p or load()
+    rate = p.get("reaction_rate", 1.0)
+    if rate < 1.0 and rng.random() >= rate:
+        return None, None
+    pools = p.get("reactions") or {}
+    bucket = bucket_of(step, value)
+    pool = pools.get(bucket) or []
+    if not pool:
+        text = ack(p, n)
+        return (text, "ack") if text else (None, None)
+    fresh = [x for x in pool if x not in used] or [x for x in pool if x != (used[-1] if used else None)] or pool
+    text = rng.choice(fresh)
+    used.append(text)
+    return text, bucket
 
 
 def split_sentences(text: str) -> list[str]:

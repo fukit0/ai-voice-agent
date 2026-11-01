@@ -11,6 +11,14 @@ const TONE_LABEL: Record<string, string> = {
 const ADDRESS_LABEL: Record<string, string> = {
   bey_hanim: "Ad + Bey/Hanım (Ahmet Bey)", ad: "Yalnız ad (Ahmet)", siz: "Ad kullanma, 'siz' de",
 };
+const BUCKET_LABEL: Record<string, string> = {
+  score_high: "Yüksek puan (8-10)", score_mid: "Orta puan", score_low: "Düşük puan (alt %40)", yes: "Evet cevabı", no: "Hayır cevabı",
+  other: "Seçenek / süre / serbest metin",
+};
+// Kova sırası ve boş kovalar karşılaştırmayı bozmasın (sunucu sırası farklı olabilir)
+const norm = (p: PersonaFields) => JSON.stringify({
+  ...p, reactions: Object.fromEntries(Object.keys(BUCKET_LABEL).filter((b) => p.reactions?.[b]?.length).map((b) => [b, p.reactions![b]])),
+});
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 
 // Persona ekranı (core-005): ajanın adı, tonu, hitabı, cümle uzunluğu ve doğal onay sözleri buradan girilir.
@@ -20,6 +28,7 @@ export function PersonaPage() {
   const [form, setForm] = useState<PersonaFields | null>(null);
   const [acks, setAcks] = useState("");
   const [avoid, setAvoid] = useState("");
+  const [rx, setRx] = useState<Record<string, string>>({});
   const [problems, setProblems] = useState<string[]>([]);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [report, setReport] = useState<PersonaReport | null>(null);
@@ -27,6 +36,7 @@ export function PersonaPage() {
 
   const apply = (v: PersonaView) => {
     setView(v); setForm(v.persona); setAcks(v.persona.acknowledgements.join("\n")); setAvoid(v.persona.avoid_phrases.join("\n"));
+    setRx(Object.fromEntries(Object.keys(BUCKET_LABEL).map((b) => [b, (v.persona.reactions?.[b] ?? []).join("\n")])));
     setProblems([]);
   };
   useEffect(() => {
@@ -34,7 +44,10 @@ export function PersonaPage() {
   }, []);
 
   const current = (): PersonaFields | null =>
-    form ? { ...form, acknowledgements: lines(acks), avoid_phrases: lines(avoid) } : null;
+    form ? {
+      ...form, acknowledgements: lines(acks), avoid_phrases: lines(avoid),
+      reactions: Object.fromEntries(Object.keys(BUCKET_LABEL).map((b) => [b, lines(rx[b] ?? "")]).filter(([, v]) => (v as string[]).length)),
+    } : null;
 
   useEffect(() => { // yazdıkça istem önizlemesi (kaydetmeden)
     const cur = current();
@@ -46,7 +59,7 @@ export function PersonaPage() {
       }).catch(() => {});
     }, 250);
     return () => clearTimeout(t);
-  }, [form, acks, avoid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [form, acks, avoid, rx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = <K extends keyof PersonaFields>(k: K, v: PersonaFields[K]) => setForm((f) => (f ? { ...f, [k]: v } : f));
 
@@ -63,7 +76,7 @@ export function PersonaPage() {
     setMsg({ kind: "ok", text: "Varsayılan persona geri yüklendi." });
   };
 
-  const dirty = view && form && JSON.stringify(current()) !== JSON.stringify(view.persona);
+  const dirty = view && form && norm(current()!) !== norm(view.persona);
 
   return (
     <section className="screen" data-testid="persona-page">
@@ -108,6 +121,17 @@ export function PersonaPage() {
             <p className="meta">Hız EMA'da uygulanır (ElevenLabs'te 0,7–1,2); Chatterbox yok sayar. Bir sonraki arama bu hızla açılır.</p>
             <label htmlFor="p-acks"><b>Doğal onay sözleri</b> <span className="meta">her satıra bir tane</span></label>
             <textarea id="p-acks" rows={4} value={acks} onChange={(e) => setAcks(e.target.value)} />
+            <h3 className="sub">Cevaba bağlı tepkiler</h3>
+            <p className="meta">Cevaptan sonra, cevabın türüne göre havuzdan seçilir; aynı aramada tekrar etmez. Boş bırakılan kovada yukarıdaki onay sözleri sırayla söylenir. Soru işareti içeremez.</p>
+            <label htmlFor="p-rate"><b>Tepki oranı</b> <span className="meta">1 = her cevaptan sonra; 0,8 = beşte biri sessiz</span></label>
+            <input id="p-rate" type="number" min={0} max={1} step={0.05} value={form.reaction_rate ?? 1}
+              onChange={(e) => set("reaction_rate", Number(e.target.value))} />
+            {Object.entries(BUCKET_LABEL).map(([b, label]) => (
+              <div key={b}>
+                <label htmlFor={`p-rx-${b}`}><b>{label}</b> <span className="meta">her satıra bir tane</span></label>
+                <textarea id={`p-rx-${b}`} rows={3} value={rx[b] ?? ""} onChange={(e) => setRx((r) => ({ ...r, [b]: e.target.value }))} />
+              </div>
+            ))}
             <label htmlFor="p-avoid"><b>Kullanılmayacak kalıplar</b> <span className="meta">her satıra bir tane</span></label>
             <textarea id="p-avoid" rows={3} value={avoid} onChange={(e) => setAvoid(e.target.value)} />
             <label htmlFor="p-extra"><b>Ek kurallar</b> <span className="meta">{form.extra_rules.length}/600</span></label>

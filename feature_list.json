@@ -1409,6 +1409,25 @@
       ],
       "evidence": [],
       "notes": "Kullanıcı 2026-11-01'de ayrı faza taşınmasını istedi. Ayrıntı ve kurulum notları: docs/faz-elevenlabs-agent.md. Girdi bekleniyor: agent kimliği, araç tanımı. Başlamadı; Faz 1 işleri (core-027, core-012) bitmeden aktif özellik yapılmaz."
+    },
+    {
+      "id": "hum-001",
+      "plan_ref": "F1.5 persona / insansılık (ADR 0009)",
+      "priority": 88,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Cevaba bağlı doğal tepkiler (hibrit konuşma katmanı, adım 1)",
+      "user_visible_behavior": "Ajan her cevaptan sonra sabit 'Anladım' yerine cevaba uygun kısa bir tepki söyler (yüksek/düşük puan, evet/hayır), aynı aramada tekrar etmez ve bazen hiç tepki vermez; havuz ve oran Persona ekranından düzenlenir.",
+      "status": "blocked",
+      "verification": [
+        "Birim testleri: kova seçimi, aramada tekrarsızlık, tepki oranı, doğrulama kuralları, FlowDriver olayı (backend/tests/test_persona.py).",
+        "Mac'te 5 gerçek test aramasında ajan tepkileri dinlenir: tekrar yok, cevaba uygun, gecikme artışı yok; transkriptte reaction olayları görülür."
+      ],
+      "evidence": [
+        "backend/tests/test_persona.py (703 backend + 104 frontend test geçti, 2026-11-01)"
+      ],
+      "notes": "BLOCKED: gerçek aramada dinleme doğrulaması yok (Mac gerekir). Karar: docs/adr/0009-hibrit-konusma-katmani.md. Sonraki adımlar: çalışma anı LLM üretimi (plan dışı soru, anlaşılmayan cevapta tekrar), LLM yargıcı. Mevcut test girdisi: test_ack_is_spoken... artık reactions={} ve reaction_rate=1.0 ile eski onay davranışını sabitler (varsayılan persona havuzlu olduğu için); doğrulama zayıflatılmadı, yeni davranış ayrı testlerle kapsandı."
     }
   ]
 }

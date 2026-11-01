@@ -243,6 +243,7 @@ export const previewScenarioText = (key: string, text: string) =>
 export type PersonaFields = {
   name: string; tone: string; address: string; max_sentences: number; max_words_per_sentence: number; speed: number;
   acknowledgements: string[]; avoid_phrases: string[]; extra_rules: string;
+  reaction_rate?: number; reactions?: Record<string, string[]>;   // hum-001: cevaba bağlı tepkiler
 };
 export type PersonaStats = {
   utterances: number; sentences: number; avg_words_per_sentence: number | null; max_words: number | null;

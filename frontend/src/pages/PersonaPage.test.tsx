@@ -81,3 +81,20 @@ describe("Persona konuşma hızı", () => {
     await waitFor(() => expect(calls.find((c) => c.method === "PUT")!.body.speed).toBe(1.2));
   });
 });
+
+
+describe("PersonaPage cevaba bağlı tepkiler (hum-001)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  it("kova metinleri satır satır kaydedilir, oran gönderilir", async () => {
+    const calls = mockApi();
+    render(<PersonaPage />);
+    const box = await screen.findByLabelText(/Yüksek puan/);
+    fireEvent.change(box, { target: { value: "Harika.\nSağ olun." } });
+    fireEvent.change(screen.getByLabelText(/Tepki oranı/), { target: { value: "0.8" } });
+    fireEvent.click(screen.getByRole("button", { name: /Kaydet/ }));
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    const put = calls.find((c) => c.method === "PUT")!;
+    expect(put.body.reactions).toEqual({ score_high: ["Harika.", "Sağ olun."] });
+    expect(put.body.reaction_rate).toBe(0.8);
+  });
+});

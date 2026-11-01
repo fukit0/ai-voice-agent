@@ -453,3 +453,9 @@ agents do not update it automatically.
 ## Session 039 - ElevenLabs Agent ayri faza tasindi (2026-11-01)
 - Kullanici ElevenLabs'ta bir agent olusturdu; senaryoyu agent'a verip aramayi onun yonlendirmesini istiyor. Karar: ayri faz (Faz 3), ea-001 not_started. Kurulum notlari, mimari fark ve riskler docs/faz-elevenlabs-agent.md'de.
 - Dogrulanmadi: agent ile gercek arama, workflow/arac ekranlari, Turkce kalite, maliyet. Girdi bekleniyor: agent kimligi, arac tanimi.
+
+## Session 040 - hibrit konusma katmani karari + hum-001 (2026-11-01)
+- Karar (kullanici): "hibrit ile devam", akisi LLM yonetmez; LLM cevaplari daha insansi hale getirilir. Sebepler ve uygulama sirasi: docs/adr/0009-hibrit-konusma-katmani.md; demo cevabi S43.
+- Yapildi (hum-001): persona.reaction/bucket_of, reaction_rate, reactions havuzu (config/persona.json: 6 kova, 3-4 cumle), FlowDriver tepki secimi (rng, tekrarsiz, 'reaction' olayi), Persona ekraninda kova ve oran duzenleme. 703 backend + 104 frontend test gecti, tsc ve build temiz.
+- Dogrulanmadi: gercek aramada dinleme; 'daha insansi' iddiasi olculmedi. Cumle havuzu henuz kullanici gozden gecirmesinden gecmedi. hum-001 BLOCKED.
+- Siradaki (onay bekliyor): calisma anı LLM uretimi (plan disi soru, anlasilmayan cevapta tekrar); A1 v5 olcumunun yeniden alinmasi (eval_prompt.py A1 --variants v5, ana set + holdout).

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 import re
 import time
 from dataclasses import dataclass, field
@@ -403,9 +404,11 @@ class FlowDriver:
     SCORE_POLICIES = ("clarify", "free")
 
     def __init__(self, scenario: dict, llm, values: dict[str, str] | None = None, score_policy: str = "clarify",
-                 persona: dict | None = None):
+                 persona: dict | None = None, rng: random.Random | None = None):
         if score_policy not in self.SCORE_POLICIES:
             raise ValueError(f"bilinmeyen puan politikası: {score_policy}")
+        self.rng = rng or random.Random()      # hum-001: tepki seçimi/atlama; testler tohumlu rng verir
+        self._reactions_used: list[str] = []   # bu aramada söylenen tepkiler (tekrar etmesin)
         self.persona = persona   # core-005: doğal onay sözleri (yalnız kademeli hat; None = onay yok)
         self.score_policy = score_policy   # clarify: sözlü/aralıklı puan netleştirilir; free: model karar verir (eski davranış)
         self.sc = scenario
@@ -640,8 +643,11 @@ class FlowDriver:
         nxt = S.next_step(step, value if not unanswered else None)
         if (self.persona and not self.coerce and not unanswered and self.steps[nxt]["kind"] != "Terminal"
                 and step["kind"] != "CheckIn"):
-            ack = persona_mod.ack(self.persona, len(self.answers) - 1)   # core-005: 'Anladım.' gibi doğal onay
+            # hum-001: cevaba bağlı kısa tepki (puan düşük/yüksek, evet/hayır...), aynı aramada tekrarsız, bazen hiç
+            ack, bucket = persona_mod.reaction(self.persona, step, None if unanswered else value, self._reactions_used, self.rng,
+                                               len(self.answers) - 1)
             if ack:
                 reply.utterances.append(ack)
+                reply.events.append({"type": "reaction", "step": key, "bucket": bucket, "text": ack})
         self._advance(nxt, reply)
         return reply
