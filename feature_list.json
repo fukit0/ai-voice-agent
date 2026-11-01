@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-10-28",
+  "last_updated": "2026-11-01",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -17,7 +17,8 @@
     "faz-0": "Model spike + Lab iskeleti (tahmini 4-6 gün).",
     "faz-1": "Lokal ajan, kıyas matrisi. Kapı: p50 < 1,2 sn, söz kesme, cevapların >= %90'ı doğru, matris dolu, yığın seçildi.",
     "faz-2": "Yönetim paneli, yük testi, production projeksiyonu. Kapı: panelde yeni senaryo kodsuz konuşulur, projeksiyon hazır.",
-    "later": "PoC sonrası pilot."
+    "later": "PoC sonrası pilot.",
+    "faz-3": "ElevenLabs Agent referansı (ayrı faz): agent'a senaryo verilir, arama agent'ın yönlendirmesiyle yürür; Faz 1 matrisinden bağımsız. Ayrıntı: docs/faz-elevenlabs-agent.md."
   },
   "features": [
     {
@@ -1391,6 +1392,23 @@
         "backend/tests/test_fastpath.py (29 test, etiketli 193 ornekte 0 yanlis); test_prewarm_cache.py guncellendi; backend 669 gecti"
       ],
       "notes": "2026-10-31: UYGULANDI, GERÇEK ÖLÇÜM YOK. Faz 1: remote.py ortak httpx.Client (bağlantı yeniden kullanımı; önceden her çağrı yeni TLS). Faz 2: ElevenLabs /stream, ChunkPipeline (durumlu yeniden örnekleme + telefon filtresi, parça sınırında tık yok). Faz 3: Deepgram canlı WebSocket, konuşma sürerken ses akar, VAD bitişinde Finalize; boş/zaman aşımı/STT geçidi/açılamama durumunda konuşmanın tamamı toplu çağrıyla yeniden çözülür (stats.stt_stream_fallbacks). Faz 4 (Anthropic prompt caching) YAPILMADI. Faz 5: profil A1S (A1 değişmedi). Faz 6: scripts/latency_probe.py. Sınırlar: boş transkript (öksürük/gürültü) de toplu yedeğe düşer, o konuşmada ek gecikme olur; telefon filtresi açıkken akışlı çıktı akışsızla örnek örnek aynı değil (genlik aynı, faz farklı); canlı STT faturası bağlı kalınan süredir (usage.stt_minutes artık akış süresi); gecikme kazancı sahte sunucularla ölçülemez. Gerçek sayılar için Mac'te: python scripts/latency_probe.py --profile A1 --wav <klip> ; ... --profile A1S ... | 2026-10-31 19:05 GERCEK OLCUM (latency_probe, Mac, tek 18,9 sn klip, 5 tekrar, ilki soguk): STT bitisten sonra toplu 1,27 sn -> akisli 0,185 sn; TTS ilk ses 0,32 -> 0,19 sn; LLM Haiku 1,0-1,3 sn (degismedi, A1S'te n=4 dalgali 0,97-2,38); tahmini ilk ses A1 2,59 -> A1S 1,68 sn (VAD bitis beklemesi ~0,5 sn dahil degil). Hedef 1,2 sn tutmadi: darbogaz LLM. Soguk ilk cagri LLM 1,75-2,6 sn (baglanti isitma gerekir). A1S'in toplu STT'si 0,9-7,1 sn dalgali (ag oynakligi), akisli 0,17-0,24 sn kararli. Durum blocked kalir: gercek arama (5) ve ilk-ses p50 Aramalar ekraninda henuz yok; tek klip, 18,9 sn (kisa cevaplarda toplu STT daha dusuk olur). | 2026-10-31 19:15 ISITMA + ONBELLEK: registry.prewarm() arama baslarken (api_voice.offer, accept'ten once, cascade profillerde) STT/LLM/TTS baglantilarini paralel isitir (zaman asimi 4 sn, hata aramayi engellemez); AnthropicLLM.prewarm = TLS + 1 kisa gercek istek (max_tokens 16, ~0,00001 $). stats.prewarm_s oturuma yazilir. Anthropic istem onbellegi opt-in (llm.prompt_cache: true, VARSAYILAN KAPALI): Haiku 5.5 asgari 512 token (resmi dokuman), ayristirici istemi ~450-500 token => buyuk olasilikla onbelleklenmez ve TTFT kazanci uzun istemlerde gorulur; olculmeden acilmaz (latency_probe.py --llm-cache). Onbellek acikken maliyet input_tokens icin hepsi tam fiyat (ust sinir). GERCEK OLCUM YOK: latency_probe.py --prewarm ve --llm-cache Mac'te kosulacak. | 2026-10-31 19:27 OLCUM (Mac, 18,9 sn klip, 5 tekrar): ISITMA ETKILI: soguk ilk LLM cagrisi 1,75-2,6 -> 1,01 sn; tahmini ilk ses A1 2,59 -> A1S 1,68 -> A1S+isitma 1,37 sn (STT 0,22 + LLM 0,95 + TTS 0,19; VAD ~0,5 sn dahil degil => canli ~1,9 sn). Isitma suresi: Deepgram 0,5-0,8, Anthropic 1,5, ElevenLabs 0,4-0,5 sn (paralel; arama kurulumunu ~1,5 sn uzatir). ISTEM ONBELLEGI KAZANC VERMEDI: onbellek calisti (723 token okundu) ama LLM medyani 0,95 -> 1,09 sn (n=5, aralıklar ortusuyor => fark yok); VARSAYILAN KAPALI KALIR. Hedef 1,2 sn henuz yok; LLM suresi toplamin ~%70'i. Sonraki: kapali sozlukte (evet/hayir/puan) LLM'siz kural yolu, LLM ısıtmasini selamlama sirasinda arka planda yapmak, alternatif hizli LLM / yerel hibrit olcumu. | 2026-10-31 aksam KOD: (a) LLM'siz hizli yol flow.fastpath_obj: yalniz tum cumlesi kapali sozlukle eslesen cevaplar (evet/hayir/tamam olur/musait degilim; 1-10 tek sayi, 'sekiz puan veriyorum'); belirsizde None -> LLM. Etiketli 114+79 ornekte kapsam 23/193, YANLIS 0 (test_fastpath.py kapiyi tutar). Yalniz profil fast_path:true (A1S) ile acik; olay 'fast_path' kayda gecer. (b) LLM isitmasi arka plana alindi: STT/TTS isitma kabulden once, LLM isitma selamlama sirasinda (arama kurulumu ~1,5 sn kisalir). Backend 669 gecti. GERCEK OLCUM YOK: hizli yolun canli kapsami ve kazanci Mac'te 5 gercek aramayla olculecek; durum blocked kalir."
+    },
+    {
+      "id": "ea-001",
+      "plan_ref": "Faz 3 (ElevenLabs Agent)",
+      "priority": 40,
+      "area": "voice-runtime",
+      "phase": "faz-3",
+      "moscow": "could",
+      "title": "ElevenLabs Agent'ı senaryoyu yönlendiren referans profil olarak kıyasa ekle",
+      "user_visible_behavior": "Kıyas ekranında agent profili (öneri: A4) aynı 5 persona x 4 yol ile koşar; doğruluk, gecikme ve maliyet diğer profillerle aynı tabloda görünür.",
+      "status": "not_started",
+      "verification": [
+        "Agent'a senaryo promptu + dynamic_variables ile verilir; kaydet_cevap webhook aracı backend'e cevapları yazar.",
+        "eval-001 koşusunda 20 aramanın cevapları kaydedilir ve diğer profillerle aynı ölçütlerle karşılaştırılır; kanıt evidence/ altında."
+      ],
+      "evidence": [],
+      "notes": "Kullanıcı 2026-11-01'de ayrı faza taşınmasını istedi. Ayrıntı ve kurulum notları: docs/faz-elevenlabs-agent.md. Girdi bekleniyor: agent kimliği, araç tanımı. Başlamadı; Faz 1 işleri (core-027, core-012) bitmeden aktif özellik yapılmaz."
     }
   ]
 }

@@ -449,3 +449,7 @@ agents do not update it automatically.
 - Eklendi: scripts/llm_stall_probe.py (paylasilan keep-alive baglanti vs her cagrida yeni baglanti; takilma yalniz 'shared'da ise bayat baglanti). Bulut/VM'den calistirilamadi (API anahtari 401). DOGRULANMADI: gercek kosu. Komut (Mac): ./.venv/bin/python scripts/llm_stall_probe.py A1 --calls 60 ; bayat baglanti icin ayrica --pause 15 --calls 30
 - Olcum (Mac, 2026-11-01): scripts/llm_stall_probe.py A1 v5, 180 cagri (60 shared + 60 fresh, pause 0; 30 + 30, pause 15). Takilma YOK: 0 cagri >5 sn, 0 hata; p50 0,90-0,97 sn, p95 1,18-1,77 sn, max 2,17 sn; shared ile fresh farksiz, 15 sn bosta kalma da bayat baglanti uretmedi. Kanit: evidence/llm-stall-A1-20261101-100258.json, -101859.json.
 - Sonuc: 29 Ekim'deki 18-55 sn takilmalar (%10-14) sirali tek cagri kosusunda yeniden uretilemedi -> bayat baglanti ve thinking elendi; en olasi gecici API/ag olayi, ama KANITLANMADI. Kisa zaman asimi + yeniden deneme eklenmedi (neden dogrulanmadi). Siradaki: eval_prompt.py A1 --variants v5 (ana set ve holdout) yeniden; p95 ~1-2 sn cikarsa gecikme sapmasi kapanir, kalan yalniz sema %98,7.
+
+## Session 039 - ElevenLabs Agent ayri faza tasindi (2026-11-01)
+- Kullanici ElevenLabs'ta bir agent olusturdu; senaryoyu agent'a verip aramayi onun yonlendirmesini istiyor. Karar: ayri faz (Faz 3), ea-001 not_started. Kurulum notlari, mimari fark ve riskler docs/faz-elevenlabs-agent.md'de.
+- Dogrulanmadi: agent ile gercek arama, workflow/arac ekranlari, Turkce kalite, maliyet. Girdi bekleniyor: agent kimligi, arac tanimi.
