@@ -37,7 +37,7 @@ describe("Playground (core-001)", () => {
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: false, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "transcript", role: "agent", text: "Merhaba, ben Ayşe.", t: 0.5 });
@@ -109,7 +109,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: true, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: "anket", scorePolicy: "clarify", phoneFilter: true, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     act(() => {
       hooks.onEvent({ type: "state", state: "listening" });
       hooks.onEvent({ type: "node", key: "q2", code: "Q2", title: "Temsilciden genel memnuniyet", kind: "Score", group: "Temsilci Değerlendirmesi", spoken: "…", terminal: false });
@@ -164,15 +164,22 @@ describe("Playground senaryo modu (lab-003)", () => {
     const start = screen.getByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, scorePolicy: "clarify", phoneFilter: false, record: false, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), { scenario: undefined, scorePolicy: "clarify", phoneFilter: false, record: true, vad: { auto: true, barge_frames: 8, barge_margin_db: 6 } }));
     expect(screen.queryByTestId("active-node")).not.toBeInTheDocument();
   });
-  it("ses kaydı varsayılan kapalıdır; açılırsa record:true gönderilir, durdurunca kayıt oynatıcısı ve silme çıkar (core-013)", async () => {
+  it("kayıt işareti kaldırılırsa record:false gönderilir (gizlilik tercihi)", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByTestId("record-toggle"));
+    const start = await screen.findByRole("button", { name: "Başlat" });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    await waitFor(() => expect(startVoice).toHaveBeenCalledWith("L2", expect.any(Object), expect.objectContaining({ record: false })));
+  });
+  it("ses kaydı varsayılan açıktır; record:true gönderilir, durdurunca kayıt oynatıcısı ve silme çıkar (core-013)", async () => {
     renderPage();
     const toggle = await screen.findByTestId("record-toggle");
-    expect(toggle).not.toBeChecked();
+    expect(toggle).toBeChecked();
     expect(screen.queryByTestId("recording-box")).toBeNull();
-    fireEvent.click(toggle);
     const start = await screen.findByRole("button", { name: "Başlat" });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
@@ -181,7 +188,7 @@ describe("Playground senaryo modu (lab-003)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Durdur" }));
     const box = await screen.findByTestId("recording-box");
     expect(within(box).getByTestId("recording-audio")).toHaveAttribute("src", "/api/voice/recordings/s1.wav");
-    fireEvent.click(within(box).getByRole("button", { name: "Kaydı sil" }));
+    fireEvent.click(within(box).getByRole("button", { name: "Sil" }));
     await waitFor(() => expect(screen.queryByTestId("recording-box")).toBeNull());
     expect(fetch).toHaveBeenCalledWith("/api/voice/recordings/s1", { method: "DELETE" });
   });

@@ -26,7 +26,7 @@ export function PlaygroundPage() {
   const [scenario, setScenario] = useState<string>("");
   const [phone, setPhone] = useState(false);
   const [scorePolicy, setScorePolicy] = useState<ScorePolicy>("clarify");   // core-021: demoda değiştirilebilir
-  const [record, setRecord] = useState(false);                         // core-013: varsayılan kapalı (gizlilik)
+  const [record, setRecord] = useState(true);                          // varsayılan açık (kullanıcı kararı 2026-11-01; core-013 ilk kararı: kapalı/gizlilik)
   const [recording, setRecording] = useState<string | null>(null);     // kaydedilen oturumun kimliği (durdurunca)
   const [state, setState] = useState<string>("idle");
   const [lines, setLines] = useState<Line[]>([]);
@@ -153,12 +153,12 @@ export function PlaygroundPage() {
         </label>
       </div>
       {recording && (
-        <p className="voice-recording" data-testid="recording-box">
-          Kayıt hazır: <audio controls src={`/api/voice/recordings/${recording}.wav`} data-testid="recording-audio" />{" "}
-          <a href={`/api/voice/recordings/${recording}.wav`} download>İndir</a>{" "}
-          <button type="button" onClick={deleteRecording}>Kaydı sil</button>
-          <span className="meta"> · sol kanal: siz, sağ kanal: ajan · konum: data/voice-sessions/{recording}.wav</span>
-        </p>
+        <div className="voice-recording" data-testid="recording-box">
+          <audio controls src={`/api/voice/recordings/${recording}.wav`} data-testid="recording-audio" />
+          <a href={`/api/voice/recordings/${recording}.wav`} download>İndir</a>
+          <button type="button" onClick={deleteRecording}>Sil</button>
+          <span className="meta" title={`Sol kanal: siz, sağ kanal: ajan · data/voice-sessions/${recording}.wav`}>Kayıt hazır</span>
+        </div>
       )}
       <p className="voice-controls">
         {running ? (
@@ -185,30 +185,27 @@ export function PlaygroundPage() {
           <label>Ajan <meter min={0} max={1} value={levels[1]} /></label>
         </div>
       )}
-      <div className="voice-sensitivity" data-testid="sensitivity">
-        <label>Mikrofon hassasiyeti (giriş eşiği){" "}
+      <details className="voice-sensitivity" data-testid="sensitivity">
+        <summary>Mikrofon ayarları <span className="meta">· {auto ? `otomatik${effectiveDb !== null ? ` (${effectiveDb} dBFS)` : ""}` : `${thresholdDb} dBFS`}</span></summary>
+        <label>Giriş eşiği{" "}
           <input type="range" min={-60} max={-20} step={1} value={thresholdDb} aria-label="Giriş eşiği (dBFS)"
-                 onChange={(e) => changeThreshold(Number(e.target.value))} />{" "}
-          <b>{auto ? `otomatik${effectiveDb !== null ? ` (${effectiveDb} dBFS)` : ""}` : `${thresholdDb} dBFS`}</b>
-        </label>{" "}
+                 onChange={(e) => changeThreshold(Number(e.target.value))} />
+        </label>
         <label className="voice-check">
           <input type="checkbox" checked={auto} onChange={(e) => changeAuto(e.target.checked)} aria-label="Otomatik eşik" /> Otomatik
         </label>
-        <span className="meta"> · Gürültü ajanı kesiyorsa eşiği sağa (daha az hassas) çekin. Kırmızı çizgi eşiktir.</span>
-        <details>
-          <summary>Gelişmiş: söz kesme</summary>
-          <label>Süre{" "}
-            <input type="number" min={1} max={50} value={bargeFrames} aria-label="Söz kesme süresi (çerçeve)"
-                   onChange={(e) => changeBarge(Math.max(1, Number(e.target.value) || 1), bargeMargin)} />
-            {" "}çerçeve (×20 ms = {bargeFrames * 20} ms)
-          </label>{" "}
-          <label>Marj{" "}
-            <input type="number" min={0} max={30} value={bargeMargin} aria-label="Söz kesme marjı (dB)"
-                   onChange={(e) => changeBarge(bargeFrames, Math.max(0, Number(e.target.value) || 0))} /> dB
-          </label>
-        </details>
+        <label>Söz kesme süresi{" "}
+          <input type="number" min={1} max={50} value={bargeFrames} aria-label="Söz kesme süresi (çerçeve)"
+                 onChange={(e) => changeBarge(Math.max(1, Number(e.target.value) || 1), bargeMargin)} />
+          {" "}çerçeve ({bargeFrames * 20} ms)
+        </label>
+        <label>Marj{" "}
+          <input type="number" min={0} max={30} value={bargeMargin} aria-label="Söz kesme marjı (dB)"
+                 onChange={(e) => changeBarge(bargeFrames, Math.max(0, Number(e.target.value) || 0))} /> dB
+        </label>
+        <p className="meta">Gürültü ajanı kesiyorsa eşiği sağa (daha az hassas) çekin. Mikrofon göstergesindeki kırmızı çizgi eşiktir.</p>
         {serverNote && <p className="meta" data-testid="vad-server-note">{serverNote}</p>}
-      </div>
+      </details>
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && <p className="status status-ok" role="status" data-testid="voice-outcome">Görüşme bitti · sonuç: <b>{outcome.label}</b></p>}
 

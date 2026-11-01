@@ -32,8 +32,8 @@ function Cell({ id, m, na }: { id: CriterionId; m: MatrixRow["metrics"][Criterio
   if (!m) return <td className="num mx-missing" title="Bileşen var ama bu profil için kayıt yok">ölçülmedi</td>;
   return (
     <td className="num">
-      <strong>{tr(m.score, 0)}</strong> <span className="meta">{show(id, m)}</span>
-      {m.n !== null && <span className="meta mx-n"> · n={m.n}</span>}
+      <div className="mx-main"><strong>{tr(m.score, 0)}</strong> <span className="meta">{show(id, m)}</span></div>
+      {m.n !== null && <div className="meta mx-n">n={m.n}</div>}
       {m.note && <span className="pill warn mx-note">{m.note}</span>}
     </td>
   );

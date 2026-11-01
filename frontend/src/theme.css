@@ -56,6 +56,10 @@ body { background: var(--bg); color: var(--text); font-family: Inter, system-ui,
 .profile-select select, select, input, textarea { font: inherit; }
 .profile-select select { color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
 .warmup { gap: 8px; }
+/* Taban düğme stili: sınıfsız düğmeler tarayıcı varsayılanına (gri kutu) düşmesin. Sınıflı kurallar bunu ezer. */
+button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; line-height: 1.2; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: .55; cursor: not-allowed; }
 .warmup button { border-radius: 10px; padding: 7px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
 .chip { border-radius: 999px; padding: 4px 10px; background: transparent; }
 
@@ -162,18 +166,25 @@ a { color: var(--accent); }
 .mx-weight { display: grid; grid-template-columns: minmax(150px, 220px) 1fr 52px; align-items: center; gap: 14px; font-size: 14px; }
 .mx-weight input { width: 100%; accent-color: var(--accent-fill); }
 .mx-weight output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
-.mx-table { min-width: 980px; }
+.mx-table { min-width: 1040px; }
 .mx-table th, .mx-table td { white-space: normal; vertical-align: top; }
 .mx-table td:nth-child(2) { min-width: 200px; max-width: 260px; overflow-wrap: anywhere; }
-.mx-table td.num { white-space: nowrap; }
-.mx-table .mx-note { display: block; margin: 4px 0 0; width: max-content; }
+.mx-table td.num { white-space: normal; min-width: 130px; max-width: 190px; }
+.mx-table .mx-note { display: block; margin: 4px 0 0; width: fit-content; max-width: 100%; }
 .mx-table-wrap { overflow-x: auto; }
-.mx-table .pill { white-space: normal; display: inline-block; max-width: 150px; text-align: center; }
-.mx-table { min-width: 1040px; }
+.mx-table .pill { white-space: normal; display: inline-block; max-width: 170px; text-align: left; border-radius: 12px; overflow-wrap: anywhere; }
 .mx-missing { color: var(--muted); font-style: italic; }
 .mx-n { white-space: nowrap; }
-.mx-note { margin-left: 6px; }
 .mx-out { opacity: .55; }
 .mx-total strong { font-size: 18px; }
 .note-list { margin: 12px 0 0; padding-left: 18px; }
 @media (max-width: 720px) { .mx-weight { grid-template-columns: 1fr 52px; } .mx-weight input { grid-column: 1 / -1; grid-row: 2; } }
+.mx-table th:first-child, .mx-table td:first-child { width: 36px; min-width: 0 !important; }
+
+/* Playground: sade kontrol alanı */
+.voice-recording { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.voice-recording audio { height: 36px; max-width: 320px; }
+.voice-sensitivity { margin: 10px 0; }
+.voice-sensitivity summary { cursor: pointer; font-weight: 550; }
+.voice-sensitivity[open] { display: grid; gap: 10px; }
+.voice-sensitivity[open] summary { margin-bottom: 2px; }
