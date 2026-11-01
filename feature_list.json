@@ -1324,7 +1324,7 @@
         "eleven_flash_v2_5 / eleven_turbo_v2_5 / eleven_multilingual_v2 aynı metinle dinleme + gecikme karşılaştırması (en az 10 cümle).",
         "Seçim ADR'ye yazılır."
       ],
-      "notes": "Kaynak: kullanıcı canlı testi, A1 oturumu 574e3e4d81b3: 'konuşma çok bozuluyor ve yavaş, tonlama ani çıkıp iniyor'. Oturum ölçümü: ilk ses 2,4–3,9 sn (STT ~1–1,8 + LLM ~1–1,8 + TTS). Flash modeli hız için seçilmişti; Türkçe kalitesi ölçülmedi.",
+      "notes": "Kaynak: kullanıcı canlı testi, A1 oturumu 574e3e4d81b3: 'konuşma çok bozuluyor ve yavaş, tonlama ani çıkıp iniyor'. Oturum ölçümü: ilk ses 2,4–3,9 sn (STT ~1–1,8 + LLM ~1–1,8 + TTS). Flash modeli hız için seçilmişti; Türkçe kalitesi ölçülmedi. | 2026-11-01 KULLANICI ONAYI (A1S): canlı A1S aramalarında (59685a0edc32, 087a5df79e68, 488d98ab8e28, ea40c9d0712a; tts=elevenlabs:eleven_v4_turbo, ton enerjik/sakin) ses kalitesi kullanıcı tarafından 'ok' bulundu. Bu madde A1 (Flash) şikayetiydi; A1 elendiği için kapsam A1S/v4 Turbo'ya taşındı. SINIR: yalnızca öznel dinleme, kör dinleme puanı yok; Flash modeli yeniden denenmedi (gecikme/kalite takası bilinmiyor). Durum not_started bırakıldı: kaynak A1 sorunu ölçülüp düzeltilmedi, A1 profili elendi.",
       "plan_ref": "F1.2 / F6 (canlı test bulgusu)",
       "phase": "faz-1",
       "moscow": "must",

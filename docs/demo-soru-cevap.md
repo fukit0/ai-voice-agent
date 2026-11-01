@@ -391,3 +391,10 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Neden böyle:** Hibrit karar: serbest üretim kapalı, çünkü ankette tutarlılık ve denetlenebilirlik önemli. Canlı LLM yanıt üretimi Faz 3'te (onay bekliyor).
 **Ne yaptık:** Persona ekranına "Neye etki eder?" kutusu ve ilgili alanlara "yalnız serbest sohbet" etiketleri eklendi; yanlış beklenti oluşmasın. Demoda "ton değiştirince anket değişmez" diye bahane üretme; bilinçli sınırdır.
 **Bilinen sınırlar:** (1) Anket aramasında ton yalnızca TTS söyleyişi (hız, ElevenLabs ses/ton) ve tepki havuzu üzerinden etki eder. (2) Realtime tarafında açılış cümlesinin persona'dan gelip gelmediği ayrıca doğrulanmadı. (3) Senaryo `off_topic` dalındaki ajan cümlesi bu oturumda koddan kontrol edilmedi.
+
+## S48 — Birincil aday A1S'in sesi nasıl, neden v4 Turbo? (2026-11-01)
+**Kısa cevap:** Canlı A1S aramalarında ses ElevenLabs v4 Turbo ile üretildi ve kullanıcı dinlemesinde "iyi" bulundu (4 kayıtlı arama: 59685a0edc32, 087a5df79e68, 488d98ab8e28, ea40c9d0712a). A1'de (Flash modeli) görülen "bozuk, tonlama ani çıkıyor" şikayeti bu aramalarda tekrarlanmadı.
+**Sınırlar:** (1) Öznel dinleme, kör dinleme puanı değil. (2) Flash modeli yeniden denenmedi; Flash hız için seçilmişti, v4 Turbo'nun gecikme bedeli tam ölçülmedi. (3) Bu aramalarda ilk ses medyanı 1,3–2,16 sn; 1,2 sn hedefi tutmuyor, bunu saklama.
+
+## S49 — L5 sunumda neden "elendi"? (2026-11-01)
+**Kısa cevap:** Sunum önce "kayıtlı arama yok, karar verilmedi" diyordu; L5 ölçüldü ve elendi (S46 güncellemesi): evet/hayır 4/10, rakam 0/14, eşik %95. Slayt güncellendi. **Sınır:** tek model ve tek taşıma denendi; "STT'siz hat olmaz" denmiyor.
