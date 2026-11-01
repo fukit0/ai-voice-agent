@@ -649,8 +649,10 @@
       "verification": [
         "L5 profiliyle 5 test araması yapılır ve gecikme L1 ile karşılaştırılır."
       ],
-      "evidence": [],
-      "notes": "2026-11-01: KOD HAZIR, DOGRULANMADI. Eklenenler: LLMProvider.complete_audio/accepts_audio, OllamaLLM ses yolu (OpenAI uyumlu /v1/chat/completions, input_audio base64 WAV; profilde audio:true), build_audio_messages + FlowDriver.handle_audio (model JSON'a transcript ekler), VoiceSession STT'siz yol (stt=None), api_voice/api_evalrun STT'siz profile izin, L5 profiline audio:true, scripts/audio_llm_probe.py. Testler: backend/tests/test_audio_llm.py (10, sahte ses-girdili LLM); 718 backend gecti. DOGRULANMAYAN: Ollama'nin gemma4:12b ile ses kabul edip etmedigi (bu biçim varsayim), cevap dogrulugu, gecikme kazanci, gurultude uydurma (sttguard yok). Siradaki (Mac): ./.venv/bin/python scripts/audio_llm_probe.py --clips data/stt-clips --limit 5 --model gemma4:12b --step musaitlik; ardindan L5 Hazirla + Kiyas kosusu. Ollama 400 donerse BLOCKED."
+      "evidence": [
+        "evidence/audio-llm-gemma4-12b-20261101-144734.json"
+      ],
+      "notes": "2026-11-01: KOD HAZIR, DOGRULANMADI. Eklenenler: LLMProvider.complete_audio/accepts_audio, OllamaLLM ses yolu (OpenAI uyumlu /v1/chat/completions, input_audio base64 WAV; profilde audio:true), build_audio_messages + FlowDriver.handle_audio (model JSON'a transcript ekler), VoiceSession STT'siz yol (stt=None), api_voice/api_evalrun STT'siz profile izin, L5 profiline audio:true, scripts/audio_llm_probe.py. Testler: backend/tests/test_audio_llm.py (10, sahte ses-girdili LLM); 718 backend gecti. DOGRULANMAYAN: Ollama'nin gemma4:12b ile ses kabul edip etmedigi (bu biçim varsayim), cevap dogrulugu, gecikme kazanci, gurultude uydurma (sttguard yok). Siradaki (Mac): ./.venv/bin/python scripts/audio_llm_probe.py --clips data/stt-clips --limit 5 --model gemma4:12b --step musaitlik; ardindan L5 Hazirla + Kiyas kosusu. Ollama 400 donerse BLOCKED. | 2026-11-01 14:47 MAC YOKLAMASI: Ollama ses istegini REDDETMEDI (HTTP hatasi yok) ama 15/15 cagrida cevap metni BOS (json_ok 0%), p50 5,9 sn, soguk 13,8 sn. Neden kanitlanmadi (supheli: dusunme token'lari 160'i yiyor). Tani eklendi: istek reasoning_effort=none, yoklama bos cevapta finish_reason/reasoning_chars/token basiyor. Siradaki: yoklamayi yeniden kos."
     },
     {
       "id": "scn-001",

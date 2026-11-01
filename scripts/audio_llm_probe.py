@@ -71,11 +71,16 @@ def main() -> int:
                 return 3
             dt = time.perf_counter() - t0
             obj, err = parse_output(res.text)
-            row = {"clip": f.name, "rep": i + 1, "seconds": round(dt, 3), "json_ok": obj is not None, "intent": (obj or {}).get("intent"),
+            diag = res.extra or {}
+            row = {"diag": {k: diag.get(k) for k in ("finish_reason", "reasoning_chars", "message_keys")}, "input_tokens": res.input_tokens,
+                   "output_tokens": res.output_tokens, "clip": f.name, "rep": i + 1, "seconds": round(dt, 3), "json_ok": obj is not None, "intent": (obj or {}).get("intent"),
                    "value": (obj or {}).get("value"), "transcript": (obj or {}).get("transcript"), "raw": res.text[:200],
                    "match": None if expect is None else (obj or {}).get("value") == expect}
             rows.append(row)
             secs.append(dt)
+            if not res.text:
+                print(f"   BOS CEVAP: finish={diag.get('finish_reason')} reasoning_chars={diag.get('reasoning_chars')} "
+                      f"giris_token={res.input_tokens} cikis_token={res.output_tokens} alanlar={diag.get('message_keys')}")
             print(f"{f.name:30s} #{i + 1} {dt:5.2f}s json={row['json_ok']} intent={row['intent']} value={row['value']} heard={row['transcript']!r}")
     warm = secs[1:] or secs
     summ = {"n": len(rows), "json_ok_rate": round(sum(r["json_ok"] for r in rows) / len(rows), 3), "p50_s": round(statistics.median(warm), 3),

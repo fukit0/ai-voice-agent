@@ -69,6 +69,7 @@ def test_ollama_sends_audio_as_input_audio_part_and_parses_reply(monkeypatch):
     assert parts[0] == {"type": "text", "text": "u"} and parts[1]["type"] == "input_audio" and parts[1]["input_audio"]["format"] == "wav"
     assert seen["body"]["messages"][0]["content"] == "s"                                # önceki mesajlar değişmez
     assert r.text == '{"intent":"answer"}' and (r.input_tokens, r.output_tokens) == (30, 5)
+    assert seen["body"]["reasoning_effort"] == "none" and r.extra["finish_reason"] is None and r.extra["reasoning_chars"] == 0
 
 
 def test_ollama_http_error_becomes_provider_error(monkeypatch):

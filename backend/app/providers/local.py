@@ -161,16 +161,20 @@ class OllamaLLM(LLMProvider):
         t0 = time.perf_counter()
         try:
             res = httpx.post(f"{OLLAMA_URL}/v1/chat/completions", timeout=120, json={
-                "model": self.model, "messages": body_msgs, "stream": False, "max_tokens": max_tokens, "temperature": temperature})
+                "model": self.model, "messages": body_msgs, "stream": False, "max_tokens": max_tokens, "temperature": temperature,
+                "reasoning_effort": self.options.get("reasoning_effort", "none")})       # düşünme token'ları cevabı yemesin (yoklamada boş cevap görüldü)
             res.raise_for_status()
         except Exception as exc:
             raise ProviderError(f"Ollama ses çağrısı başarısız ({self.model}): {exc}") from exc
         body = res.json()
         choices = body.get("choices") or [{}]
         usage = body.get("usage") or {}
+        msg = choices[0].get("message", {})
+        diag = {"finish_reason": choices[0].get("finish_reason"), "reasoning_chars": len(msg.get("reasoning") or msg.get("reasoning_content") or ""),
+                "message_keys": sorted(msg.keys())}
         return LLMResult(text=(choices[0].get("message", {}).get("content") or "").strip(),
                          seconds=time.perf_counter() - t0, provider=self.kind, model=self.model,
-                         output_tokens=usage.get("completion_tokens"), input_tokens=usage.get("prompt_tokens"), extra={"audio": True})
+                         output_tokens=usage.get("completion_tokens"), input_tokens=usage.get("prompt_tokens"), extra={"audio": True, **diag})
 
     @staticmethod
     def loaded_models() -> set[str] | None:
