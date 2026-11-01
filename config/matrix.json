@@ -1,6 +1,7 @@
 {
   "_doc": "Kıyas matrisi ayarları (lab-005, plan F6.2/F7.5). Ağırlıklar plandaki önerilerdir; ekranda değiştirilebilir. 'license' tablosundaki değerler MODEL KARTLARINDAN CANLI DOĞRULANMADI (verified=false); elenme yalnızca commercial_ok=false iken olur, null = belirsiz (uyarı).",
-  "weights": {"latency": 30, "naturalness": 25, "accuracy": 25, "wer": 10, "resources": 10},
+  "weights": {"latency": 30, "naturalness": 25, "accuracy": 25, "completion": 25, "wer": 10, "resources": 10},
+  "completion": {"expected": {"tam_katilim": "tamamlandi", "ret": "katilmak_istemedi", "geri_arama": "geri_arama"}, "_doc": "Anket tamamlama: Kıyas koşularında yolun beklenen sonucuna ulaşan çağrı oranı. Ağırlık 25 eklendi (L1 hiçbir aramayı bitiremediği halde 2. sıradaydı, 2026-11-01); diğer ağırlıklar değişmedi, toplam yüzde 100'e normalize edilir."},
   "min_coverage": 0.5,
   "latency": {"full_score_s": 1.2, "zero_score_s": 3.0},
   "resources": {"gpu_usd_per_hour": 1.0, "full_score_usd": 0.02, "zero_score_usd": 0.20, "_doc": "GPU saat fiyatı VARSAYIMDIR, ölçülmedi ve doğrulanmadı; gerçek sunucu teklifi gelince değiştirin. Puan: arama başı (API $ + GPU sn × saat fiyatı) ≤ full → 100, ≥ zero → 0."},

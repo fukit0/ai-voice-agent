@@ -8,6 +8,9 @@ Kriter ← kaynak ← 0-100 puan kuralı
 - naturalness ← data/tts-sessions kör dinleme puanları (naturalness 1-5)   ← (ortalama-1)/4×100; profilin TTS'iyle (provider+model, ya da kimlik) eşleşen puanlar
 - accuracy    ← data/llm-evals (summary.full_rate, en yeni koşu)           ← full_rate×100; profilin LLM'iyle (provider+model) eşleşen
 - wer         ← data/stt-runs (ok sonuçların wer ortalaması)               ← (1-WER)×100, 0'a kırpılır; profilin STT'siyle (provider+model, "+ ipucu" varyantı hariç) eşleşen
+- completion  ← data/eval-runs (Kıyas koşuları, status=ok çağrılar)          ← beklenen sonuca ulaşan çağrı oranı ×100
+              Beklenen sonuç (config/matrix.json completion.expected): tam_katilim→tamamlandi, ret→katilmak_istemedi, geri_arama→geri_arama.
+              "belirsiz" yolu sayılmaz (sonucu tanım gereği belirsiz). Anketi anlamayan profil (hepsi sistem_sonlandirdi) 0 alır.
 - resources   ← data/voice-sessions usage (calls.compare: arama başı API $ + GPU sn) ← arama başı maliyet ≤ 0,02 $ → 100, ≥ 0,20 $ → 0
               GPU saati fiyatı bir VARSAYIMDIR (config/matrix.json resources.gpu_usd_per_hour, doğrulanmadı); hücre notunda gösterilir.
 Uygulanamaz: profilde o bileşen yoksa (L5 ve realtime'da STT → WER; realtime'da ayrı LLM → doğruluk) kriter ilgili satırda "uygulanamaz"
@@ -34,6 +37,7 @@ CRITERIA: list[dict[str, str]] = [
     {"id": "naturalness", "label": "Doğallık (kör dinleme)", "source": "TTS stüdyosu dinleyici puanları", "rule": "(ortalama−1)/4×100"},
     {"id": "accuracy", "label": "Cevap doğruluğu", "source": "LLM testi (tam doğru oranı)", "rule": "oran×100"},
     {"id": "wer", "label": "STT hatası (WER)", "source": "STT test koşuları", "rule": "(1−WER)×100"},
+    {"id": "completion", "label": "Anket tamamlama", "source": "Kıyas koşuları (beklenen sonuca ulaşma)", "rule": "oran×100"},
     {"id": "resources", "label": "Kaynak kullanımı", "source": "Aramalar (arama başı API $ + GPU sn)", "rule": "≤ 0,02 $ → 100, ≥ 0,20 $ → 0"},
 ]
 IDS = [c["id"] for c in CRITERIA]
@@ -49,6 +53,7 @@ def load_config() -> dict[str, Any]:
     cfg.setdefault("min_coverage", 0.5)
     cfg.setdefault("latency", {"full_score_s": 1.2, "zero_score_s": 3.0})
     cfg.setdefault("license", {})
+    cfg.setdefault("completion", {"expected": {"tam_katilim": "tamamlandi", "ret": "katilmak_istemedi", "geri_arama": "geri_arama"}})
     cfg.setdefault("resources", {"gpu_usd_per_hour": 1.0, "full_score_usd": 0.02, "zero_score_usd": 0.20})
     return cfg
 
@@ -163,6 +168,24 @@ def llm_runs() -> list[dict]:
     return sorted(runs, key=lambda r: r.get("created_at", ""), reverse=True)
 
 
+def completion_stats(expected: dict[str, str]) -> dict[str, tuple[int, int]]:
+    """Profil -> (beklenen sonuca ulaşan, toplam) — yalnızca Kıyas koşularının status=ok çağrıları ve beklenen sonucu tanımlı yollar."""
+    root = stt_runs.data_dir() / "eval-runs"
+    out: dict[str, list[int]] = {}
+    for p in sorted(root.glob("*.json")) if root.is_dir() else []:
+        try:
+            run = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for c in run.get("calls", []):
+            if c.get("status") != "ok" or c.get("path") not in expected:
+                continue
+            pid = run.get("profile", "")
+            hit, tot = out.get(pid, [0, 0])
+            out[pid] = [hit + (c.get("outcome") == expected[c["path"]]), tot + 1]
+    return {k: (v[0], v[1]) for k, v in out.items()}
+
+
 def _tts_match(row: dict, pid: str, spec: dict | None) -> bool:
     if row.get("profile") == pid:
         return True
@@ -178,6 +201,7 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
     profiles = load_profiles()
     latency = {g["key"]: g for g in calls.compare(stt_runs.data_dir() / "voice-sessions", "profile")["groups"]}
     nat_rows, wer_rows, llms = tts_rows(), stt_results(), llm_runs()
+    comp = completion_stats(cfg["completion"]["expected"])
     pct = {k: round(v / sum(weights.values()) * 100, 1) for k, v in weights.items()}
 
     rows = []
@@ -209,6 +233,10 @@ def build(weights_text: str | None = None) -> dict[str, Any]:
                     metrics["accuracy"] = {"value": rate, "unit": "oran", "score": accuracy_score(rate), "n": run.get("n_samples"),
                                            "note": f"koşu {run.get('id')}"}
                     break
+        if pid in comp:
+            hit, tot = comp[pid]
+            metrics["completion"] = {"value": round(hit / tot, 3), "unit": "oran", "score": accuracy_score(hit / tot), "n": tot,
+                                     "note": f"{hit}/{tot} beklenen sonuç" + (" · örnek az (<5 çağrı)" if tot < 5 else "")}
         g_res = latency.get(pid)
         if g_res and g_res.get("usage_calls") and g_res.get("cost_complete") and g_res.get("avg_cost_usd") is not None:
             rc = cfg["resources"]

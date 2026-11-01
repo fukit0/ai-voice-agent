@@ -7,7 +7,7 @@ import type { CriterionId, DecisionStatus, Matrix, MatrixRow, Metric, Weights } 
  *  Veri olmayan kriter "ölçülmedi" gösterilir, sayı uydurulmaz; profilde bileşen yoksa "uygulanamaz" (ağırlık paydasından çıkar). */
 
 const STORE = "sva.matrix.weights";
-const IDS: CriterionId[] = ["latency", "naturalness", "accuracy", "wer", "resources"];
+const IDS: CriterionId[] = ["latency", "naturalness", "accuracy", "completion", "wer", "resources"];
 const tr = (v: number, d = 1) => v.toFixed(d).replace(".", ",");
 
 function loadWeights(): Weights | undefined {
@@ -22,6 +22,7 @@ function show(id: CriterionId, m: Metric) {
   if (id === "latency") return `${tr(m.value, 2)} sn`;
   if (id === "naturalness") return `${tr(m.value, 2)}/5`;
   if (id === "wer") return `WER %${tr(m.value * 100)}`;
+  if (id === "completion") return `%${tr(m.value * 100, 0)} tamamladı`;
   if (id === "resources") return `$${tr(m.value, 3)}/arama`;
   return `%${tr(m.value * 100, 0)} doğru`;
 }
@@ -132,8 +133,9 @@ export function MatrixPage() {
     setWeights(undefined);
     try { localStorage.removeItem(STORE); } catch { /* depolama yok */ }
   };
-  const sum = current ? IDS.reduce((a, k) => a + current[k], 0) : 0;
-  const anyData = data?.rows.some((r) => IDS.some((k) => r.metrics[k]));
+  const ids = (data?.criteria ?? []).map((c) => c.id);          // sütunlar sunucudaki kriter listesinden
+  const sum = current ? ids.reduce((a, k) => a + (current[k] ?? 0), 0) : 0;
+  const anyData = data?.rows.some((r) => ids.some((k) => r.metrics[k]));
   const ordered = data ? [...data.rows].sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9) || a.profile.localeCompare(b.profile)) : [];
 
   return (
@@ -191,7 +193,7 @@ export function MatrixPage() {
                     <td className="num">{r.rank ?? "—"}</td>
                     <td><strong>{r.profile}</strong> <span className="meta">{r.name}</span>
                       <div className="meta">{r.components.map((c) => `${c.kind}: ${(c.model || c.provider).split("/").pop()}`).join(" · ")}</div></td>
-                    {IDS.map((id) => <Cell key={id} id={id} m={r.metrics[id]} na={r.not_applicable?.[id]} />)}
+                    {ids.map((id) => <Cell key={id} id={id} m={r.metrics[id]} na={r.not_applicable?.[id]} />)}
                     <td className="num" title={`Eksik: ${r.missing.join(", ") || "yok"}`}>%{tr(r.coverage * 100, 0)}</td>
                     <td className="num mx-total">{r.total === null
                       ? <span className="meta" title={`Kapsam en az %${tr(data.min_coverage * 100, 0)} olmalı`}>{r.eliminated ? "elendi" : "yetersiz veri"}</span>

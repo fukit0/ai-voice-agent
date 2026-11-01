@@ -374,3 +374,8 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Kısa cevap:** Boş hücreyi sayı uydurarak doldurmadık. Üç ayrım var: ölçüldü; uygulanamaz (profilde o bileşen yok: L5 ve realtime'da STT yok, realtime'da ayrı LLM yok; bu hücre ağırlık paydasından çıkar); ölçülmedi (bileşen var, kayıt yok).
 **Kaynak kullanımı** = arama başına API maliyeti + GPU saniyesi × GPU saat fiyatı. GPU saat fiyatı (1 $/sa) bir varsayımdır, doğrulanmadı; sunucu teklifi gelince config/matrix.json'da değişir. Demoda "yerel profil bedava değil, ama fiyatı henüz bilmiyoruz" diye anlat.
 **Bilinen sınırlar:** (1) Kalan boşlar yeni arama ya da insan dinleme puanı ister. (2) Dinleme puanları n=2-3: ince. (3) Matris anket tamamlamayı puanlamıyor: L1 (gemma4:e4b) "Hayır, katılmadım" cevabını anlamayıp aramayı kapatıyor ama matriste 83,5 alıyor. Bunu "ilk yükleme" bahanesi yapma, eksik kriter diye anlat.
+
+## S45 — L1 neden elendi / matris neden "tamamlama" puanlıyor? (2026-11-01)
+**Kısa cevap:** İlk matris yalnızca hız, ses, doğruluk ve maliyeti puanlıyordu; L1 hızlı ve ucuz olduğu için 2. sıradaydı ama ankete verilen "Hayır, katılmadım." cevabını anlamayıp aramayı kapatıyordu. Bu bir eksik kriterdi, bahane değil: bulduk, "Anket tamamlama" kriterini ekledik (Kıyas koşularında yolun beklenen sonucuna ulaşan çağrı oranı, ağırlık 25).
+**Gerçek sonuç:** L2 77/77, L2-EL 58/60, A1 30/30, L1 6/20 (yalnızca geri arama yolu bitiyor), L4 0/30. L1 83,5 → 72,8 (2. → 4. sıra).
+**Sınırlar:** (1) Koşular farklı kod sürümleriyle yapıldı. (2) Tamamlama yalnızca Kıyas koşusu olan profillerde var; L3, L5, A1S, A2, A3 için yok. (3) "Belirsiz" yolu sayılmıyor, çünkü sonucu tanım gereği belirsiz. (4) Ağırlık 25 benim önerimdir; ekranda değiştirilebilir.

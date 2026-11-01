@@ -465,3 +465,10 @@ agents do not update it automatically.
 - Yapildi: scripts/import_llm_evidence.py (6 gercek LLM kosusu data/llm-evals/'e alindi, yeni sayi uretmez); Kaynak kullanimi = arama basi API $ + GPU sn x varsayilan GPU saat fiyati (config/matrix.json, 1 $/sa VARSAYIM, dogrulanmadi); "uygulanamaz" (L5/realtime'da STT, realtime'da ayri LLM) olculmedi'den ayrildi ve agirlik paydasindan cikar. 706 backend + 105 frontend test gecti.
 - Matris sonrasi KALAN BOS (9 hucre, yeni olcum gerekir): L3/L4/L5 kaynak (yeni arama), L4/L5 gecikme (yeni arama), L2-EL/A2/A3 dogallik (insan dinleme puani), A2/A3 kaynak (realtime kullanim kaydi + fiyat yok). Dogallik n=2-3, L3 WER n=2: ince.
 - L1 kosusu (kullanici, 26/40 iptal): q3'te "Hayir, katilmadim." gemma4:e4b tarafindan 3 kez anlasilmadi -> sistem_sonlandirdi; tamamlanan 26 cagrida >2 cevap yok. LLM testi (%76,7) ile tutarli. Matriste L1 83,5 puanla ust sirada: matris anket TAMAMLAMA'yi olcmuyor (kriter eksik, oneri).
+
+## Session 042 - Kiyas matrisine "Anket tamamlama" kriteri (2026-11-01)
+- Kullanici: L1 hicbir sey anlamiyor ama 2. siradaydi; tamamlanma orani sirayi degistirir, hemen yap. Eklendi: completion kriteri = Kiyas kosularinda (data/eval-runs, status=ok) yolun beklenen sonucuna ulasan cagri orani (tam_katilim->tamamlandi, ret->katilmak_istemedi, geri_arama->geri_arama; belirsiz yol sayilmaz). Agirlik 25 (config/matrix.json), digerleri degismedi; toplam %100'e normalize.
+- Gercek sonuc: L2 77/77, L2-EL 58/60, A1 30/30, L1 6/20 (yalniz geri_arama), L4 0/30. L1 toplam 83,5 -> 72,8 (2. -> 4. sira); L2 89,9 ile 1., L2-EL 81,0 (dogallik eksik, kapsam %80), A1S 75,4 (tamamlama eksik).
+- Testler: eski iki test (parse_weights, gecersiz agirlik 422) kriter listesi 6'ya ciktigi icin GIRDIsi guncellendi (completion:0 eklendi), amaci ayni; 2 yeni test (beklenen sonuc sayimi, tamamlayamayan profil dusuyor). 708 backend + 105 frontend gecti.
+- Duzeltme: sunumdaki "L1, L4 icin kayitli arama yok" ifadesi YANLISTI; ikisinin de Kiyas kosusu var (L1 6/20, L4 0/30). Sunum duzeltildi.
+- Hala bos: L3/L5/A1S/A2/A3 tamamlama (Kiyas kosusu yok), L5 gecikme+kaynak, L3/A2/A3 kaynak, L2-EL/A2/A3 dogallik (dinleme puani).

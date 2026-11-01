@@ -69,9 +69,9 @@ def test_combine_renormalises_over_available_criteria():
 
 
 def test_parse_weights():
-    d = {"latency": 30, "naturalness": 25, "accuracy": 25, "wer": 10, "resources": 10}
+    d = {"latency": 30, "naturalness": 25, "accuracy": 25, "completion": 25, "wer": 10, "resources": 10}
     assert matrix.parse_weights("latency:50", d)["latency"] == 50 and matrix.parse_weights("", d) == d
-    for bad in ("foo:1", "latency:-1", "latency:abc", "latency:0,naturalness:0,accuracy:0,wer:0,resources:0"):
+    for bad in ("foo:1", "latency:-1", "latency:abc", "latency:0,naturalness:0,accuracy:0,completion:0,wer:0,resources:0"):
         with pytest.raises(ValueError):
             matrix.parse_weights(bad, d)
 
@@ -137,7 +137,7 @@ def test_weights_recompute_totals_and_ranking(data, monkeypatch):
 
 
 def test_invalid_weights_422(data):
-    for bad in ("foo:1", "latency:-3", "latency:0,naturalness:0,accuracy:0,wer:0,resources:0"):
+    for bad in ("foo:1", "latency:-3", "latency:0,naturalness:0,accuracy:0,completion:0,wer:0,resources:0"):
         assert client.get("/api/matrix", params={"weights": bad}).status_code == 422
 
 
@@ -193,3 +193,33 @@ def test_resources_from_usage_with_gpu_assumption(data):
     assert m["value"] == pytest.approx(0.05 + 36 / 3600 * matrix.load_config()["resources"]["gpu_usd_per_hour"], abs=1e-4)
     assert "varsayım" in m["note"]
     assert row(client.get("/api/matrix").json(), "A2")["not_applicable"].keys() == {"wer", "accuracy"}
+
+
+# ---- anket tamamlama ----
+def eval_run(data, rid, profile, calls):
+    d = data / "eval-runs"
+    d.mkdir(exist_ok=True)
+    (d / f"{rid}.json").write_text(json.dumps({"id": rid, "profile": profile, "calls": [
+        {"path": p, "status": s, "outcome": o} for p, s, o in calls]}), encoding="utf-8")
+
+
+def test_completion_counts_expected_outcomes_only(data):
+    eval_run(data, "e1", "L1", [("tam_katilim", "ok", "sistem_sonlandirdi"), ("ret", "ok", "sistem_sonlandirdi"),
+                                ("geri_arama", "ok", "geri_arama"), ("belirsiz", "ok", "sistem_sonlandirdi"),
+                                ("tam_katilim", "pending", None)])
+    eval_run(data, "e2", "L2", [("tam_katilim", "ok", "tamamlandi"), ("ret", "ok", "katilmak_istemedi"), ("belirsiz", "ok", "tamamlandi")])
+    body = client.get("/api/matrix").json()
+    l1, l2 = row(body, "L1")["metrics"]["completion"], row(body, "L2")["metrics"]["completion"]
+    assert (l1["n"], l1["score"]) == (3, round(1 / 3 * 100, 1))        # belirsiz yol ve pending sayılmaz
+    assert (l2["n"], l2["score"]) == (2, 100.0)
+    assert row(body, "A1")["metrics"]["completion"] is None            # koşu yok -> uydurma yok
+    assert "completion" in [c["id"] for c in body["criteria"]]
+
+
+def test_completion_drops_a_profile_that_cannot_finish_the_survey(data):
+    for pid in ("L1", "L2"):
+        call(data, f"c-{pid}", pid, [1.0])
+    eval_run(data, "e1", "L1", [("tam_katilim", "ok", "sistem_sonlandirdi")] * 5)
+    eval_run(data, "e2", "L2", [("tam_katilim", "ok", "tamamlandi")] * 5)
+    body = client.get("/api/matrix?weights=latency:50,completion:50,naturalness:0,accuracy:0,wer:0,resources:0").json()
+    assert row(body, "L2")["total"] > row(body, "L1")["total"] and row(body, "L1")["total"] == 50.0

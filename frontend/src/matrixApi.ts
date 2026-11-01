@@ -1,5 +1,5 @@
 // Kıyas matrisi API'si (lab-005). api.ts Mac'te yazılamadığı için ayrı dosya.
-export type CriterionId = "latency" | "naturalness" | "accuracy" | "wer" | "resources";
+export type CriterionId = "latency" | "naturalness" | "accuracy" | "completion" | "wer" | "resources";
 export type Weights = Record<CriterionId, number>;
 export type Metric = { value: number; unit: string; score: number; n: number | null; note: string | null };
 export type LicenseInfo = { kind: string; model: string; license: string; commercial_ok: boolean | null; verified: boolean };
