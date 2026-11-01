@@ -1,12 +1,12 @@
 {
   "currency": "USD",
   "note": "Liste fiyatlari; plan, kota, kurumsal anlasma ve kur farkli olabilir. Faturayi gercek hesapta dogrulayin. Yerel (self-host) bilesenler API ucreti almaz; maliyetleri GPU saniyesiyle ayri izlenir (donanim/enerji maliyeti bu dosyada yok).",
-  "checked": "2026-10-31",
+  "checked": "2026-11-01",
   "stt": {
     "deepgram:nova-3": {
       "unit": "minute",
       "usd": 0.0092,
-      "source": "deepgram.com/pricing (pay-as-you-go, streaming, multilingual)",
+      "source": "deepgram.com/pricing (2026-11-01): Nova-3 streaming pay-as-you-go multilingual $0,0092/dk, monolingual $0,0077/dk; sayfa Turkcenin hangi katmanda oldugunu belirtmiyor; 150 eszamanli akis baglantisi",
       "verified": true
     }
   },
@@ -14,46 +14,46 @@
     "anthropic:claude-haiku-5-5": {
       "input_per_mtok": 0.1,
       "output_per_mtok": 0.5,
-      "source": "ucuncu taraf blog (dev.to/hassann); 100K token alti istem fiyati. Resmi Anthropic sayfasindan dogrulanmadi",
-      "verified": false
+      "source": "anthropic.com/claude/haiku (2026-11-01): <=100K token istem $0,10 giris / $0,50 cikis per Mtok; 100K ustu $0,50 / $2,50; batch %50 indirim",
+      "verified": true
     }
   },
   "tts": {
     "elevenlabs:eleven_flash_v2_5": {
       "unit": "1k_chars",
       "usd": 0.04,
-      "source": "config/elevenlabs-models.json (liste fiyati)",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     },
     "elevenlabs:eleven_turbo_v2_5": {
       "unit": "1k_chars",
       "usd": 0.04,
-      "source": "config/elevenlabs-models.json",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     },
     "elevenlabs:eleven_v4_turbo": {
       "unit": "1k_chars",
       "usd": 0.04,
-      "source": "config/elevenlabs-models.json",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     },
     "elevenlabs:eleven_multilingual_v2": {
       "unit": "1k_chars",
       "usd": 0.08,
-      "source": "config/elevenlabs-models.json",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     },
     "elevenlabs:eleven_v3": {
       "unit": "1k_chars",
       "usd": 0.08,
-      "source": "config/elevenlabs-models.json (liste fiyati)",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     },
     "elevenlabs:eleven_v4": {
       "unit": "1k_chars",
       "usd": 0.08,
-      "source": "config/elevenlabs-models.json (liste fiyati)",
-      "verified": false
+      "source": "elevenlabs.io/pricing/api (herkese acik liste, 2026-11-01): Flash/Turbo ve v4 Turbo $0,04, v4/v3/Multilingual v2 $0,08 per 1k karakter. Kullanicinin hesabi/plani ve kurumsal teklif dogrulanmadi",
+      "verified": true
     }
   },
   "local_providers": [
