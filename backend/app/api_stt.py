@@ -22,9 +22,9 @@ from .wer import wer
 
 router = APIRouter(prefix="/api/stt", tags=["stt"])
 # Sınırlar ortam değişkeniyle ayarlanır (SVA_STT_MAX_MB, SVA_STT_MAX_SECONDS). 25 MB / 180 sn gerçek görüşme kayıtlarına
-# (stereo, 5-10 dk) yetmediği için 200 MB / 20 dk yapıldı. Uzun sesi yerel modeller (Whisper, BuzzASR) yavaş işler.
-DEFAULT_MAX_MB = 200
-DEFAULT_MAX_SECONDS = 1200
+# (stereo, 1 saate kadar) yetmediği için 1 GB / 2 saat yapıldı. Uzun sesi yerel modeller (Whisper, BuzzASR) yavaş işler.
+DEFAULT_MAX_MB = 1024
+DEFAULT_MAX_SECONDS = 7200
 
 
 def _max_bytes() -> int:
