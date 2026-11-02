@@ -165,3 +165,18 @@ def test_empty_audio_is_a_400_not_a_500(tmp_path, monkeypatch):
         assert res.status_code == 400, channel
         assert res.json()["detail"]["message"].startswith("Ses çözülemedi: ses boş"), res.text
     assert CALLS == []
+
+
+def test_upload_and_duration_limits_are_configurable(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    data = stereo_wav(0.5, 0.5, seconds=2.0)
+    monkeypatch.setenv("SVA_STT_MAX_SECONDS", "1")
+    res = client.post("/api/stt/compare", files={"audio": ("k.wav", data, "audio/wav")}, data={"profiles": "M1"})
+    assert res.status_code == 413 and res.json()["detail"]["error"] == "audio_too_long"
+    monkeypatch.setenv("SVA_STT_MAX_SECONDS", "10")
+    monkeypatch.setenv("SVA_STT_MAX_MB", "0.001")
+    res = client.post("/api/stt/compare", files={"audio": ("k.wav", data, "audio/wav")}, data={"profiles": "M1"})
+    assert res.status_code == 413 and res.json()["detail"]["error"] == "audio_too_large"
+    monkeypatch.delenv("SVA_STT_MAX_MB")
+    ok = client.post("/api/stt/compare", files={"audio": ("k.wav", data, "audio/wav")}, data={"profiles": "M1"})
+    assert ok.status_code == 200                      # varsayılan sınırlar 2 sn'lik sesi geçirir

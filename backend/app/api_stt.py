@@ -6,6 +6,8 @@ ADR 0001: soğuk model ölçüme alınmaz, o modelin sonucu "cold" durumuyla ve 
 """
 from __future__ import annotations
 
+import os
+
 import numpy as np
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -19,8 +21,20 @@ from .providers.local import MlxWhisperSTT
 from .wer import wer
 
 router = APIRouter(prefix="/api/stt", tags=["stt"])
-MAX_UPLOAD_BYTES = 25 * 1024 * 1024
-MAX_AUDIO_SECONDS = 180
+# Sınırlar ortam değişkeniyle ayarlanır (SVA_STT_MAX_MB, SVA_STT_MAX_SECONDS). 25 MB / 180 sn gerçek görüşme kayıtlarına
+# (stereo, 5-10 dk) yetmediği için 200 MB / 20 dk yapıldı. Uzun sesi yerel modeller (Whisper, BuzzASR) yavaş işler.
+DEFAULT_MAX_MB = 200
+DEFAULT_MAX_SECONDS = 1200
+
+
+def _max_bytes() -> int:
+    return int(float(os.environ.get("SVA_STT_MAX_MB", DEFAULT_MAX_MB)) * 1024 * 1024)
+
+
+def _max_seconds() -> float:
+    return float(os.environ.get("SVA_STT_MAX_SECONDS", DEFAULT_MAX_SECONDS))
+
+
 SILENT_DBFS = -55.0   # bu seviyenin altındaki kanal STT'ye verilmez: Whisper sessizlikte metin uydurur
 SPEAKERS = (("customer", "Müşteri"), ("agent", "Ajan"))
 
@@ -55,9 +69,10 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
     ids = [i for i in dict.fromkeys(x.strip() for x in profiles.split(",")) if i]
     if not ids:
         raise HTTPException(400, {"error": "no_models", "message": "En az bir STT modeli seçin."})
-    data = audio.file.read(MAX_UPLOAD_BYTES + 1)
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, {"error": "audio_too_large", "message": "Ses dosyası 25 MB'tan büyük."})
+    limit = _max_bytes()
+    data = audio.file.read(limit + 1)
+    if len(data) > limit:
+        raise HTTPException(413, {"error": "audio_too_large", "message": f"Ses dosyası {limit // (1024 * 1024)} MB'tan büyük."})
     if channel == "both":
         return _compare_speakers(audio.filename, data, ids, language)
     try:
@@ -67,9 +82,9 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
     audio_seconds = len(samples) / rate
     if audio_seconds <= 0:
         raise HTTPException(400, {"error": "bad_audio", "message": "Ses çözülemedi: ses boş (0 sn)."})
-    if audio_seconds > MAX_AUDIO_SECONDS:
+    if audio_seconds > _max_seconds():
         raise HTTPException(413, {"error": "audio_too_long",
-                                  "message": f"Ses {MAX_AUDIO_SECONDS} sn'den uzun ({audio_seconds:.0f} sn)."})
+                                  "message": f"Ses {_max_seconds():.0f} sn'den uzun ({audio_seconds:.0f} sn)."})
     all_profiles = load_profiles()
     reference = reference.strip()
     results, seen = [], set()
@@ -137,9 +152,9 @@ def _compare_speakers(filename: str | None, data: bytes, ids: list[str], languag
     audio_seconds = len(left) / rate
     if audio_seconds <= 0:
         raise HTTPException(400, {"error": "bad_audio", "message": "Ses çözülemedi: ses boş (0 sn)."})
-    if audio_seconds > MAX_AUDIO_SECONDS:
+    if audio_seconds > _max_seconds():
         raise HTTPException(413, {"error": "audio_too_long",
-                                  "message": f"Ses {MAX_AUDIO_SECONDS} sn'den uzun ({audio_seconds:.0f} sn)."})
+                                  "message": f"Ses {_max_seconds():.0f} sn'den uzun ({audio_seconds:.0f} sn)."})
     channels = {"customer": left, "agent": right}
     levels = {k: round(rms_dbfs(v), 1) for k, v in channels.items()}
     all_profiles = load_profiles()
