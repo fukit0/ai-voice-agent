@@ -26,21 +26,28 @@ def resample(audio: np.ndarray, src_rate: int, dst_rate: int) -> np.ndarray:
 
 
 def read_audio(data: bytes) -> tuple[np.ndarray, int]:
-    """Ses baytlarını (n, kanal) float32'ye çevirir. libsndfile okuyamazsa (m4a/AAC, WAV adlı başka biçim, Opus-webm)
-    ffmpeg varsa onunla çevrilir; yoksa ya da o da okuyamazsa ilk hata yükseltilir. Kanal sayısı korunur."""
+    """Ses baytlarını (n, kanal) float32'ye çevirir. libsndfile okuyamazsa ya da 0 örnek dönerse (başlığı yarım WAV:
+    veri uzunluğu 0 yazılmış akış kaydı) ve ffmpeg varsa onunla çevrilir (m4a/AAC, WAV adlı başka biçim, Opus-webm).
+    Kanal sayısı korunur. Sonuç yine boşsa ValueError ("ses boş")."""
+    first: Exception | None = None
     try:
         audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
-        return audio, int(rate)
-    except Exception as first:  # noqa: BLE001
-        ffmpeg = shutil.which("ffmpeg")
-        if not ffmpeg:
-            raise
-        proc = subprocess.run([ffmpeg, "-v", "error", "-i", "pipe:0", "-f", "wav", "-acodec", "pcm_f32le", "pipe:1"],
-                              input=data, capture_output=True, timeout=60)
-        if proc.returncode != 0 or not proc.stdout:
-            raise first
+        if len(audio):
+            return audio, int(rate)
+        first = ValueError(f"ses boş (0 örnek, {len(data)} bayt dosya)")
+    except Exception as exc:  # noqa: BLE001
+        first = exc
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise first
+    proc = subprocess.run([ffmpeg, "-v", "error", "-i", "pipe:0", "-f", "wav", "-acodec", "pcm_f32le", "pipe:1"],
+                          input=data, capture_output=True, timeout=60)
+    if proc.returncode == 0 and proc.stdout:
         audio, rate = sf.read(io.BytesIO(proc.stdout), dtype="float32", always_2d=True)
-        return audio, int(rate)
+        if len(audio):
+            return audio, int(rate)
+    raise ValueError(f"ses boş ya da okunamadı ({len(data)} bayt dosya; {first}; ffmpeg: "
+                     f"{proc.stderr.decode('utf-8', 'replace').strip()[:200] or 'çıktı yok'})")
 
 
 def decode_audio(data: bytes, channel: str = "mix") -> tuple[np.ndarray, int]:

@@ -152,3 +152,16 @@ def test_decode_falls_back_to_ffmpeg_for_formats_libsndfile_cannot_read(tmp_path
     from backend.app.providers.audio import decode_stereo
     left, right, rate = decode_stereo(m4a.read_bytes())          # ffmpeg yedeği: stereo korunur
     assert len(left) == len(right) > 0 and rate > 0 and np.abs(left).max() > 0.05
+
+
+def test_empty_audio_is_a_400_not_a_500(tmp_path, monkeypatch):
+    """Veri uzunluğu 0 olan WAV (yarım kalmış kayıt): eskiden 0'a bölme ile 500 veriyordu."""
+    _env(tmp_path, monkeypatch)
+    empty = io.BytesIO()
+    sf.write(empty, np.zeros((0, 2), np.float32), 16000, format="WAV")
+    for channel in ("mix", "both"):
+        res = client.post("/api/stt/compare", files={"audio": ("e.wav", empty.getvalue(), "audio/wav")},
+                          data={"profiles": "M1", "channel": channel})
+        assert res.status_code == 400, channel
+        assert res.json()["detail"]["message"].startswith("Ses çözülemedi: ses boş"), res.text
+    assert CALLS == []

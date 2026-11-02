@@ -65,6 +65,8 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(400, {"error": "bad_audio", "message": f"Ses çözülemedi: {exc}"}) from exc
     audio_seconds = len(samples) / rate
+    if audio_seconds <= 0:
+        raise HTTPException(400, {"error": "bad_audio", "message": "Ses çözülemedi: ses boş (0 sn)."})
     if audio_seconds > MAX_AUDIO_SECONDS:
         raise HTTPException(413, {"error": "audio_too_long",
                                   "message": f"Ses {MAX_AUDIO_SECONDS} sn'den uzun ({audio_seconds:.0f} sn)."})
@@ -127,10 +129,14 @@ def _compare_speakers(filename: str | None, data: bytes, ids: list[str], languag
     try:
         left, right, rate = decode_stereo(data)
     except ValueError as exc:
-        raise HTTPException(400, {"error": "not_stereo", "message": f"Müşteri/ajan ayrımı yapılamadı: {exc}."}) from exc
+        if "tek kanallı" in str(exc):
+            raise HTTPException(400, {"error": "not_stereo", "message": f"Müşteri/ajan ayrımı yapılamadı: {exc}."}) from exc
+        raise HTTPException(400, {"error": "bad_audio", "message": f"Ses çözülemedi: {exc}"}) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(400, {"error": "bad_audio", "message": f"Ses çözülemedi: {exc}"}) from exc
     audio_seconds = len(left) / rate
+    if audio_seconds <= 0:
+        raise HTTPException(400, {"error": "bad_audio", "message": "Ses çözülemedi: ses boş (0 sn)."})
     if audio_seconds > MAX_AUDIO_SECONDS:
         raise HTTPException(413, {"error": "audio_too_long",
                                   "message": f"Ses {MAX_AUDIO_SECONDS} sn'den uzun ({audio_seconds:.0f} sn)."})
