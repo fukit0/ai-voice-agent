@@ -13,7 +13,7 @@ const pct = (v: number | null | undefined) => (v == null ? "—" : `${(v * 100).
 export function SttPage() {
   const [models, setModels] = useState<SttModel[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [audio, setAudio] = useState<{ blob: Blob; name: string; url: string } | null>(null);
+  const [audio, setAudio] = useState<{ blob: Blob; name: string; url: string; converted: boolean } | null>(null);
   const [reference, setReference] = useState("");
   const [channel, setChannel] = useState<SttChannel>("mix");
   const [prompt, setPrompt] = useState("");
@@ -40,9 +40,9 @@ export function SttPage() {
     void loadRuns();
   }, [loadModels, loadRuns]);
 
-  const setAudioBlob = (blob: Blob, name: string) => {
+  const setAudioBlob = (blob: Blob, name: string, converted = true) => {
     if (audio) URL.revokeObjectURL(audio.url);
-    setAudio({ blob, name, url: URL.createObjectURL(blob) });
+    setAudio({ blob, name, url: URL.createObjectURL(blob), converted });
     setRun(null);
   };
 
@@ -53,7 +53,7 @@ export function SttPage() {
       // WAV olduğu gibi gönderilir: stereo ses kaydında (sol müşteri, sağ ajan) kanal seçimi sunucuda yapılır;
       // toWav() kanalları ortalayıp tek kanala indirir ve seçimi imkânsız kılar. Diğer biçimler (m4a, webm) WAV'a çevrilir.
       const isWav = /\.wav$/i.test(file.name) || /^audio\/(x-)?wav$/.test(file.type);
-      setAudioBlob(isWav ? file : await toWav(file), file.name.replace(/\.[^.]+$/, "") + ".wav");
+      setAudioBlob(isWav ? file : await toWav(file, true), file.name.replace(/\.[^.]+$/, "") + ".wav", !isWav);
     } catch {
       setError("Ses dosyası çözülemedi. WAV, MP3, M4A veya OGG deneyin.");
     }
@@ -112,7 +112,15 @@ export function SttPage() {
     setError(null);
     try {
       const profiles = models.filter((m) => selected.has(modelKey(m))).map((m) => m.profile);
-      setRun(await compareStt(audio.blob, audio.name, profiles, reference, channel, prompt));
+      try {
+        setRun(await compareStt(audio.blob, audio.name, profiles, reference, channel, prompt));
+      } catch (first) {
+        // Sunucu dosyayı çözemediyse (WAV adlı başka biçim, m4a/opus) tarayıcıda WAV'a çevirip bir kez daha dene; stereo korunur.
+        if (audio.converted || !/Ses çözülemedi/.test((first as Error).message)) throw first;
+        const wav = await toWav(audio.blob, true);
+        setAudioBlob(wav, audio.name, true);
+        setRun(await compareStt(wav, audio.name, profiles, reference, channel, prompt));
+      }
       void loadRuns();
       void loadModels();
     } catch (e) {

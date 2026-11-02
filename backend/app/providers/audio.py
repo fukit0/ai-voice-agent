@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import io
+import shutil
+import subprocess
 from math import gcd
 
 import numpy as np
@@ -23,12 +25,30 @@ def resample(audio: np.ndarray, src_rate: int, dst_rate: int) -> np.ndarray:
     return resample_poly(audio, dst_rate // g, src_rate // g).astype(np.float32)
 
 
+def read_audio(data: bytes) -> tuple[np.ndarray, int]:
+    """Ses baytlarını (n, kanal) float32'ye çevirir. libsndfile okuyamazsa (m4a/AAC, WAV adlı başka biçim, Opus-webm)
+    ffmpeg varsa onunla çevrilir; yoksa ya da o da okuyamazsa ilk hata yükseltilir. Kanal sayısı korunur."""
+    try:
+        audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
+        return audio, int(rate)
+    except Exception as first:  # noqa: BLE001
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            raise
+        proc = subprocess.run([ffmpeg, "-v", "error", "-i", "pipe:0", "-f", "wav", "-acodec", "pcm_f32le", "pipe:1"],
+                              input=data, capture_output=True, timeout=60)
+        if proc.returncode != 0 or not proc.stdout:
+            raise first
+        audio, rate = sf.read(io.BytesIO(proc.stdout), dtype="float32", always_2d=True)
+        return audio, int(rate)
+
+
 def decode_audio(data: bytes, channel: str = "mix") -> tuple[np.ndarray, int]:
     """WAV/FLAC/OGG baytlarını mono float32'ye çevirir.
 
     channel: "mix" (kanalların ortalaması), "left" ya da "right". Ses kaydı (core-013) stereodur: sol müşteri, sağ ajan;
     STT karşılaştırması için "left" seçilmezse iki ses karışır. Tek kanallı dosyada seçim yok sayılır."""
-    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
+    audio, rate = read_audio(data)
     if channel in ("left", "right") and audio.shape[1] >= 2:
         return np.ascontiguousarray(audio[:, 0 if channel == "left" else 1]), int(rate)
     return to_mono_float32(audio), int(rate)
@@ -36,7 +56,7 @@ def decode_audio(data: bytes, channel: str = "mix") -> tuple[np.ndarray, int]:
 
 def decode_stereo(data: bytes) -> tuple[np.ndarray, np.ndarray, int]:
     """Stereo kaydı (sol = müşteri, sağ = ajan) iki ayrı mono diziye böler. Tek kanallı dosyada ValueError."""
-    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
+    audio, rate = read_audio(data)
     if audio.shape[1] < 2:
         raise ValueError("ses tek kanallı; müşteri ve ajan ayrılamaz (stereo kayıt gerekir)")
     return np.ascontiguousarray(audio[:, 0]), np.ascontiguousarray(audio[:, 1]), int(rate)

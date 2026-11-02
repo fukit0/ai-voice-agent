@@ -2,6 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SttPage } from "./SttPage";
 
+const toWavMock = vi.hoisted(() => vi.fn(async (b: Blob) => new Blob([b], { type: "audio/wav" })));
+vi.mock("../wav", () => ({ toWav: toWavMock }));
+
 const MODELS = [
   { profile: "L2", profiles: ["L1", "L2"], provider: "mlx_whisper", model: "whisper-large-v3-turbo", ready: true, warm: true, missing_env: [] },
   { profile: "L3", profiles: ["L3"], provider: "hf_whisper", model: "BuzzASR/turkish", ready: true, warm: false, missing_env: [] },
@@ -113,5 +116,26 @@ describe("STT test ekranı", () => {
     expect(within(box).getByText("Merhaba, ben Ayşe")).toBeInTheDocument();
     const form = fetchMock.mock.calls.find(([u]) => u === "/api/stt/compare")![1].body as FormData;
     expect(form.get("channel")).toBe("both");
+  });
+
+  it("sunucu dosyayı çözemezse tarayıcıda WAV'a çevirip (stereo korunur) bir kez yeniden dener", async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/stt/models") return new Response(JSON.stringify(models));
+      if (url === "/api/stt/runs") return new Response("[]");
+      if (url === "/api/stt/compare" && init?.method === "POST") {
+        calls += 1;
+        if (calls === 1) return new Response(JSON.stringify({ detail: { error: "bad_audio", message: "Ses çözülemedi: Format not recognised" } }), { status: 400 });
+        return new Response(JSON.stringify(RUN));
+      }
+      return new Response("", { status: 404 });
+    });
+    toWavMock.mockClear();
+    render(<SttPage />);
+    fireEvent.change(await screen.findByTestId("stt-file"), { target: { files: [new File([new Uint8Array(8)], "k.wav", { type: "audio/wav" })] } });
+    fireEvent.click(await screen.findByRole("button", { name: "Karşılaştır" }));
+    await screen.findByTestId("stt-results");
+    expect(calls).toBe(2);
+    expect(toWavMock).toHaveBeenCalledWith(expect.any(Blob), true);
   });
 });

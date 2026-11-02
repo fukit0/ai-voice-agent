@@ -1,7 +1,13 @@
 // Tarayıcıda ses dosyasını / kaydı backend'in her zaman çözebildiği mono 16-bit WAV'a çevirir.
 // (MediaRecorder webm/opus, telefon kayıtları m4a verir; backend yalnızca libsndfile formatlarını okur.)
 
-export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+// samples: tek kanal ya da kanal dizisi (en çok 2; stereo kayıtta sol = müşteri, sağ = ajan korunur).
+export function encodeWav(input: Float32Array | Float32Array[], sampleRate: number): Blob {
+  const chans = Array.isArray(input) ? input : [input];
+  const n = chans.length;
+  const frames = chans[0].length;
+  const samples = new Float32Array(frames * n);
+  for (let i = 0; i < frames; i++) for (let c = 0; c < n; c++) samples[i * n + c] = chans[c][i];
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
   const write = (offset: number, text: string) => {
@@ -13,10 +19,10 @@ export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   write(12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, 1, true); // mono
+  view.setUint16(22, n, true); // kanal sayısı
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
+  view.setUint32(28, sampleRate * 2 * n, true);
+  view.setUint16(32, 2 * n, true);
   view.setUint16(34, 16, true);
   write(36, "data");
   view.setUint32(40, samples.length * 2, true);
@@ -34,11 +40,13 @@ export function mixToMono(channels: Float32Array[]): Float32Array {
   return out;
 }
 
-export async function toWav(blob: Blob): Promise<Blob> {
+// keepStereo: iki (ya da daha çok) kanallı kayıtta ilk iki kanal ayrı bırakılır (sol/sağ seçimi ve müşteri/ajan ayrımı için).
+export async function toWav(blob: Blob, keepStereo = false): Promise<Blob> {
   const ctx = new AudioContext();
   try {
     const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
     const channels = Array.from({ length: decoded.numberOfChannels }, (_, i) => decoded.getChannelData(i));
+    if (keepStereo && channels.length >= 2) return encodeWav(channels.slice(0, 2), decoded.sampleRate);
     return encodeWav(mixToMono(channels), decoded.sampleRate);
   } finally {
     void ctx.close();

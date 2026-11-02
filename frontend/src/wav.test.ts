@@ -26,4 +26,14 @@ describe("wav", () => {
   it("stereoyu ortalayarak mono yapar", () => {
     expect(Array.from(mixToMono([new Float32Array([1, 0]), new Float32Array([0, 1])]))).toEqual([0.5, 0.5]);
   });
+
+  it("stereo yazar: sol/sağ kanal sırayla dizilir ve başlık 2 kanal der", async () => {
+    const blob = encodeWav([new Float32Array([1, 0]), new Float32Array([0, -1])], 16000);
+    const view = new DataView(await readBuffer(blob));
+    expect(view.getUint16(22, true)).toBe(2);           // kanal sayısı
+    expect(view.getUint16(32, true)).toBe(4);           // blok hizası
+    expect(view.getUint32(40, true)).toBe(8);           // 2 kare x 2 kanal x 2 bayt
+    expect([view.getInt16(44, true), view.getInt16(46, true), view.getInt16(48, true), view.getInt16(50, true)])
+      .toEqual([32767, 0, 0, -32768]);
+  });
 });

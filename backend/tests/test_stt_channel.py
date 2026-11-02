@@ -135,3 +135,20 @@ def test_compare_both_rejects_mono_audio(tmp_path, monkeypatch):
                       data={"profiles": "M1", "channel": "both"})
     assert res.status_code == 400 and res.json()["detail"]["error"] == "not_stereo"
     assert CALLS == []
+
+
+def test_decode_falls_back_to_ffmpeg_for_formats_libsndfile_cannot_read(tmp_path):
+    import shutil
+    import subprocess
+    import pytest
+    if not shutil.which("ffmpeg"):
+        pytest.skip("ffmpeg yok")
+    m4a = tmp_path / "s.m4a"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-f", "lavfi",
+                    "-i", "sine=frequency=880:duration=1", "-filter_complex", "[0][1]amerge=inputs=2", "-c:a", "aac",
+                    "-f", "ipod", str(m4a)], check=True)
+    with pytest.raises(Exception):
+        sf.read(io.BytesIO(m4a.read_bytes()))                    # libsndfile bunu tanımıyor (kullanıcının aldığı hata)
+    from backend.app.providers.audio import decode_stereo
+    left, right, rate = decode_stereo(m4a.read_bytes())          # ffmpeg yedeği: stereo korunur
+    assert len(left) == len(right) > 0 and rate > 0 and np.abs(left).max() > 0.05
