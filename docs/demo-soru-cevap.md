@@ -437,3 +437,10 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 
 ## S56 — Anketi ElevenLabs'e taşısak? (2026-11-02)
 **Kısa cevap:** Tamamen ElevenAgents workflow'u olarak kurulabilir (subagent, expression/LLM edge, end node); bizim servis çağrısı olmaz. Kayıp: deterministik akış garantisi, bizim eval harness'ı, bileşen bazlı gecikme ölçümü. Maliyet $0,08/dk + LLM + telefon. Ayrıntı ve doğrulanmamış 20 madde: docs/elevenlabs-workflow-gecis.md.
+
+**S51 güncelleme (2026-11-02):** Gerçek bir ElevenAgents görüşmesinde (399 sn = 6,65 dk) LLM maliyeti $0,17 çıktı (~$0,026/dk). Platform $0,08/dk ile toplam ≈ $0,105/dk (telefon hariç), A1S'in (~$0,035) yaklaşık 3 katı; 3,2 dk'lık ortalama arama ~$0,34 (A1S ~$0,11); 25.000 dk/ay ~$2.640 (önceki "≥ ~$2.000" yalnız platform ücretiydi). Sınır: tek görüşme (n=1), LLM maliyeti seçilen modele ve istem uzunluğuna göre değişir; ses üretiminin $0,08'e dahil olduğu hâlâ varsayım.
+
+## S57 — 'Sende kaç puan vereyim?' gibi sorulara nasıl doğal cevap veriyoruz? (2026-11-03)
+**Kısa cevap:** Konu dışı/meta turlarda (karşı soru, açıklama isteği, hava, sohbet) lokal Qwen 1-2 cümlelik cevabı yazar; bekleyen anket sorusunu kod aynen ekler. Normal cevap, dnc, ret, geri arama ve fast path turlarında LLM çağrılmaz, gecikme eklenmez.
+**Güvenlik:** Müşteri sözü veri olarak verilir; çıktı denetlenir (uzunluk, rakam/puan, yasaklı kalıp, URL, Türkçe dışı, tekrar); denetim geçmezse, 1,5 sn aşılırsa, Qwen soğuk/yoksa sabit havuz cümlesi söylenir. Kimlik, KVKK, süre, destek, hakaret sabit havuzda kalır.
+**Sınırlar (saklanmaz):** Gerçek Qwen ile henüz ölçülmedi (yalnızca sahte istemciyle test); doğallık ve p95 gecikme bilinmiyor; Qwen soğuk yüklemesi ~67 sn (demo öncesi Hazırla); production'da lokal LLM için GPU sunucu gerekir. Detay: docs/serbest-cevap-qwen.md.

@@ -1457,6 +1457,27 @@
         "commit 85b74c0 (genel başarı 0,245 -> 0,989; konuya uygun karşılık 0,148 -> 0,984; robotik şablon 0,841 -> 0,032; kural güvenliği 0,50 -> 1,0)"
       ],
       "notes": "SINIRLAR: LLM çıktısı simüle edildi, gerçek model bu sözleri hangi intent'e koyuyor ölçülmedi; gerçek ses/telefon yok; 'daha insansı' dinleyici testiyle ölçülmedi; metinlerin hukuk/KVKK onayı yok; bekletmede sessizlik bekçisi ~18 sn sonra kapanabilir; 1 vaka (o27) bilinçli başarısız. Gözlem (düzeltilmedi): onay_tekrar koşulu uygulanmıyor, q100 devre dışı."
+    },
+    {
+      "id": "off-002",
+      "plan_ref": "F1.5 persona / insansılık (ADR 0009 adım 2)",
+      "priority": 91,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Lokal Qwen ile serbest cevap (konu dışı/meta turlar)",
+      "user_visible_behavior": "'Sende kaç puan vereyim?' gibi karşı soru ve açıklama isteklerinde ajan lokal Qwen ile 1-2 cümlelik doğal cevap verir, bekleyen soruyu kod aynen ekler; Qwen yoksa/soğuksa/yavaşsa/denetim başarısızsa sabit havuza düşer.",
+      "status": "blocked",
+      "verification": [
+        "Sahte istemciyle birim testleri (pytest 881 geçti, vitest 117).",
+        "Mac'te gerçek Qwen ile: ./.venv/bin/python scripts/eval_free_reply.py --runs 3 (32 vaka); sonuçları insan okur (doğallık, denetimden geçme oranı, p95 gecikme)."
+      ],
+      "evidence": [
+        "commit a035d11",
+        "evidence/free-reply-tests-20261103.txt",
+        "docs/serbest-cevap-qwen.md"
+      ],
+      "notes": "BLOCKED: gerçek Qwen ile ölçülmedi (bulutta Ollama yok, Mac VM'inden localhost'a erişim yok). Doğrulanmayan: doğallık, denetim geçme oranı, p95 (>1,5 sn olabilir), gerçek ses/telefon. Varsayılan açık; Qwen soğuksa havuza düşer (ADR 0001, soğuk yükleme ~67 sn: demo öncesi Hazırla)."
     }
   ]
 }
