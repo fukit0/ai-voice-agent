@@ -1435,6 +1435,28 @@
         "2026-11-01 CANLI DİNLEME (kullanıcı, Playground, A1S): tepkiler çalıştı. Oturum kayıtları 59685a0edc32, 087a5df79e68, 488d98ab8e28, ea40c9d0712a; transkript incelemesi (bu oturum): 4 aramada ajanın tepki cümleleri aynı aramada tekrar etmedi (tekrar eden tek cümle 'Özür dilerim, tam anlayamadım' = anlaşılmadı yeniden sorma, tepki değil), cevaba uygun tepkiler (yüksek puan: 'Ne güzel, bunu duymak iyi geldi'; düşük puan: 'Bunu bilmek bizim için önemli, sağ olun'; hayır: 'Anladım, sorun değil')."
       ],
       "notes": "BLOCKED: gerçek aramada dinleme doğrulaması yok (Mac gerekir). Karar: docs/adr/0009-hibrit-konusma-katmani.md. Sonraki adımlar: çalışma anı LLM üretimi (plan dışı soru, anlaşılmayan cevapta tekrar), LLM yargıcı. Mevcut test girdisi: test_ack_is_spoken... artık reactions={} ve reaction_rate=1.0 ile eski onay davranışını sabitler (varsayılan persona havuzlu olduğu için); doğrulama zayıflatılmadı, yeni davranış ayrı testlerle kapsandı. | 2026-11-01: PASSING. SINIRLAR: (1) 'reaction' olayları oturum JSON'una yazılmıyor; kanıt transkript metnine dayanıyor. (2) Gecikme artışı yokluğu ölçülmedi: karşılaştırma tabanı yok (ilk ses medyanı 1,3-2,2 sn, n=4-22/oturum). (3) Birkaç tepki sınırda: 'Anlıyorum, vakit ayırdığınız için teşekkür ederim' ('Sesini kesmeni istiyorum' sonrası). (4) Soru olmayan nezaket cümlesine 'Sorunuzu not aldım' denmesi (ea40c9d0712a) bu özelliğin dışında, ayrı düzeltme (off_topic köprüsü)."
+    },
+    {
+      "id": "off-001",
+      "plan_ref": "F1.5 persona / insansılık (ADR 0009)",
+      "priority": 90,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Konu dışı sözler ve bağlama bağlı karşılık (LLM'siz konuşma katmanı)",
+      "user_visible_behavior": "Konu dışı söz/soru (kimlik, numara nereden, hava, şaka, hakaret vb.) kısa, dürüst karşılık + soruya dönüş alır; aynı cümle art arda tekrarlanmaz; olumsuz deneyime empati; 'bir daha aramayın' her durumda uygulanır.",
+      "status": "passing",
+      "verification": [
+        "Offline simülasyon eval: scripts/eval_offtopic.py, config/eval/offtopic-samples.json (66 vaka, 5 tohum).",
+        "pytest backend (802 geçti) + vitest 115."
+      ],
+      "evidence": [
+        "evidence/offtopic-eval-once-20261102-193818.json",
+        "evidence/offtopic-eval-sonra-20261102-194422.json",
+        "docs/offtopic-baglam-iyilestirme.md",
+        "commit 85b74c0 (genel başarı 0,245 -> 0,989; konuya uygun karşılık 0,148 -> 0,984; robotik şablon 0,841 -> 0,032; kural güvenliği 0,50 -> 1,0)"
+      ],
+      "notes": "SINIRLAR: LLM çıktısı simüle edildi, gerçek model bu sözleri hangi intent'e koyuyor ölçülmedi; gerçek ses/telefon yok; 'daha insansı' dinleyici testiyle ölçülmedi; metinlerin hukuk/KVKK onayı yok; bekletmede sessizlik bekçisi ~18 sn sonra kapanabilir; 1 vaka (o27) bilinçli başarısız. Gözlem (düzeltilmedi): onay_tekrar koşulu uygulanmıyor, q100 devre dışı."
     }
   ]
 }

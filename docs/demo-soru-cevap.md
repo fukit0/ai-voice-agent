@@ -425,3 +425,15 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 - Ne yapar: STT test ekranında Kanal = "Müşteri + Ajan ayrı (referanssız)". Stereo kaydın sol kanalı müşteri, sağ kanalı ajan olarak ayrı ayrı yazıya çevrilir; referans metin gerekmez (WER hesaplanmaz).
 - Nasıl ayırıyor: Playground kayıtları zaten stereo (sol müşteri, sağ ajan). Ayrımı konuşmacı tanıma ile değil kanalla yapıyoruz; bu yüzden hatasız ve ek model gerektirmiyor.
 - Sınırlar (demoda dürüst söyle): (1) Tek kanallı (mono) dosyada ayrım yapılamaz, ekran hata verir. Telefon operatör kaydı tek kanallıysa konuşmacı ayrımı (diarization) gerekir, yapılmadı. (2) Kanallar ayrı yazıldığı için konuşma sırası (kim kimden sonra) gösterilmez. (3) Sessiz kanal STT'ye verilmez; Whisper sessizlikte metin uydurur. (4) Gerçek kayıtla Mac'te doğrulanmadı.
+
+## S54 — STT bazen neden yavaş kaldı? (2026-11-02, oturum 888090ca1304)
+**Kısa cevap:** Akışlı tanıma tipik 0,2 sn. Tanıma güvensiz olursa tüm ses yeniden toplu çözülüyor ve tur 1,5–2,5 sn sürüyor. 25 turun 5'i yedeğe düştü.
+**Dayanak:** logs/provider-calls.jsonl; ayrıntı docs/stt-yavaslik-analizi.md. **Sınırlar:** yedeğin neden geçmiş değerlerden yavaş olduğu (ağ mı Deepgram mı) ayrılamadı; ortamda ikinci konuşan vardı. Demoda sessiz oda, kulaklık, tek konuşan.
+
+## S55 — Konu dışı sözleri ve robotik cevapları nasıl ele alıyoruz? (2026-11-02)
+**Kısa cevap:** 13 konu dışı kategori için kısa, dürüst karşılık + soruya dönüş; tekrarsız; olumsuz deneyime empati; "bir daha aramayın" her durumda uygulanır. Çalışma anında LLM yok, gecikme artmadı.
+**Ölçüm (offline, 66 vaka):** konuya uygun karşılık 0,15 → 0,98, robotik şablon 0,84 → 0,03, kural güvenliği 0,50 → 1,0 (docs/offtopic-baglam-iyilestirme.md, commit 85b74c0).
+**Sınırlar (saklanmaz):** LLM çıktısı simüle edildi; gerçek model, ses ve telefonla doğrulanmadı; "daha insansı" dinleyici testiyle ölçülmedi; kimlik/kayıt metinleri hukuk onayı bekliyor.
+
+## S56 — Anketi ElevenLabs'e taşısak? (2026-11-02)
+**Kısa cevap:** Tamamen ElevenAgents workflow'u olarak kurulabilir (subagent, expression/LLM edge, end node); bizim servis çağrısı olmaz. Kayıp: deterministik akış garantisi, bizim eval harness'ı, bileşen bazlı gecikme ölçümü. Maliyet $0,08/dk + LLM + telefon. Ayrıntı ve doğrulanmamış 20 madde: docs/elevenlabs-workflow-gecis.md.
