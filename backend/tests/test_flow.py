@@ -129,7 +129,9 @@ def test_off_topic_returns_to_question_and_wrong_type_is_rejected():
     d, _ = driver(ans(None, "off_topic"), ans("9"))     # "9" metin: Score için geçersiz -> unclear gibi
     d.start()
     r = d.handle("siz kimsiniz")
-    assert r.utterances[0].startswith("Sorunuzu not aldım") and d.current == "giris"
+    # off-001: sabit 'Sorunuzu not aldım' yerine soruya özgü kısa karşılık (kim arıyor); soru yeniden sorulur, cevap sayılmaz
+    assert "sahibinden" in r.utterances[0].casefold() and "Sorunuzu not aldım" not in " ".join(r.utterances)
+    assert r.utterances[-1] == d.retry_of("giris") and d.current == "giris" and not d.answers and not r.finished
     r = d.handle("dokuz")
     assert r.utterances[0].startswith("Özür dilerim") or r.utterances[0].startswith("Kusura")
 

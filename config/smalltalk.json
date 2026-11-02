@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "description": "off-001 konuşma katmanı (docs/offtopic-baglam-iyilestirme.md): konu dışı sözlere kısa karşılık, soruya köprü, bağlama bağlı tepki havuzları. Cümleleri kod seçer (çalışma anında LLM üretmez, ek gecikme yok); aynı aramada aynı cümle art arda söylenmez. Metinler müşteri cümlesini ASLA tekrar etmez (enjeksiyon yüzeyi yok). Hukuk/KVKK gözden geçirmesi gereken metinler: number_source, recording, identity. {ASISTAN} ve {CAGRI_MERKEZI} senaryo değerleridir.",
+  "replies": {
+    "identity": [
+      "Evet, yapay zekâ destekli dijital bir asistanım; gerçek bir kişi değilim.",
+      "Doğru, sahibinden.com adına arayan bir yapay zekâ asistanıyım.",
+      "Evet, bir yapay zekâ asistanıyla konuşuyorsunuz; cevaplarınızı dikkatle kaydediyorum."
+    ],
+    "who": [
+      "Ben {ASISTAN}, sahibinden.com adına Nielsen Araştırma'dan arayan dijital asistanım.",
+      "Sahibinden.com adına arıyorum; ben {ASISTAN}, çağrı merkezi anketi için arayan dijital asistanım."
+    ],
+    "number_source": [
+      "Numaranız, sahibinden.com çağrı merkeziyle yaptığınız görüşmedeki iletişim bilginizden alındı.",
+      "Sizi, sahibinden.com çağrı merkeziyle yaptığınız görüşme nedeniyle kayıtlı numaranızdan arıyorum."
+    ],
+    "recording": [
+      "Evet, görüşmemiz kayıt altına alınıyor; yalnızca hizmet kalitesini ölçmek için kullanılıyor.",
+      "Evet, kayıt alınıyor; kayıt sadece kalite ölçümünde kullanılıyor."
+    ],
+    "duration": [
+      "Kısa sürecek, toplamda beş dakika kadar.",
+      "Birkaç sorumuz kaldı, kısa tutacağım."
+    ],
+    "purpose": [
+      "Sahibinden.com çağrı merkeziyle yaptığınız görüşmeye dair kısa bir memnuniyet anketi bu.",
+      "Çağrı merkezi hizmetimizden memnuniyetinizi ölçmek için arıyorum."
+    ],
+    "support": [
+      "Bu konuda ben işlem yapamıyorum; {CAGRI_MERKEZI} numaralı çağrı merkezimiz yardımcı olabilir.",
+      "Anlıyorum, bu konuda çağrı merkezimiz size yardımcı olabilir; numara {CAGRI_MERKEZI}."
+    ],
+    "weather": [
+      "Keşke söyleyebilsem, buradan havayı göremiyorum.",
+      "Hava durumunu maalesef bilemiyorum."
+    ],
+    "chitchat": [
+      "Teşekkür ederim, iyiyim; sorduğunuz için sağ olun.",
+      "Sağ olun, iyiyim."
+    ],
+    "joke": [
+      "Bu hoşuma gitti, sağ olun; ama ben yalnızca anket için arıyorum.",
+      "Güldürdünüz beni; ama görevim kısa bir anket."
+    ],
+    "profanity": [
+      "Anlıyorum, sizi rahatsız ettiysem kusura bakmayın.",
+      "Haklı olabilirsiniz, kusura bakmayın; kısa tutacağım."
+    ],
+    "hold": [
+      "Tabii, acele yok, bekliyorum.",
+      "Elbette, buradayım."
+    ],
+    "other": [
+      "Bu konuda maalesef yardımcı olamıyorum.",
+      "Keşke bilsem, ama bu konuda bilgim yok."
+    ]
+  },
+  "bridges": [
+    "Kaldığımız yerden devam edeyim.",
+    "Şimdi soruya döneyim.",
+    "İzin verirseniz soruya döneyim.",
+    "Devam edelim o zaman."
+  ],
+  "offer_callback": [
+    "Şu an uygun değilseniz sizi daha sonra da arayabilirim; değilse devam edelim.",
+    "Müsait değilseniz uygun bir zamanda tekrar arayabilirim; isterseniz devam edelim."
+  ],
+  "hold_return": "Buradayım, hazır olduğunuzda devam edelim.",
+  "close_offtopic": "Sizi daha fazla meşgul etmeyeyim. Vakit ayırdığınız için teşekkür ederim, iyi günler dilerim.",
+  "reactions": {
+    "empathy": [
+      "Bunu duyduğuma üzüldüm, not aldım.",
+      "Çok üzgünüm, yaşadıklarınızı not ettim.",
+      "Haklısınız, bunu duymak üzücü; not aldım.",
+      "Kusura bakmayın, bunu yaşamanız hiç hoş değil."
+    ],
+    "mixed": [
+      "Anladım, eksik kalan kısmı da not ettim.",
+      "Peki, belirttiğiniz sorunu da not aldım.",
+      "Anlıyorum, olumsuz kısmı da not ettim."
+    ]
+  }
+}

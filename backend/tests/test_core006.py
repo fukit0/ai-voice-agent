@@ -50,8 +50,16 @@ def test_identity_answer_never_claims_to_be_human():
 def test_identity_cap_then_normal_flow_resumes():
     d, llm = driver(ans("devam"))
     d.start()
+    said = []
     for _ in range(MAX_IDENTITY_ASKS):
-        assert d.handle("bot musun").utterances[0] == IDENTITY_ANSWER
+        r = d.handle("bot musun")
+        said.append(r.utterances[0])
+        low = r.utterances[0].casefold()
+        assert "yapay zek" in low or "dijital asistan" in low          # her seferinde dürüst: yapay zekâ olduğunu söyler
+        assert "insanım" not in low and not d.finished and r.utterances[-1] == d.retry_of(d.current)
+    # off-001: ilk cevap aynen IDENTITY_ANSWER; tekrar sorulunca aynı cümle art arda okunmaz (yine dürüst bir söyleyiş)
+    assert said[0] == IDENTITY_ANSWER and all(said[i] != said[i + 1] for i in range(len(said) - 1))
+    assert llm.calls == []
     d.handle("bot musun")                                             # sınır aşıldı: döngü yok, normal LLM yoluna gider
     assert len(llm.calls) == 1
 
