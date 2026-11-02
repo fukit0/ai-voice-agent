@@ -9,6 +9,9 @@ cevaplanır (identity_question), 'müsait değilim' türü sözler LLM ret/anla�
 off-001 (docs/offtopic-baglam-iyilestirme.md): konu dışı sözlere kategoriye göre kısa, dürüst karşılık + soruya köprü (smalltalk.py, config/smalltalk.json); aynı
 cümle art arda söylenmez; art arda 2. konu dışında geri arama önerilir, 3.'de nazikçe kapatılır. Bağlam: olumsuz duygulu cevaba empati,
 zaman söylenen geri arama isteğinde zaman yeniden sorulmaz. Hepsi LLM'siz (ek gecikme yok); cevap/DNC/ret kararlarını değiştirmez.
+ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): `free_reply` verilmişse (canlı kademeli arama, ayar açık) YALNIZ konu dışı turlarda ve
+seçili kategorilerde karşılık cümlesi lokal Qwen ile üretilmeye çalışılır; bekleyen soruyu yine kod okur. Denetim/zaman aşımı/soğuk modelde
+havuz cümlesi konuşur. answer/dnc/refuse/callback/fast path/kimlik/bekletme turlarında çağrılmaz; realtime hatta (coerce) hiç çağrılmaz.
 """
 from __future__ import annotations
 
@@ -474,6 +477,7 @@ class FlowDriver:
         self.last_fast = False
         self.prompt_variant: str | None = None   # None: config'teki aktif ayrıştırıcı prompt sürümü; kıyas koşusu sürümleri tek tek dener
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
+        self.free_reply = None       # ADR 0009 adım 2: free_reply.FreeReplier | None (None = yalnız havuz, eski davranış; api_voice verir)
         self.outcome: str | None = None
         self.answers: list[dict] = []
         self.path: list[str] = []
@@ -643,17 +647,38 @@ class FlowDriver:
         self.offtopic_streak += 1
         self.silences = 0
         reply.events.append({"type": "off_topic", "step": key, "category": cat, "text": utterance, "streak": self.offtopic_streak})
-        if self.offtopic_streak >= T.OFFTOPIC_CLOSE_AT:
+        if self.offtopic_streak >= T.OFFTOPIC_CLOSE_AT:     # kapanış her zaman sabit metin (serbest cevap denenmez)
             text = T.config()["close_offtopic"]
             reply.utterances.append(text)
             reply.events.append({"type": "node", "key": "sistem_sonlandirdi", "code": None, "title": "Sistem sonlandırdı (konu dışı)",
                                  "kind": "Terminal", "group": "Erken Kapanış", "spoken": text, "terminal": True})
             self._finish("sistem_sonlandirdi", reply)
             return reply
-        pool = T.config()["replies"].get(cat) or T.config()["replies"]["other"]
-        reply.utterances.append(self._say_pool(pool) + " " + self._bridge())
+        free = self._free_text(step, utterance, cat, reply)
+        if free is not None:
+            # Qwen karşılığı kendi içinde soruya bağlanır; köprü yalnızca geri arama önerisi sırasıysa eklenir (karar kodda kalır)
+            offer = " " + self._bridge() if self.offtopic_streak == OFFTOPIC_OFFER_AT and "randevu" in self.steps else ""
+            reply.utterances.append(free + offer)
+        else:
+            pool = T.config()["replies"].get(cat) or T.config()["replies"]["other"]
+            reply.utterances.append(self._say_pool(pool) + " " + self._bridge())
         reply.utterances.append(self.retry_of(key))
         return reply
+
+    def _free_text(self, step: dict, utterance: str, category: str, reply: Reply) -> str | None:
+        """ADR 0009 adım 2: konu dışı turda lokal Qwen ile kısa karşılık dener. free_reply yoksa (ayar kapalı, kıyas/eval koşuları) ya da
+        realtime hatsa hiçbir şey yapmaz ve None döner (eski davranış). Denemenin sonucu (qwen|pool, sebep, süre) tur olayına yazılır."""
+        if self.free_reply is None or self.coerce or not utterance.strip():
+            return None
+        res = self.free_reply.generate(step, self.text_of(step["key"]), utterance, category)
+        reply.events.append(res.event(step["key"]))
+        if res.text and res.text in self._talk_used[-1:]:      # art arda aynı cümle söylenmez (havuzla aynı kural)
+            reply.events[-1].update({"source": "pool", "reason": "repeat"})
+            reply.events[-1].pop("text", None)
+            return None
+        if res.text:
+            self._talk_used.append(res.text)
+        return res.text
 
     def _callback_with_time(self, when: str, utterance: str, reply: Reply) -> Reply:
         """off-001: müşteri geri arama isterken zamanı da söylediyse ('yarın akşam arayın') randevu sorusu yeniden sorulmaz; zaman randevu
@@ -711,6 +736,11 @@ class FlowDriver:
             return self._accept(step, utterance, value, reply)
         if intent == "repeat":
             self.offtopic_streak = 0
+            if T.categorize(utterance) == "clarify" if utterance.strip() else False:
+                # 'ne demek istediniz': ayrıştırıcı tekrar isteği saydıysa, serbest cevap açıksa önce kısa açıklama; değilse eskisi gibi yalnız soru
+                free = self._free_text(step, utterance, "clarify", reply)
+                if free:
+                    reply.utterances.append(free)
             reply.utterances.append(self.text_of(key))
             return reply
         if intent == "refuse":

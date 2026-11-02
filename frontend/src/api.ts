@@ -360,3 +360,28 @@ export async function setFastPath(profile: string, enabled: boolean | null): Pro
   });
   await json(res);
 }
+
+/** ADR 0009 adım 2: konu dışı turlarda lokal Qwen ile serbest cevap (docs/serbest-cevap-qwen.md). */
+export type FreeReplySettings = {
+  enabled: boolean;
+  model: string;
+  timeout_s: number;
+  defaults: { enabled: boolean; model: string; timeout_s: number };
+  overridden: string[];
+  categories: string[];
+  timeout_range: [number, number];
+  prompt: { version: string; hash: string };
+  status?: { reachable: boolean; warm: boolean; model: string };
+};
+
+export const fetchFreeReply = () => fetch("/api/free-reply").then((r) => json<FreeReplySettings>(r));
+
+/** Yalnız verilen alanlar değişir; null o alanı varsayılana döndürür. */
+export async function setFreeReply(patch: Partial<{ enabled: boolean | null; model: string | null; timeout_s: number | null }>): Promise<FreeReplySettings> {
+  const res = await fetch("/api/free-reply", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  return json<FreeReplySettings>(res);
+}

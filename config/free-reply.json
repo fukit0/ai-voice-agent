@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): konu dışı/meta müşteri sözlerine lokal Qwen (Ollama) ile kısa, serbest karşılık. LLM yalnızca 1-2 kısa cümle yazar; bekleyen anket sorusunu kod aynen ekler. Çıktı denetimden geçmezse, zaman aşımında, Ollama'ya ulaşılamazsa ya da model soğuksa (bellekte değilse) config/smalltalk.json havuz cevabı kullanılır. Ekrandan değiştirilen enabled/model/timeout_s değerleri data/free-reply.json'a yazılır; buradaki değerler varsayılandır.",
+  "enabled": true,
+  "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
+  "timeout_s": 1.5,
+  "temperature": 0.6,
+  "max_tokens": 90,
+  "max_chars": 200,
+  "max_sentences": 2,
+  "max_questions": 0,
+  "warm_check_ttl_s": 30,
+  "categories": ["counter", "clarify", "other", "weather", "chitchat", "joke"],
+  "categories_note": "Serbest cevabın denendiği konu dışı kategoriler. Bilinçli olarak DIŞARIDA: identity (dürüst kimlik cevabı sabit metin, core-006), who / number_source / recording (KVKK ve hukuk metni, sabit), duration / purpose (olgusal bilgi; LLM süre uydurabilir), support (çağrı merkezi numarası sabit), profanity (gerginlikte sabit, gözden geçirilmiş özür), hold (bekleme). 3. art arda konu dışı kapanışı her zaman sabit metindir.",
+  "banned_patterns": [
+    "(?<![a-zçğıöşü])(?:veririm|verirdim|verirsem|vereyim|veriyorum|verdim)(?![a-zçğıöşü])",
+    "(?<![a-zçğıöşü])ben\\s+olsa(?:m|ydım)",
+    "(?<![a-zçğıöşü])benim\\s+(?:puan|fikr|görüş|tercih|düşünce)",
+    "(?<![a-zçğıöşü])(?:bence|kanaatimce|bana\\s+göre)(?![a-zçğıöşü])",
+    "(?<![a-zçğıöşü])(?:insanım|gerçek\\s+bir\\s+(?:insanım|kişiyim)|robot\\s+değilim|bot\\s+değilim|yapay\\s+zek\\w*\\s+değilim|makine\\s+değilim)",
+    "(?:arayacağ|döneceğ|ileteceğ|çözeceğ|halledeceğ|ulaşacağ|söz\\s+veri|garanti)",
+    "(?<![a-zçğıöşü])(?:iade|indirim|ücretsiz|hediye|kampanya|tazminat)",
+    "(?:bağlıyorum|aktarıyorum|yönlendiriyorum)",
+    "(?:talimat|sistem\\s+istem|prompt|json|intent|kurallarım)",
+    "(?<![a-zçğıöşü])(?:adresim|numaram|şirketimiz\\s+\\w+\\s+yılında|merkezimiz\\s+\\w+da)"
+  ]
+}

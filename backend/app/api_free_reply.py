@@ -1,0 +1,44 @@
+"""Ayarlar > Konu dışı serbest cevap (ADR 0009 adım 2; docs/serbest-cevap-qwen.md).
+
+GET: geçerli ayar, varsayılanlar ve Ollama/model durumu (ulaşılıyor mu, model bellekte mi). PUT: enabled / model / timeout_s
+(null -> varsayılan). Ayar yeni aramalara uygulanır; her arama kendi kaydına hangi ayarla yapıldığını yazar (config.free_reply)."""
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+from .voice import free_reply as F
+
+router = APIRouter(prefix="/api/free-reply", tags=["free-reply"])
+
+
+def _view(with_status: bool = True) -> dict:
+    cfg, d, ov = F.settings(), F.defaults(), F.load_overrides()
+    out = {"enabled": bool(cfg["enabled"]), "model": cfg["model"], "timeout_s": float(cfg["timeout_s"]),
+           "defaults": {k: d[k] for k in F.OVERRIDABLE}, "overridden": sorted(ov), "categories": list(cfg.get("categories", [])),
+           "timeout_range": list(F.TIMEOUT_RANGE), "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()}}
+    if with_status:
+        out["status"] = F.status(cfg)
+    return out
+
+
+@router.get("")
+def get_settings() -> dict:
+    return _view()
+
+
+class FreeReplyBody(BaseModel):
+    enabled: bool | None = None
+    model: str | None = None
+    timeout_s: float | None = None
+
+
+@router.put("")
+def put_settings(body: FreeReplyBody) -> dict:
+    """Yalnız gönderilen alanlar değişir; alan açıkça null gönderilirse varsayılana döner."""
+    patch = {k: getattr(body, k) for k in body.model_fields_set if k in F.OVERRIDABLE}
+    try:
+        F.save_overrides(patch)
+    except ValueError as exc:
+        raise HTTPException(400, {"error": "invalid_free_reply_setting", "message": str(exc)}) from exc
+    return _view()

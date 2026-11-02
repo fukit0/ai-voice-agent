@@ -1,0 +1,176 @@
+"""ADR 0009 adım 2: konu dışı serbest cevabın GERÇEK Qwen ile değerlendirmesi (Mac'te, Ollama açıkken çalıştırılır).
+
+Ne ölçer: config/eval/free-reply-samples.json'daki her vakada (bekleyen soru + müşteri sözü + kategori) canlı akışla AYNI istem ve AYNI
+çıktı denetimiyle Qwen'den kısa karşılık ister. Vaka başına: üretilen metin, denetimden geçti mi (geçmediyse hangi kurallar), süre, müşteriye
+söylenecek tam cümle (karşılık + kodun eklediği soru; düşerse havuz cümlesi). Özet: geçme oranı, düşüş sebepleri, süre p50/p95/en çok.
+
+Kullanım (proje kökünde):
+  ./.venv/bin/python scripts/eval_free_reply.py                    # 3 tekrar, config'teki model ve zaman aşımı
+  ./.venv/bin/python scripts/eval_free_reply.py --runs 5 --timeout 1.5 --model qwen3:30b-a3b-instruct-2507-q4_K_M
+  ./.venv/bin/python scripts/eval_free_reply.py --fake             # betiğin kendisini modelsiz dener (kanıt DEĞİLDİR, evidence'a yazmaz)
+
+Model soğuksa önce bir ısınma çağrısı yapılır (ölçüme girmez, yükleme süresi ayrıca yazılır; ADR 0001). Ölçüm sıcak modelle yapılır.
+Çıktı: evidence/free-reply-eval-<tarih>.json (makine) + aynı adla .md (insan okuması, gözden geçirme sütunu boş).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import random
+import statistics
+import sys
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT), str(ROOT / "backend")]
+
+from backend.app import persona as persona_mod
+from backend.app import scenario as S
+from backend.app.voice import free_reply as F
+from backend.app.voice import smalltalk as T
+
+SAMPLES = ROOT / "config" / "eval" / "free-reply-samples.json"
+
+
+class FakeClient:
+    """--fake: betiğin akışını modelsiz sınamak için (kategoriye göre sabit metin; biri bilerek denetime takılır)."""
+    model = "fake"
+
+    def is_warm(self):
+        return True
+
+    def chat(self, messages, timeout_s, max_tokens, temperature):
+        u = messages[1]["content"]
+        return "Ben olsam sekiz verirdim." if "ignore" in u else "Bu tamamen sizin kendi deneyiminize bağlı bir değerlendirme."
+
+
+def pct(xs: list[float], q: float) -> float | None:
+    if not xs:
+        return None
+    xs = sorted(xs)
+    return round(xs[min(len(xs) - 1, round(q * (len(xs) - 1)))], 3)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--runs", type=int, default=3, help="vaka başına tekrar (sıcaklık 0,6: çıktı değişir)")
+    ap.add_argument("--model", default=None)
+    ap.add_argument("--timeout", type=float, default=None, help="zaman aşımı (sn); varsayılan config/free-reply.json")
+    ap.add_argument("--samples", type=Path, default=SAMPLES)
+    ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--fake", action="store_true", help="modelsiz kuru çalıştırma; evidence'a yazmaz")
+    args = ap.parse_args()
+
+    cfg = F.settings()
+    model = args.model or cfg["model"]
+    timeout = args.timeout or float(cfg["timeout_s"])
+    data = json.loads(args.samples.read_text(encoding="utf-8"))
+    sc = S.get("anket")
+    steps = S.step_map(sc)
+    persona = persona_mod.load()
+    values = {**S.sample_values(sc), **persona_mod.scenario_values(persona)}
+    assistant = values.get("ASISTAN", "Ayşe")
+    texts = S.load_overrides(sc["key"])
+
+    client = FakeClient() if args.fake else F.OllamaChatClient(model, ttl_s=0)
+    load_s = None
+    if not args.fake:
+        warm = client.is_warm()
+        if warm is None:
+            print(f"Ollama'ya ulaşılamıyor ({client.url}). `ollama serve` çalışıyor mu?", file=sys.stderr)
+            return 2
+        if not warm:
+            print(f"{model} soğuk; ısınma çağrısı (ölçüme girmez, ~1 dk sürebilir)...", flush=True)
+            t0 = time.perf_counter()
+            try:
+                client.chat([{"role": "user", "content": "Tek kelimeyle cevap ver: hazır mısın?"}], 300, 8, 0.0)
+            except Exception as exc:  # noqa: BLE001
+                print(f"Isınma başarısız: {exc}", file=sys.stderr)
+                return 2
+            load_s = round(time.perf_counter() - t0, 2)
+            print(f"ısındı ({load_s} sn)")
+    live_cats = set(cfg.get("categories", []))
+    # Değerlendirmede tüm kategoriler denenir (canlıda yalnız live_cats); denetim ve istem canlıyla aynı
+    rep = F.FreeReplier(client, {**cfg, "model": model, "timeout_s": timeout, "categories": sorted({c["category"] for c in data["cases"]} | live_cats)},
+                        assistant)
+    pool_rng = random.Random(0)
+    rows = []
+    for case in data["cases"]:
+        step = steps[case["step"]]
+        question = S.fill(texts.get(step["key"], step["defaultText"]), values)
+        reask = S.fill(step["retryText"], values) if step.get("retryText") and step["key"] not in texts else question
+        for run in range(args.runs):
+            r = rep.generate(step, question, case["utterance"], case["category"])
+            pool = T.config()["replies"].get(case["category"]) or T.config()["replies"]["other"]
+            said = (r.text if r.text else S.fill(pool_rng.choice(pool), values) + " " + S.fill(pool_rng.choice(T.config()["bridges"]), values))
+            rows.append({"id": case["id"], "run": run, "step": case["step"], "category": case["category"], "utterance": case["utterance"],
+                         "live_eligible": case["category"] in live_cats, "source": r.source, "reason": r.reason, "passed": r.text is not None,
+                         "fails": r.fails, "seconds": r.seconds, "text": r.text, "candidate": r.candidate, "spoken": said + " " + reask,
+                         "note": case.get("note", "")})
+            mark = "OK " if r.text else f"-> havuz ({r.reason}: {', '.join(r.fails)[:60]})"
+            print(f"{case['id']} #{run} {r.seconds:5.2f} sn {mark}  {(r.text or r.candidate or '')[:90]}", flush=True)
+
+    secs = [x["seconds"] for x in rows if x["reason"] not in ("cold", "unreachable")]
+    live = [x for x in rows if x["live_eligible"]]
+    reasons: dict[str, int] = {}
+    rule_fails: dict[str, int] = {}
+    for x in rows:
+        if not x["passed"]:
+            reasons[x["reason"]] = reasons.get(x["reason"], 0) + 1
+            for f in x["fails"]:
+                rule_fails[f] = rule_fails.get(f, 0) + 1
+    summary = {"cases": len(data["cases"]), "runs_per_case": args.runs, "turns": len(rows),
+               "pass_rate": round(sum(x["passed"] for x in rows) / len(rows), 3),
+               "pass_rate_live_categories": round(sum(x["passed"] for x in live) / len(live), 3) if live else None,
+               "within_timeout_rate": round(sum(x["reason"] != "timeout" for x in rows) / len(rows), 3),
+               "fallback_reasons": reasons, "rule_fails": rule_fails,
+               "seconds": {"p50": pct(secs, 0.5), "p95": pct(secs, 0.95), "max": max(secs) if secs else None,
+                           "mean": round(statistics.mean(secs), 3) if secs else None}}
+    meta = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "fake": args.fake, "model": model if not args.fake else "fake",
+            "timeout_s": timeout, "cold_load_s": load_s, "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()},
+            "samples": str(args.samples.relative_to(ROOT)) if args.samples.is_relative_to(ROOT) else str(args.samples),
+            "live_categories": sorted(live_cats)}
+    doc = {"meta": meta, "summary": summary, "rows": rows}
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    if args.out:
+        out = args.out
+    elif args.fake:
+        out = Path(tempfile.gettempdir()) / f"free-reply-eval-FAKE-{stamp}.json"
+    else:
+        out = ROOT / "evidence" / f"free-reply-eval-{stamp}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+    out.with_suffix(".md").write_text(markdown(doc), encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=False, indent=1))
+    print(f"kanıt: {out} ve {out.with_suffix('.md').name}")
+    return 0
+
+
+def markdown(doc: dict) -> str:
+    m, s = doc["meta"], doc["summary"]
+    lines = [f"# Serbest cevap (Qwen) değerlendirmesi — {m['generated_at']}", "",
+             ("**SAHTE (--fake) ÇALIŞTIRMA: kanıt değildir.**\n" if m["fake"] else ""),
+             f"- Model: `{m['model']}` · zaman aşımı {m['timeout_s']} sn · istem {m['prompt']['version']}/{m['prompt']['hash']}"
+             + (f" · ısınma (ölçüm dışı) {m['cold_load_s']} sn" if m["cold_load_s"] else ""),
+             f"- {s['cases']} vaka × {s['runs_per_case']} tekrar = {s['turns']} tur",
+             f"- Denetimden geçen: **{s['pass_rate']}** (canlıda Qwen'e giden kategorilerde: **{s['pass_rate_live_categories']}**)",
+             f"- Zaman aşımı içinde: {s['within_timeout_rate']} · süre p50 {s['seconds']['p50']} / p95 {s['seconds']['p95']} / en çok {s['seconds']['max']} sn",
+             f"- Havuza düşüş sebepleri: {s['fallback_reasons'] or '-'} · kural: {s['rule_fails'] or '-'}", "",
+             "Gözden geçirme: her satır için 'Doğal mı / doğru mu / güvenli mi' sütununu insan doldurur (otomatik denetim yalnızca yasakları yakalar).", "",
+             "| Vaka | Kat. | Canlı | Müşteri | Qwen çıktısı | Denetim | Sn | Söylenecek (soru dahil) | İnsan notu |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    esc = lambda t: (t or "").replace("|", "\\|").replace("\n", " ")
+    for x in doc["rows"]:
+        out = x["text"] or x["candidate"] or ""
+        verdict = "geçti" if x["passed"] else f"{x['reason']}: {', '.join(x['fails'])[:50]}"
+        lines.append(f"| {x['id']}#{x['run']} | {x['category']} | {'evet' if x['live_eligible'] else 'hayır'} | {esc(x['utterance'])} | {esc(out)} | "
+                     f"{esc(verdict)} | {x['seconds']} | {esc(x['spoken'])} | |")
+    return "\n".join(lines) + "\n"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

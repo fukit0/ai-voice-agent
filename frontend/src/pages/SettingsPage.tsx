@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ElevenLabsSettings } from "../ElevenLabsSettings";
 import { FastPathSettings } from "../FastPathSettings";
+import { FreeReplySettings } from "../FreeReplySettings";
 import { useProfile } from "../ProfileContext";
 import { useTheme } from "../theme";
 
@@ -45,6 +46,7 @@ export function SettingsPage() {
           <a href="#profil">Profil</a>
           <a href="#ses">Ses (ElevenLabs)</a>
           <a href="#anlama">Cevap anlama</a>
+          <a href="#serbest">Serbest cevap</a>
           <a href="#konusma">Konuşma</a>
           <a href="#gorunum">Görünüm</a>
         </nav>
@@ -83,6 +85,12 @@ export function SettingsPage() {
             <h3>Cevap anlama (hızlı yol)</h3>
             <p className="meta">Aktif profil için; seçim kalıcıdır, yeni aramalara uygulanır.</p>
             <dl><FastPathSettings /></dl>
+          </div>
+
+          <div className="panel" id="serbest">
+            <h3>Konu dışı serbest cevap (Qwen)</h3>
+            <p className="meta">Tüm kademeli profiller için; seçim kalıcıdır, yeni aramalara uygulanır.</p>
+            <dl><FreeReplySettings /></dl>
           </div>
 
           <div className="panel" id="konusma">

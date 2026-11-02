@@ -51,6 +51,14 @@
       "Tabii, acele yok, bekliyorum.",
       "Elbette, buradayım."
     ],
+    "counter": [
+      "Bu tamamen sizin kendi deneyiminize bağlı; kendi memnuniyetinize göre cevap verebilirsiniz.",
+      "Burada önemli olan sizin görüşünüz; kendi deneyiminize göre söylemeniz yeterli."
+    ],
+    "clarify": [
+      "Kısaca, bu konudaki kendi deneyiminizi öğrenmek istiyoruz.",
+      "Amacımız hizmetimizi sizin deneyiminize göre iyileştirmek; bu yüzden soruyoruz."
+    ],
     "other": [
       "Bu konuda maalesef yardımcı olamıyorum.",
       "Keşke bilsem, ama bu konuda bilgim yok."

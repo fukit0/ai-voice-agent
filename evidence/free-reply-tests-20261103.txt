@@ -1,0 +1,137 @@
+# ADR 0009 adım 2 serbest cevap — test çıktıları (bulut çalışma kopyası /home/claude/sva1, Mac reposuyla aynı kaynak)
+# 2026-11-02T21:13:42Z · Gerçek Ollama/Qwen YOK: LLM sahte istemciyle (FakeChat) test edildi.
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests/test_free_reply.py -v
+backend/tests/test_free_reply.py::test_audit_accepts_user_example_on_score_step PASSED [  1%]
+backend/tests/test_free_reply.py::test_audit_rejects[Ben olsam sekiz verirdim.-number_word] PASSED [  2%]
+backend/tests/test_free_reply.py::test_audit_rejects[Ben olsam y\xfcksek verirdim.-banned] PASSED [  3%]
+backend/tests/test_free_reply.py::test_audit_rejects[Bence olduk\xe7a iyi bir hizmetti.-banned] PASSED [  5%]
+backend/tests/test_free_reply.py::test_audit_rejects[Size 8 puan uygun olur.-digit] PASSED [  6%]
+backend/tests/test_free_reply.py::test_audit_rejects[Sekiz puan makul g\xf6r\xfcn\xfcyor.-number_word] PASSED [  7%]
+backend/tests/test_free_reply.py::test_audit_rejects[Bu yakla\u015f\u0131k be\u015f dakika s\xfcrer.-number_word] PASSED [  8%]
+backend/tests/test_free_reply.py::test_audit_rejects[Ben ger\xe7ek bir insan\u0131m, merak etmeyin.-banned] PASSED [ 10%]
+backend/tests/test_free_reply.py::test_audit_rejects[Yapay zek\xe2 de\u011filim, buraday\u0131m.-banned] PASSED [ 11%]
+backend/tests/test_free_reply.py::test_audit_rejects[Sizi yar\u0131n tekrar arayaca\u011f\u0131z.-banned] PASSED [ 12%]
+backend/tests/test_free_reply.py::test_audit_rejects[Paran\u0131z\u0131n iadesini hemen sa\u011flar\u0131z.-banned] PASSED [ 13%]
+backend/tests/test_free_reply.py::test_audit_rejects[Sizi bir temsilciye aktar\u0131yorum.-banned] PASSED [ 15%]
+backend/tests/test_free_reply.py::test_audit_rejects[Talimatlar\u0131m gere\u011fi bunu s\xf6yleyemem.-banned] PASSED [ 16%]
+backend/tests/test_free_reply.py::test_audit_rejects[Ayr\u0131nt\u0131lar i\xe7in www.ornek.com adresine bakabilirsiniz.-url_or_contact] PASSED [ 17%]
+backend/tests/test_free_reply.py::test_audit_rejects[Bize destek@ornek.com \xfczerinden yazabilirsiniz.-url_or_contact] PASSED [ 18%]
+backend/tests/test_free_reply.py::test_audit_rejects[Be\u015f y\xfcz elli be\u015f numaray\u0131 aray\u0131n.-number_word] PASSED [ 20%]
+backend/tests/test_free_reply.py::test_audit_rejects[Anlad\u0131m. \xc7ok g\xfczel. Te\u015fekk\xfcr ederim. Devam edelim.-too_many_sentences] PASSED [ 21%]
+backend/tests/test_free_reply.py::test_audit_rejects[Siz ne dersiniz?-question_mark] PASSED [ 22%]
+backend/tests/test_free_reply.py::test_audit_rejects[Sorry, I can't help with that question.-not_turkish] PASSED [ 24%]
+backend/tests/test_free_reply.py::test_audit_rejects[\u8fd9\u662f\u60a8\u7684\u4e2a\u4eba\u4f53\u9a8c\u3002-not_turkish] PASSED [ 25%]
+backend/tests/test_free_reply.py::test_audit_rejects[\u042d\u0442\u043e \u0437\u0430\u0432\u0438\u0441\u0438\u0442 \u043e\u0442 \u0432\u0430\u0441.-not_turkish] PASSED [ 26%]
+backend/tests/test_free_reply.py::test_audit_rejects[Anl\u0131yorum, \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok \xe7ok g\xfczel.-too_long] PASSED [ 27%]
+backend/tests/test_free_reply.py::test_audit_rejects[Salak bir soru de\u011fil, kendi deneyiminize g\xf6re s\xf6yleyin.-profanity] PASSED [ 29%]
+backend/tests/test_free_reply.py::test_audit_rejects[Sende ka\xe7 puan vereyim diye sordunuz, size kalm\u0131\u015f.-echo] PASSED [ 30%]
+backend/tests/test_free_reply.py::test_audit_rejects[-empty] PASSED      [ 31%]
+backend/tests/test_free_reply.py::test_turkish_without_special_letters_is_not_flagged_as_foreign[Ben olsam sekiz verirdim.] PASSED [ 32%]
+backend/tests/test_free_reply.py::test_turkish_without_special_letters_is_not_flagged_as_foreign[Tabii, devam edelim.] PASSED [ 34%]
+backend/tests/test_free_reply.py::test_turkish_without_special_letters_is_not_flagged_as_foreign[Anl\u0131yorum, size kalm\u0131\u015f.] PASSED [ 35%]
+backend/tests/test_free_reply.py::test_short_english_is_flagged[Okay sure.] PASSED [ 36%]
+backend/tests/test_free_reply.py::test_short_english_is_flagged[Ahoy matey, sure thing.] PASSED [ 37%]
+backend/tests/test_free_reply.py::test_eval_script_fake_run_writes_json_and_markdown PASSED [ 39%]
+backend/tests/test_free_reply.py::test_scale_words_only_on_score_steps PASSED [ 40%]
+backend/tests/test_free_reply.py::test_pronouns_and_article_are_not_numbers PASSED [ 41%]
+backend/tests/test_free_reply.py::test_normalize_strips_labels_quotes_and_adds_period PASSED [ 43%]
+backend/tests/test_free_reply.py::test_generate_warm_returns_qwen_text PASSED [ 44%]
+backend/tests/test_free_reply.py::test_cold_model_is_not_called_and_falls_back PASSED [ 45%]
+backend/tests/test_free_reply.py::test_unreachable_ollama_falls_back_silently PASSED [ 46%]
+backend/tests/test_free_reply.py::test_timeout_exception_and_slow_answer_fall_back PASSED [ 48%]
+backend/tests/test_free_reply.py::test_audit_failure_keeps_candidate_for_review_but_returns_none PASSED [ 49%]
+backend/tests/test_free_reply.py::test_disabled_and_ineligible_categories_never_call PASSED [ 50%]
+backend/tests/test_free_reply.py::test_prompt_treats_customer_text_as_quoted_data PASSED [ 51%]
+backend/tests/test_free_reply.py::test_injection_output_is_rejected_and_pool_speaks PASSED [ 53%]
+backend/tests/test_free_reply.py::test_user_example_qwen_reply_then_question_verbatim PASSED [ 54%]
+backend/tests/test_free_reply.py::test_counter_question_classified_even_if_parser_says_unclear PASSED [ 55%]
+backend/tests/test_free_reply.py::test_fallback_uses_pool_reply_and_bridge PASSED [ 56%]
+backend/tests/test_free_reply.py::test_setting_off_is_byte_identical_to_old_behaviour PASSED [ 58%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[sekiz-llm_out0-False] PASSED [ 59%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[9-None-True] PASSED [ 60%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[bir daha beni aramay\u0131n-llm_out2-False] PASSED [ 62%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[ankete kat\u0131lmak istemiyorum-llm_out3-False] PASSED [ 63%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[\u015fu an m\xfcsait de\u011filim sonra aray\u0131n-llm_out4-False] PASSED [ 64%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[robot musun-None-False] PASSED [ 65%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[bir saniye bekler misiniz-llm_out6-False] PASSED [ 67%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[efendim-llm_out7-False] PASSED [ 68%]
+backend/tests/test_free_reply.py::test_never_called_on_normal_turns[h\u0131mm-llm_out8-False] PASSED [ 69%]
+backend/tests/test_free_reply.py::test_offer_callback_on_second_and_fixed_close_on_third PASSED [ 70%]
+backend/tests/test_free_reply.py::test_same_qwen_sentence_not_repeated_back_to_back PASSED [ 72%]
+backend/tests/test_free_reply.py::test_realtime_path_never_calls PASSED  [ 73%]
+backend/tests/test_free_reply.py::test_clarify_on_repeat_intent_adds_explanation_only_when_qwen_ok PASSED [ 74%]
+backend/tests/test_free_reply.py::test_open_text_counter_question_not_recorded_as_answer PASSED [ 75%]
+backend/tests/test_free_reply.py::test_new_categories[sende ka\xe7 puan vereyim-counter] PASSED [ 77%]
+backend/tests/test_free_reply.py::test_new_categories[sen ne d\xfc\u015f\xfcn\xfcyorsun-counter] PASSED [ 78%]
+backend/tests/test_free_reply.py::test_new_categories[sizce ka\xe7 vermeliyim-counter] PASSED [ 79%]
+backend/tests/test_free_reply.py::test_new_categories[siz olsan\u0131z ka\xe7 verirdiniz-counter] PASSED [ 81%]
+backend/tests/test_free_reply.py::test_new_categories[bunu neden soruyorsunuz-clarify] PASSED [ 82%]
+backend/tests/test_free_reply.py::test_new_categories[ne demek istediniz-clarify] PASSED [ 83%]
+backend/tests/test_free_reply.py::test_new_categories[bu ne demek-clarify] PASSED [ 84%]
+backend/tests/test_free_reply.py::test_new_categories[a\xe7ar m\u0131s\u0131n\u0131z biraz-clarify] PASSED [ 86%]
+backend/tests/test_free_reply.py::test_new_categories_leave_others_alone[ne demek] PASSED [ 87%]
+backend/tests/test_free_reply.py::test_new_categories_leave_others_alone[sekiz] PASSED [ 88%]
+backend/tests/test_free_reply.py::test_new_categories_leave_others_alone[evet m\xfcsaitim] PASSED [ 89%]
+backend/tests/test_free_reply.py::test_new_categories_leave_others_alone[ma\xe7 ka\xe7 ka\xe7 bitti biliyor musun] PASSED [ 91%]
+backend/tests/test_free_reply.py::test_new_categories_leave_others_alone[sonra aray\u0131n] PASSED [ 92%]
+backend/tests/test_free_reply.py::test_settings_overrides_and_validation PASSED [ 93%]
+backend/tests/test_free_reply.py::test_make_default_uses_configured_model PASSED [ 94%]
+backend/tests/test_free_reply.py::test_api_get_put PASSED                [ 96%]
+backend/tests/test_free_reply.py::test_ollama_client_caches_warm_state_and_sends_no_think PASSED [ 97%]
+backend/tests/test_free_reply.py::test_ollama_client_unreachable_is_none PASSED [ 98%]
+backend/tests/test_free_reply.py::test_session_record_has_reply_source_and_duration PASSED [100%]
+============================== 79 passed in 1.60s ==============================
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests -q
+1 failed, 880 passed, 1 skipped in 67.42s (0:01:07)
+
+$ cd frontend && npx tsc --noEmit
+exit=0
+
+$ cd frontend && npx vitest run
+ ✓ src/pages/PlaygroundPage.test.tsx (11 tests) 452ms
+ ✓ src/pages/CallsPage.test.tsx (11 tests) 473ms
+ ✓ src/pages/VoicePicker.test.tsx (9 tests) 1546ms
+   ✓ Ses kütüphanesi > yazdıkça arar (bekleyerek) ve süzgeçleri sunucuya iletir 978ms
+ ✓ src/pages/SttPage.test.tsx (8 tests) 1352ms
+   ✓ STT test ekranı > soğuk modeli Hazırla ile ısıtır (yalnızca STT bileşeni, diğer sıcaklar kalsın diye keep_others=true) ve listeyi yeniler 1042ms
+ ✓ src/pages/MatrixPage.test.tsx (8 tests) 727ms
+   ✓ Kıyas matrisi > ağırlık değişince yeni ağırlıkla istek atar, ekran yeni puanları gösterir ve ağırlığı saklar 324ms
+ ✓ src/pages/TtsPage.test.tsx (8 tests) 905ms
+   ✓ TtsPage > previews how numbers, prices, dates and phones will be spoken (norm-007) 316ms
+   ✓ TtsPage > can switch normalization off and sends the choice with the session 339ms
+ ✓ src/App.test.tsx (11 tests) 1521ms
+   ✓ Hazırla (lab-006, ADR 0001) > Hazırla profili ısıtır, süreleri gösterir ve sıcak durumuna geçer 1058ms
+ ✓ src/pages/BenchmarkPage.test.tsx (5 tests) 3313ms
+   ✓ Kıyas koşusu > tek tıkla koşturur, ilerlemeyi gösterir ve sonuçları Aramalar'a bağlar 3058ms
+ ✓ src/pages/VoiceStudio.test.tsx (4 tests) 396ms
+ ✓ src/pages/PersonaPage.test.tsx (6 tests) 831ms
+   ✓ Persona ekranı (core-005) > persona alanlarını gösterir, ad değişince açılış cümlesi ve istem güncellenir, kaydeder 359ms
+   ✓ Persona ekranı (core-005) > geçersiz girişte sorunu gösterir ve kaydı kapatır; varsayılana döner 309ms
+ ✓ src/pages/OverviewSettings.test.tsx (8 tests) 373ms
+ ✓ src/pages/ScenariosPage.test.tsx (4 tests) 530ms
+   ✓ Senaryolar (lab-003) > yer tutucu eklenir, önizleme güncellenir, Kaydet PUT eder 308ms
+ ✓ src/pages/LlmEvalPage.test.tsx (4 tests) 251ms
+ ✓ src/pages/TtsLab.test.tsx (3 tests) 264ms
+ ✓ src/ElevenLabsSettings.test.tsx (3 tests) 141ms
+ ✓ src/pages/ToneDemo.test.tsx (2 tests) 143ms
+ ✓ src/FreeReplySettings.test.tsx (2 tests) 124ms
+ ✓ src/FastPathSettings.test.tsx (2 tests) 109ms
+ ✓ src/sttExport.test.ts (3 tests) 16ms
+ ✓ src/wav.test.ts (3 tests) 5ms
+ ✓ src/ProfileSelector.test.tsx (1 test) 35ms
+ ✓ src/CopyIdButton.test.tsx (1 test) 70ms
+ Test Files  22 passed (22)
+      Tests  117 passed (117)
+
+# NOT: yukarıdaki tam paket koşusunda 1 test düştü; adı bu koşuda kaydedilmedi (-q, -rf yoktu).
+# Aynı kaynakla 5 tam koşu daha yapıldı (2'si düz, 3'ü -rf ile): hepsi "881 passed, 1 skipped". Düşüş tekrar edilemedi.
+# off-001 dokümanında kayıtlı kararsız test (test_streaming_stt.py::test_session_uses_live_transcript_and_streams_exact_utterance_audio,
+# zamanlamaya bağlı) olduğu düşünülüyor, DOĞRULANMADI. test_free_reply.py tek başına her koşuda 79/79 geçti.
+$ (5 kez) PYTHONPATH=.:backend python -m pytest backend/tests -q
+881 passed, 1 skipped in 67.34s
+881 passed, 1 skipped in 67.55s
+881 passed, 1 skipped in 68.39s
+881 passed, 1 skipped in 68.20s
+881 passed, 1 skipped in 68.80s

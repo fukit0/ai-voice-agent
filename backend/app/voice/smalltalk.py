@@ -22,6 +22,7 @@ from pathlib import Path
 CONFIG = Path(__file__).resolve().parents[3] / "config" / "smalltalk.json"
 OFFTOPIC_CLOSE_AT = 3          # art arda bu kadar konu dışı (kimlik hariç) -> nazik kapanış; 2. seferde geri arama önerilir
 META = ("identity", "who", "number_source", "recording", "duration", "purpose")    # cevapla birlikte gelse de kısaca yanıtlanır
+ASKS_BACK = ("counter", "clarify")    # ADR 0009 adım 2: karşı soru / açıklama isteği; açık uçlu adımda cevap olarak kaydedilmez
 
 
 @lru_cache(maxsize=1)
@@ -65,6 +66,16 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
                     B + r"bugün\s+hava", B + r"sıcak\s+değil\s+mi")),
     ("chitchat", _rx(B + r"nasılsın\w*", B + r"nasılsınız", B + r"naber", B + r"ne\s+haber", B + r"iyi\s+misin\w*", B + r"napıyorsun\w*",
                      B + r"ne\s+yapıyorsun\w*")),
+    # ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): müşteri soruyu ajana geri soruyor / ajanın fikrini ya da puanını soruyor
+    ("counter", _rx(B + r"(?:sen|siz)(?:ce|de|\s+de)?\s+(?:kaç|ne)\s+(?:puan\s+)?(?:ver|der|düşün|söyle)",
+                    B + r"(?:sence|sizce)(?![a-zçğıöşü])", B + r"(?:sen|siz)\s+olsa(?:n|nız|ydın|ydınız)(?![a-zçğıöşü])",
+                    B + r"ne\s+düşünüyorsun\w*", B + r"kaç\s+puan\s+(?:vereyim|versem|vermeliyim|vermem\s+lazım)",
+                    B + r"ne\s+(?:diyeyim|desem|söyleyeyim)", B + r"(?:siz|sen)\s+bilirsin\w*")),
+    # sorunun ne anlama geldiğini ya da neden sorulduğunu soruyor
+    # çıplak 'ne demek' bilinçli olarak YOK: anlaşılmama tekrarı (unclear) olarak kalır (test_survey_e2e dal B)
+    ("clarify", _rx(B + r"(?:bu|o|şu|bunun|onun)\s+ne\s+demek", B + r"ne\s+demek\s+(?:ist|yani|oluyor)", B + r"ne\s+kastet\w*", B + r"kastınız", B + r"nasıl\s+yani",
+                    B + r"yani\s+ne(?![a-zçğıöşü])", B + r"(?:bunu|bunları|neden|niye|niçin)\s+(?:\w+\s+)?sor(?:uyorsunuz|uyorsun|uluyor)",
+                    B + r"anlamadım\s+(?:ne|neyi|soruyu|bunu)", B + r"(?:açar|açıklar)\s+m[ıi]s[ıi]n\w*", B + r"daha\s+açık\s+(?:söyle|anlat)")),
 ]
 
 _DNC = _rx(B + r"bir\s+daha\s+(?:beni\s+)?ara(?:may|mayın|mayınız|maz)", B + r"beni\s+(?:bir\s+daha\s+)?aramay", B + r"aramayın\s+artık",
@@ -116,9 +127,13 @@ def pure_meta(utterance: str) -> str | None:
     """Açık uçlu adımda (LLM çağrılmayan) soru biçimli, kısa, META kategorisinde söz: cevap olarak kaydedilmemeli. Kategori ya da None."""
     t = low(utterance)
     toks = re.findall(r"[a-zçğıöşü0-9]+", t)
-    if not toks or len(toks) > 7 or not _QUESTIONISH.search(t):
+    if not toks or len(toks) > 7:
         return None
     cat = categorize(t)
+    if cat in ASKS_BACK:         # kalıpların kendisi soru biçimli ('sen ne düşünüyorsun', 'bunu neden soruyorsunuz'): soru eki şartı yok
+        return cat
+    if not _QUESTIONISH.search(t):
+        return None
     return cat if cat in META else None
 
 

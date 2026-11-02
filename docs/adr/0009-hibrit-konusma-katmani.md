@@ -21,3 +21,12 @@ Ajanı daha insansı yapmak için akışı (FlowDriver) LLM ile DEĞİŞTİRMİY
 ## Sınırlar (dürüst durum)
 - Tepki havuzu elle/LLM ile yazıldı, dinleyici testinden geçmedi; "daha insansı" iddiası ölçülmedi. Ölçüt önerisi: aramada tekrar eden tepki sayısı (kodla ölçülebilir) + kör dinleme puanı.
 - Çalışma anı LLM üretimi henüz yok; plan dışı sorularda hâlâ sabit metinler konuşur.
+
+## Ek (2026-11-03): Adım 2 uygulandı — konu dışı turlarda lokal Qwen ile serbest cevap
+Durum: kullanıcı isteği ve onayıyla uygulandı; sahte istemciyle test edildi, **gerçek Qwen ile henüz ölçülmedi**. Ayrıntı: `docs/serbest-cevap-qwen.md`.
+- Kapsam ADR'deki 2. adımdan dar tutuldu: yalnızca konu dışı/meta turlar (karşı soru "sende kaç puan vereyim", açıklama isteği "bunu neden soruyorsunuz", hava, hal hatır, şaka, diğer). Geçiş cümleleri ve anlaşılmayan cevapta doğal tekrar bu dilimde YOK. Kimlik, KVKK/kayıt, numara kaynağı, süre/amaç, destek ve hakaret cevapları sabit havuzda kaldı (olgusal ya da hukuki doğruluk).
+- Karar ilkesi korunuyor: akış, cevap kaydı, DNC/ret/geri arama kodda. LLM (L2 ile aynı `qwen3:30b-a3b-instruct-2507-q4_K_M`, Ollama) yalnızca 1-2 kısa cümle yazar. Bekleyen soruyu kod aynen ekler, LLM soruyu yeniden yazmaz.
+- ADR'deki kısıtlar uygulandı: uzunluk sınırı (≤200 karakter, ≤2 cümle), yasak kalıp denetimi (ajan adına puan/görüş, insan iddiası, söz verme, istem sızıntısı, rakam/sayı, URL/telefon, Türkçe dışı, müşteri sözünü tekrar), zaman aşımında (varsayılan 1,5 sn) havuza düşüş. Ek kısıt: model soğuksa (ADR 0001, ~67 sn yükleme) istek atılmaz, havuz konuşur.
+- Gecikme yalnızca bu turlara eklenir. answer/dnc/refuse/callback/hızlı yol turlarında çağrı yok (testte sıfır çağrı). Realtime (A2/A3) ve kıyas koşularında kapalı. Gecikme bütçesi Mac'te `scripts/eval_free_reply.py` ile ölçülecek.
+- Her tur kaydına kaynak (`reply_source`: qwen|pool), düşüş sebebi ve süre yazılır. Ayarlar ekranından açma/kapama, model ve zaman aşımı değiştirilebilir (varsayılan: açık).
+- "Sınırlar" bölümündeki "Çalışma anı LLM üretimi henüz yok" maddesi bu dilim için artık geçerli değil. Kalan iş: geçiş cümleleri, anlaşılmayan cevapta doğal tekrar, gerçek Qwen ölçümü ve dinleme testi.
