@@ -87,4 +87,31 @@ describe("STT test ekranı", () => {
     expect(form.get("prompt")).toBe("sahibinden.com");
     expect((form.get("audio") as File).size).toBe(4);      // çevrilmedi: özgün baytlar
   });
+
+  it("Müşteri + Ajan ayrı: kanallar etiketli iki metin olarak görünür, sessiz kanal belirtilir, referans kapanır", async () => {
+    const BOTH = { ...RUN, reference: "", channel: "both", results: [{
+      profile: "L2", provider: "mlx_whisper", model: "whisper-large-v3-turbo", status: "ok", text: "",
+      speakers: {
+        customer: { text: "", silent: true, level_dbfs: -120 },
+        agent: { text: "Merhaba, ben Ayşe", silent: false, level_dbfs: -20, seconds: 0.4, rtf: 0.1 },
+      },
+    }] };
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/stt/models") return new Response(JSON.stringify(models));
+      if (url === "/api/stt/runs") return new Response("[]");
+      if (url === "/api/stt/compare" && init?.method === "POST") return new Response(JSON.stringify(BOTH));
+      return new Response("", { status: 404 });
+    });
+    render(<SttPage />);
+    fireEvent.change(await screen.findByLabelText("Kanal"), { target: { value: "both" } });
+    expect(screen.getByLabelText("Referans metin")).toBeDisabled();
+    fireEvent.change(screen.getByTestId("stt-file"), { target: { files: [new File([new Uint8Array(8)], "k.wav", { type: "audio/wav" })] } });
+    fireEvent.click(await screen.findByRole("button", { name: "Karşılaştır" }));
+    const box = await screen.findByTestId("stt-speakers");
+    expect(within(box).getByText(/Müşteri \(sol kanal\)/)).toBeInTheDocument();
+    expect(within(box).getByText(/kanal sessiz/)).toBeInTheDocument();
+    expect(within(box).getByText("Merhaba, ben Ayşe")).toBeInTheDocument();
+    const form = fetchMock.mock.calls.find(([u]) => u === "/api/stt/compare")![1].body as FormData;
+    expect(form.get("channel")).toBe("both");
+  });
 });

@@ -495,3 +495,5 @@ agents do not update it automatically.
 - Session 044 (devam 6): Kullanıcı ElevenLabs hesap fiyat ekranlarını paylaştı (TTS API, ElevenAgents): TTS API fiyatları kamuya açık sayfayla aynı çıktı. ElevenAgents: $0,08/dk barındırma + LLM + telefon; eşzamanlılık 4–40 (plana göre). Demo S51, ea-001 notu. Sunum slaytları hâlâ eski rakamlarda (kullanıcı onayı bekleniyor).
 
 - Session 044 (devam): Demo v2 slaytları güncellendi (maliyet, gecikme, ölçümler, bileşenler, bilinmeyenler): 17 canlı A1S araması, p50 1,56 sn, $0,035/dk, 477 oturum. Kıyas koşusu A1S gecikmesi (p50 ~2,7) simüle/toplu STT olduğundan temsil etmiyor. ElevenLabs Starter plan: kredi azalıyor, demo öncesi yükle. Açık: core-027 (1,2 sn hedefi tutmadı), core-016 canlı barge-in provası, A1 v5 yeniden ölçüm.
+
+- Session 045: STT test ekranına 'Müşteri + Ajan ayrı (referanssız)' eklendi (lab-002 EK). Bulut: backend 724, vitest 109, tsc temiz. Mac'te gerçek stereo kayıtla doğrulanmadı. Açık: mono kayıtta diarization yok; konuşma sırası (diyalog) gösterilmiyor.

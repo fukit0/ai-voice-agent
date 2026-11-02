@@ -101,3 +101,37 @@ def test_compare_channel_left_hears_customer_only_and_prompt_adds_a_row(tmp_path
     rows = both["results"]
     assert [r["model"] for r in rows] == ["m", "m + ipucu"] and rows[1]["prompt"] == "sahibinden.com, çağrı merkezi"
     assert [c["prompt"] for c in CALLS] == [None, "sahibinden.com, çağrı merkezi"]    # ipucuz ve ipuçlu iki çağrı
+
+
+def test_compare_both_separates_customer_and_agent_without_reference(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    data = stereo_wav(0.5, 0.5)                    # iki kanalda da konuşma
+    run = client.post("/api/stt/compare", files={"audio": ("k.wav", data, "audio/wav")},
+                      data={"profiles": "M1", "channel": "both"}).json()
+    row = run["results"][0]
+    assert run["channel"] == "both" and run["reference"] == "" and row["status"] == "ok"
+    assert row["speakers"]["customer"]["text"] == "ses var" and row["speakers"]["agent"]["text"] == "ses var"
+    assert row["speakers"]["customer"]["silent"] is False and "wer" not in row
+    assert row["text"] == "Müşteri: ses var\nAjan: ses var"
+    assert len(CALLS) == 2                          # her kanal ayrı çağrı
+
+
+def test_compare_both_skips_silent_channel_instead_of_feeding_whisper(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    data = stereo_wav(0.0, 0.5)                    # müşteri kanalı tamamen sessiz
+    row = client.post("/api/stt/compare", files={"audio": ("k.wav", data, "audio/wav")},
+                      data={"profiles": "M1", "channel": "both"}).json()["results"][0]
+    assert row["speakers"]["customer"] == {"text": "", "silent": True, "level_dbfs": -120.0}
+    assert row["speakers"]["agent"]["text"] == "ses var"
+    assert len(CALLS) == 1                          # sessiz kanal STT'ye hiç gitmedi
+    assert row["text"] == "Müşteri: (konuşma yok)\nAjan: ses var"
+
+
+def test_compare_both_rejects_mono_audio(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    mono = io.BytesIO()
+    sf.write(mono, np.ones(16000, np.float32) * 0.3, 16000, format="WAV")
+    res = client.post("/api/stt/compare", files={"audio": ("m.wav", mono.getvalue(), "audio/wav")},
+                      data={"profiles": "M1", "channel": "both"})
+    assert res.status_code == 400 and res.json()["detail"]["error"] == "not_stereo"
+    assert CALLS == []

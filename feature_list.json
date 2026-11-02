@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-11-01",
+  "last_updated": "2026-11-02",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -132,7 +132,7 @@
       "evidence": [
         "evidence/lab-002-verification.json"
       ],
-      "notes": "2026-10-23 Mac'te doğrulandı: mlx-whisper (WER %8.3, 0.63 sn) ve Deepgram nova-3 (WER %16.7, 3.92 sn) yan yana; koşu kaydedildi ve yeniden açıldı. BuzzASR Mac'te indirilmedi (HF çevrimdışı). Mikrofon kaydı düğmesi elle denenmedi (tarayıcı araçlarıyla test edilemez). Yalnızca-STT Hazırla: POST /api/profiles/{id}/warmup?components=stt. WER normalizasyonu: Türkçe küçük harf, kesme işareti ek ile birleşik, noktalama atılır; sayı yazımı çevrilmez."
+      "notes": "2026-10-23 Mac'te doğrulandı: mlx-whisper (WER %8.3, 0.63 sn) ve Deepgram nova-3 (WER %16.7, 3.92 sn) yan yana; koşu kaydedildi ve yeniden açıldı. BuzzASR Mac'te indirilmedi (HF çevrimdışı). Mikrofon kaydı düğmesi elle denenmedi (tarayıcı araçlarıyla test edilemez). Yalnızca-STT Hazırla: POST /api/profiles/{id}/warmup?components=stt. WER normalizasyonu: Türkçe küçük harf, kesme işareti ek ile birleşik, noktalama atılır; sayı yazımı çevrilmez. | 2026-11-02 EK: STT test ekranına 'Müşteri + Ajan ayrı (referanssız)' kanal seçeneği eklendi (channel=both): stereo kaydın sol kanalı müşteri, sağ kanalı ajan olarak ayrı ayrı yazıya çevrilir, referans metin gerekmez; sessiz kanal (< -55 dBFS) STT'ye verilmez (Whisper sessizlikte metin uydurur); tek kanallı dosya 400 not_stereo. Bulutta sahte STT ile doğrulandı (backend 724, vitest 109). GERÇEK MODEL/KAYIT ile Mac'te doğrulanmadı. Sınır: kanallar ayrı yazıldığı için konuşma sırası (diyalog) gösterilmez; WER bu modda hesaplanmaz."
     },
     {
       "id": "norm-007",

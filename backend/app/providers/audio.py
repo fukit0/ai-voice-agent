@@ -34,6 +34,19 @@ def decode_audio(data: bytes, channel: str = "mix") -> tuple[np.ndarray, int]:
     return to_mono_float32(audio), int(rate)
 
 
+def decode_stereo(data: bytes) -> tuple[np.ndarray, np.ndarray, int]:
+    """Stereo kaydı (sol = müşteri, sağ = ajan) iki ayrı mono diziye böler. Tek kanallı dosyada ValueError."""
+    audio, rate = sf.read(io.BytesIO(data), dtype="float32", always_2d=True)
+    if audio.shape[1] < 2:
+        raise ValueError("ses tek kanallı; müşteri ve ajan ayrılamaz (stereo kayıt gerekir)")
+    return np.ascontiguousarray(audio[:, 0]), np.ascontiguousarray(audio[:, 1]), int(rate)
+
+
+def rms_dbfs(audio: np.ndarray) -> float:
+    rms = float(np.sqrt(np.mean(np.square(audio)))) if len(audio) else 0.0
+    return -120.0 if rms <= 1e-6 else 20.0 * float(np.log10(rms))
+
+
 def encode_wav(audio: np.ndarray, sample_rate: int) -> bytes:
     buf = io.BytesIO()
     sf.write(buf, np.clip(audio, -1.0, 1.0), sample_rate, format="WAV", subtype="PCM_16")

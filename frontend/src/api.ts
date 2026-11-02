@@ -94,6 +94,8 @@ export type SttResult = {
   substitutions?: number;
   deletions?: number;
   insertions?: number;
+  // channel="both": stereo kayıtta kanal başına transkript (customer = sol, agent = sağ); silent = kanal sessiz, STT'ye verilmedi
+  speakers?: Record<"customer" | "agent", { text: string; silent: boolean; level_dbfs: number; seconds?: number; rtf?: number }>;
 };
 
 export type SttRun = {
@@ -120,7 +122,7 @@ export const fetchSttRuns = () => fetch("/api/stt/runs").then((r) => json<SttRun
 export const fetchSttRun = (id: string) => fetch(`/api/stt/runs/${id}`).then((r) => json<SttRun>(r));
 export const sttAudioUrl = (id: string) => `/api/stt/runs/${id}/audio`;
 
-export type SttChannel = "mix" | "left" | "right";
+export type SttChannel = "mix" | "left" | "right" | "both";
 
 // channel: stereo ses kaydında (core-013) sol = müşteri, sağ = ajan; prompt: Whisper alan ipucu (MLX), verilirse aynı model ipuçlu da koşar.
 export function compareStt(audio: Blob, filename: string, profiles: string[], reference: string,

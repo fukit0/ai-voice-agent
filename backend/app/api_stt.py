@@ -6,6 +6,7 @@ ADR 0001: soğuk model ölçüme alınmaz, o modelin sonucu "cold" durumuyla ve 
 """
 from __future__ import annotations
 
+import numpy as np
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
@@ -13,13 +14,15 @@ from . import stt_runs
 from .api_profiles import _call, _provider
 from .profiles import load_profiles
 from .providers import PROVIDERS, ProviderNotReady, cached, missing_env, provider_key, record_call
-from .providers.audio import decode_audio, encode_wav
+from .providers.audio import decode_audio, decode_stereo, encode_wav, rms_dbfs
 from .providers.local import MlxWhisperSTT
 from .wer import wer
 
 router = APIRouter(prefix="/api/stt", tags=["stt"])
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_AUDIO_SECONDS = 180
+SILENT_DBFS = -55.0   # bu seviyenin altındaki kanal STT'ye verilmez: Whisper sessizlikte metin uydurur
+SPEAKERS = (("customer", "Müşteri"), ("agent", "Ajan"))
 
 
 def _stt_models() -> dict[tuple, dict]:
@@ -55,6 +58,8 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
     data = audio.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, {"error": "audio_too_large", "message": "Ses dosyası 25 MB'tan büyük."})
+    if channel == "both":
+        return _compare_speakers(audio.filename, data, ids, language)
     try:
         samples, rate = decode_audio(data, channel)
     except Exception as exc:  # noqa: BLE001
@@ -111,6 +116,68 @@ def compare(audio: UploadFile = File(...), profiles: str = Form(...), reference:
                              "sample_rate": rate, "reference": reference, "language": language, "channel": channel,
                              "results": results}, encode_wav(samples, rate))
     return run
+
+
+def _compare_speakers(filename: str | None, data: bytes, ids: list[str], language: str) -> dict:
+    """Referans metinsiz transkript: stereo kaydın sol kanalı müşteri, sağ kanalı ajan olarak ayrı ayrı yazıya çevrilir.
+
+    Her model için iki satır (müşteri, ajan) yerine tek sonuç döner: `speakers` altında kanal başına metin/süre/RTF.
+    Sessiz kanal STT'ye verilmez (Whisper sessizliğe metin uydurur); `silent: true` ile işaretlenir.
+    Kanallar ayrı yazıldığı için konuşma sırası (kim kimden sonra konuştu) bilinmez; yalnızca kanal başına metin verilir."""
+    try:
+        left, right, rate = decode_stereo(data)
+    except ValueError as exc:
+        raise HTTPException(400, {"error": "not_stereo", "message": f"Müşteri/ajan ayrımı yapılamadı: {exc}."}) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(400, {"error": "bad_audio", "message": f"Ses çözülemedi: {exc}"}) from exc
+    audio_seconds = len(left) / rate
+    if audio_seconds > MAX_AUDIO_SECONDS:
+        raise HTTPException(413, {"error": "audio_too_long",
+                                  "message": f"Ses {MAX_AUDIO_SECONDS} sn'den uzun ({audio_seconds:.0f} sn)."})
+    channels = {"customer": left, "agent": right}
+    levels = {k: round(rms_dbfs(v), 1) for k, v in channels.items()}
+    all_profiles = load_profiles()
+    results, seen = [], set()
+    for pid in ids:
+        profile = all_profiles.get(pid)
+        spec = profile.component("stt") if profile else None
+        if not spec:
+            raise HTTPException(400, {"error": "unknown_stt", "message": f"{pid} profilinde STT yok."})
+        if provider_key(spec) in seen:
+            continue
+        seen.add(provider_key(spec))
+        base = {"profile": pid, "provider": spec.get("provider"), "model": spec.get("model") or ""}
+        try:
+            provider = _provider(profile, "stt")
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else {"message": str(exc.detail)}
+            state = "cold" if detail.get("error") == "profile_not_warm" else "not_ready"
+            results.append({**base, "status": state, "error": detail.get("message", "")})
+            continue
+        speakers: dict[str, dict] = {}
+        failed = ""
+        for key, _label in SPEAKERS:
+            if levels[key] < SILENT_DBFS:
+                speakers[key] = {"text": "", "silent": True, "level_dbfs": levels[key]}
+                continue
+            try:
+                result, seconds = _call(profile, "stt", provider,
+                                        lambda p=provider, x=channels[key]: p.transcribe(x, rate, language))
+            except HTTPException as exc:
+                failed = exc.detail.get("message", "") if isinstance(exc.detail, dict) else str(exc.detail)
+                break
+            record_call(pid, "stt", provider, seconds, ok=True, warm=True, audio_seconds=round(audio_seconds, 2),
+                        chars=len(result.text), source="stt-test")
+            speakers[key] = {"text": result.text, "silent": False, "level_dbfs": levels[key],
+                             "seconds": round(result.seconds, 3), "rtf": round(result.seconds / audio_seconds, 3)}
+        if failed:
+            results.append({**base, "status": "failed", "error": failed})
+            continue
+        results.append({**base, "status": "ok", "speakers": speakers,
+                        "text": "\n".join(f"{label}: {speakers[k]['text'] or '(konuşma yok)'}" for k, label in SPEAKERS)})
+    return stt_runs.save_run({"filename": filename, "audio_seconds": round(audio_seconds, 2), "sample_rate": rate,
+                              "reference": "", "language": language, "channel": "both", "results": results},
+                             encode_wav(np.column_stack([left, right]), rate))
 
 
 @router.get("/runs")

@@ -419,3 +419,9 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 - ElevenLabs Agents alternatifi: $0,08/dk barındırma + LLM + telefon; A1S'in ~2,3 katı (ses üretiminin dahil olduğu varsayıldı, doğrulanmadı).
 - Telefon operatörü ücreti zaten ödendiği için bilinmeyenler listesinden çıkarıldı.
 - Seçenek (doğrulanmadı): Scribe v2 Realtime STT $0,39/saat; Türkçe kalitesi ölçülmedi.
+
+
+## S53 — Referans metinsiz transkript, müşteri/ajan ayrımı (STT test ekranı)
+- Ne yapar: STT test ekranında Kanal = "Müşteri + Ajan ayrı (referanssız)". Stereo kaydın sol kanalı müşteri, sağ kanalı ajan olarak ayrı ayrı yazıya çevrilir; referans metin gerekmez (WER hesaplanmaz).
+- Nasıl ayırıyor: Playground kayıtları zaten stereo (sol müşteri, sağ ajan). Ayrımı konuşmacı tanıma ile değil kanalla yapıyoruz; bu yüzden hatasız ve ek model gerektirmiyor.
+- Sınırlar (demoda dürüst söyle): (1) Tek kanallı (mono) dosyada ayrım yapılamaz, ekran hata verir. Telefon operatör kaydı tek kanallıysa konuşmacı ayrımı (diarization) gerekir, yapılmadı. (2) Kanallar ayrı yazıldığı için konuşma sırası (kim kimden sonra) gösterilmez. (3) Sessiz kanal STT'ye verilmez; Whisper sessizlikte metin uydurur. (4) Gerçek kayıtla Mac'te doğrulanmadı.

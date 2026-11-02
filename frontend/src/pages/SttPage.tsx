@@ -176,15 +176,17 @@ export function SttPage() {
       {(audio || run) && <audio controls src={audio?.url ?? (run ? sttAudioUrl(run.id) : undefined)} />}
 
       <h3 className="sub">3 · Referans metin (WER için, isteğe bağlı)</h3>
-      <textarea rows={3} value={reference} onChange={(e) => setReference(e.target.value)}
-        placeholder="Seste söylenenin doğru yazılışı" aria-label="Referans metin" />
+      <textarea rows={3} value={reference} onChange={(e) => setReference(e.target.value)} disabled={channel === "both"}
+        placeholder={channel === "both" ? "Müşteri + Ajan ayrı modunda WER hesaplanmaz" : "Seste söylenenin doğru yazılışı"}
+        aria-label="Referans metin" />
 
       <h3 className="sub">4 · Seçenekler (isteğe bağlı)</h3>
       <div className="voice-options">
         <label>Kanal{" "}
           <select value={channel} onChange={(e) => setChannel(e.target.value as SttChannel)} aria-label="Kanal"
-                  title="Playground'da kaydedilen stereo ses: sol kanal müşteri, sağ kanal ajan. Müşteri hatalarını ölçmek için Sol'u seçin.">
+                  title="Playground'da kaydedilen stereo ses: sol kanal müşteri, sağ kanal ajan. 'Müşteri + Ajan ayrı': iki kanalı ayrı ayrı yazıya çevirir (referans metin gerekmez). Müşteri hatalarını ölçmek için Sol'u seçin.">
             <option value="mix">Karışık (varsayılan)</option>
+            <option value="both">Müşteri + Ajan ayrı (referanssız)</option>
             <option value="left">Sol (müşteri)</option>
             <option value="right">Sağ (ajan)</option>
           </select>
@@ -227,7 +229,21 @@ function Results({ run }: { run: SttRun }) {
         <article key={`${r.provider}:${r.model}`} className="stt-card">
           <h4>{r.model || r.provider}</h4>
           <p className="meta">{r.provider} · {r.profile}</p>
-          {r.status === "ok" ? (
+          {r.status === "ok" && r.speakers ? (
+            <div data-testid="stt-speakers">
+              {(["customer", "agent"] as const).map((k) => {
+                const sp = r.speakers![k];
+                return (
+                  <div key={k} className="stt-speaker">
+                    <p className="meta"><b>{k === "customer" ? "Müşteri (sol kanal)" : "Ajan (sağ kanal)"}</b>
+                      {sp.silent ? " · kanal sessiz, yazıya çevrilmedi" : ` · ${sp.seconds?.toFixed(2)} sn · RTF ${sp.rtf?.toFixed(3)}`}</p>
+                    <p className="stt-text">{sp.text || "(konuşma yok)"}</p>
+                  </div>
+                );
+              })}
+              <p className="meta">Kanallar ayrı yazıldığı için konuşma sırası gösterilmez.</p>
+            </div>
+          ) : r.status === "ok" ? (
             <>
               <p className="stt-text">{r.text || "(boş transkript)"}</p>
               <dl className="stt-stats">
