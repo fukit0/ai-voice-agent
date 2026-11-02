@@ -196,3 +196,10 @@ a { color: var(--accent); }
 .persona-scope { margin: 10px 0 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 13.5px; line-height: 1.5; }
 .persona-scope ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
 .persona-scope li + li { margin-top: 4px; }
+
+/* STT test: çalışıyor göstergesi ve sonuç eylemleri */
+.busy-note { display: inline-flex; align-items: center; gap: 8px; margin-left: 12px; color: var(--accent); font-size: 14px; }
+.spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.stt-actions { grid-column: 1 / -1; margin: 0; }

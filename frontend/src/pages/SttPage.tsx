@@ -3,6 +3,7 @@ import {
   compareStt, fetchSttModels, fetchSttRun, fetchSttRuns, getWarmup, startWarmup, sttAudioUrl,
   type SttChannel, type SttModel, type SttResult, type SttRun, type SttRunSummary,
 } from "../api";
+import { downloadText, sttRunToText, sttTxtName } from "../sttExport";
 import { toWav } from "../wav";
 
 const modelKey = (m: { provider: string; model: string }) => `${m.provider}:${m.model}`;
@@ -20,6 +21,7 @@ export function SttPage() {
   const [run, setRun] = useState<SttRun | null>(null);
   const [runs, setRuns] = useState<SttRunSummary[]>([]);
   const [busy, setBusy] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [preparing, setPreparing] = useState<Record<string, boolean>>({});
   const [recording, setRecording] = useState(false);
@@ -34,6 +36,11 @@ export function SttPage() {
       setError((e as Error).message);
     }
   }, []);
+  useEffect(() => {
+    if (!busy) { setElapsed(0); return; }
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
   const loadRuns = useCallback(() => fetchSttRuns().then(setRuns).catch(() => {}), []);
   useEffect(() => {
     void loadModels();
@@ -209,6 +216,11 @@ export function SttPage() {
         <button type="button" className="primary" disabled={!canRun} onClick={execute}>
           {busy ? "Çalışıyor…" : "Karşılaştır"}
         </button>
+        {busy && (
+          <span className="busy-note" role="status" data-testid="stt-busy">
+            <span className="spinner" aria-hidden="true" /> Model çalışıyor… {elapsed} sn
+          </span>
+        )}
       </p>
       {error && <p className="status status-error" role="alert">{error}</p>}
 
@@ -233,6 +245,10 @@ export function SttPage() {
 function Results({ run }: { run: SttRun }) {
   return (
     <div className="stt-results" data-testid="stt-results">
+      <p className="stt-actions">
+        <button type="button" data-testid="stt-download"
+          onClick={() => downloadText(sttTxtName(run), sttRunToText(run))}>TXT indir</button>
+      </p>
       {run.results.map((r: SttResult) => (
         <article key={`${r.provider}:${r.model}`} className="stt-card">
           <h4>{r.model || r.provider}</h4>

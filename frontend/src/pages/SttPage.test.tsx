@@ -138,4 +138,32 @@ describe("STT test ekranı", () => {
     expect(calls).toBe(2);
     expect(toWavMock).toHaveBeenCalledWith(expect.any(Blob), true);
   });
+
+  it("işlem sürerken spinner ve geçen süre görünür; bitince kaybolur, sonuç TXT olarak indirilir", async () => {
+    let release: (r: Response) => void = () => {};
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/stt/models") return new Response(JSON.stringify(models));
+      if (url === "/api/stt/runs") return new Response("[]");
+      if (url === "/api/stt/compare" && init?.method === "POST") return new Promise<Response>((res) => { release = res; });
+      return new Response("", { status: 404 });
+    });
+    const created: Blob[] = [];
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: (b: Blob) => { created.push(b); return "blob:x"; }, revokeObjectURL: () => {} }));
+    render(<SttPage />);
+    fireEvent.change(await screen.findByTestId("stt-file"), { target: { files: [new File([new Uint8Array(8)], "k.wav", { type: "audio/wav" })] } });
+    fireEvent.click(await screen.findByRole("button", { name: "Karşılaştır" }));
+    expect(await screen.findByTestId("stt-busy")).toHaveTextContent("Model çalışıyor");
+    release(new Response(JSON.stringify(RUN)));
+    await screen.findByTestId("stt-results");
+    expect(screen.queryByTestId("stt-busy")).toBeNull();
+    created.length = 0;
+    fireEvent.click(screen.getByTestId("stt-download"));
+    const txt = await new Promise<string>((res) => {   // jsdom Blob.text() sunmaz
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result));
+      fr.readAsText(created[created.length - 1]);
+    });
+    expect(txt).toContain("Merhaba dünya");
+    expect(txt).toContain("Koşu: " + RUN.id);
+  });
 });
