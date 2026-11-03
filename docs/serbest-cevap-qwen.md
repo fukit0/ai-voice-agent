@@ -188,3 +188,9 @@ Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aş
 - İstem artık 6 örnek içeriyor (3 karşı soru: puan/evet-hayır, 3 açıklama isteği); örnek cümleleri kopyalamamaları söyleniyor. Eski istemde 3 örnek vardı ve ikisi değerlendirme setiyle AYNI müşteri sözüydü ("sende kaç puan vereyim", "hava nasıl orada"): f01'in iyi çıkması kısmen bundan olabilir, 2026-11-03 ölçümü bu yüzden şişmiş olabilir.
 - v2'de örnek sözler değerlendirme setinden ayrıldı; `test_prompt_examples_do_not_leak_eval_utterances` bunu korur. PROMPT_VERSION = 2.
 - ÖLÇÜLMEDİ: v2 istemiyle gerçek Qwen koşusu. Mac'te: `./.venv/bin/python scripts/eval_free_reply.py --runs 3`
+
+## İstem v3 (2026-11-03): v2 ölçümü kötüleşti, istem kısaltıldı
+- v2 (6 örnek) gerçek ölçüm (evidence/free-reply-eval-20261103-071346.*): zaman aşımı içinde 0,99 -> 0,80; counter+clarify p50 0,78 -> 1,37 sn; çoğu tur 1,52 sn'de ReadTimeout; counter 6/24 Qwen cevabı konuşuldu, geri kalanı havuz. Geçen çıktıların ~üçte biri istemdeki örnek kalıbına çok yakın. Nedeni (uzun istem mi, Mac'in o andaki yükü mü, thinking modeli aynı anda bellekte miydi) KANITLANMADI.
+- v1 (3 örnek) 0,99 zaman aşımı içinde, p50 0,78 ölçülmüştü ama 2 örnek eval sözleriyle aynıydı (ölçüm şişkin).
+- v3: 3 örnek (2 counter/clarify cümlesi eval setinden ayrı) -> istem v1 uzunluğunda. PROMPT_VERSION = 3. Test: eval sözleri istemde yok.
+- ÖLÇÜLMEDİ: v3 gerçek koşu. Mac'te önce `ollama ps` ile yalnız instruct modelin yüklü olduğunu doğrulayın (thinking modeli ayrı bellek ve gecikme yükü getirir), sonra: `./.venv/bin/python scripts/eval_free_reply.py --runs 3`.

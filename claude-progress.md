@@ -510,3 +510,5 @@ agents do not update it automatically.
 - Session 046 (devam 2): off-002 gerçek Qwen ölçümü (Mac, 96 tur): geçen 0,75, p50 0,78 / p95 1,23 sn. counter+clarify iyi; weather/chitchat/joke/other uydurma cümleler -> canlı kategoriler yalnızca counter+clarify. off-002 passing (yalnız bu kapsam). Backend 882 test geçti (bulut).
 
 - Session 046 (devam 3): serbest cevap istemi v2 (6 few-shot örnek; eski istemin 2 örneği eval setiyle aynıydı, v1 ölçümü şişmiş olabilir). 883 backend test geçti (bulut). v2 ile gerçek Qwen koşusu bekleniyor: scripts/eval_free_reply.py --runs 3; off-002 tekrar blocked.
+
+- Session 046 (devam 4): Qwen thinking ayarı eklendi (7ddf760, sahte istemciyle test; gerçek ölçülmedi). v2 istem gerçek ölçümde geriledi (zaman aşımı 1 -> 19/96, p50 0,78 -> 1,37 sn counter+clarify); istem v3 (3 örnek). 907 backend test geçti (bulut). v3 gerçek koşu bekleniyor.
