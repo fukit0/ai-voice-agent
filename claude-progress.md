@@ -529,3 +529,5 @@ agents do not update it automatically.
 - Session 046 (devam 9): gerçek Haiku v5 ölçümü: canlı 69/90, too_long 0, p50 1,18 sn; question_mark reddi 4->12 (Haiku kendi sorusunu ekliyor), f27 'talimat' reddi, f30 'Selin' name_claim kaçağı, f12 3/3 zaman aşımı. Düzeltmeler bekliyor.
 
 - Session 046 (devam 10): geniş kapsam (off-004) kullanıcı kararıyla yerel Qwen için de açıldı (wide_scope_backends haiku+qwen). 17 eski-mod testi use_pool_fallback_only=False'a sabitlendi, silinmedi. Qwen geniş kapsamda ölçülmedi.
+
+- Session 046 (devam 11): geniş kapsam gerçek ölçüm: Haiku varsayılan 87/96 (p50 1,15 sn), Haiku özel istem 56/96, Qwen varsayılan 83/96 (p50 0,83 sn), Qwen özel istem 54/96. Bulgular: 'benim fikrim' yanlış reddi, 4000 karakter sınırı istem.txt'yi (5483) kesti, tam-ajan istemi cevap uzunluğu kuralı olmadığı için reddediliyor, Qwen kalitesi pass oranından kötü.
