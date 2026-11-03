@@ -124,3 +124,12 @@ ollama serve   # çalışmıyorsa ayrı terminalde
 - Yeni: `backend/app/voice/free_reply.py`, `backend/app/api_free_reply.py`, `config/free-reply.json`, `config/eval/free-reply-samples.json`, `scripts/eval_free_reply.py`, `backend/tests/test_free_reply.py`, `frontend/src/FreeReplySettings.tsx`, `frontend/src/FreeReplySettings.test.tsx`, `evidence/free-reply-tests-20261103.txt`, bu doküman
 - Değişen: `backend/app/voice/flow.py` (`free_reply` kancası: `_off_topic`, `repeat` + açıklama), `backend/app/voice/smalltalk.py` (`counter`/`clarify` kategorileri; açık uçlu adımda `pure_meta`), `config/smalltalk.json` (2 yeni havuz), `backend/app/voice/session.py` (tur kaydı + `config.free_reply`), `backend/app/api_voice.py` (canlı kademeli aramada üretici), `backend/app/main.py` (router), `frontend/src/api.ts`, `frontend/src/pages/SettingsPage.tsx`, `docs/adr/0009-hibrit-konusma-katmani.md` (ek not)
 - Dokunulmayan: ayrıştırıcı istemi ve dondurulmuş setler (`config/prompts/cascade-parser.json`, `prompt-samples`/`holdout` ve sha256), `offtopic-samples.json`, mevcut testler
+
+
+## Gerçek Qwen ölçümü (2026-11-03, Mac, evidence/free-reply-eval-20261103-064415.json/.md)
+Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aşımı 1,5 sn.
+- Denetimden geçen 0,75 (canlıda Qwen'e giden kategorilerde 0,80). Süre p50 0,78 / p95 1,23 / en çok 2,41 sn (ilk çağrı, zaman aşımı -> havuz). Zaman aşımı içinde 0,99.
+- **counter + clarify (vaka f01-f13, 39 tur): iyi.** Kullanıcı örneği ("sende kaç puan vereyim") neredeyse birebir çıktı: "Bu tamamen sizin kendi deneyiminize bağlı bir değerlendirme. Bir ile on arasında, kendi memnuniyetinize göre bir puan verebilirsiniz." + soru. "Benim puanım…" diyenler denetimle havuza düştü.
+- **weather / chitchat / joke / other: denetimden geçip de kötü cümleler çıktı** ("Hava gerçekten sıcak geçiyor, içeriye girmek isterseniz" = ajan havayı bilmiyor; "hemen hemen her anket sonunda bir fıkra bekliyorum" = anlamsız; "çağrı merkezimiz takvim düzenlemeleri yapmaz" = geri arama özelliğiyle çelişen yanlış bilgi). Otomatik denetim bunları yakalamıyor.
+- Karar: canlı varsayılan kategoriler yalnızca counter ve clarify; diğerleri sabit havuzda. identity/profanity/support zaten dışarıdaydı (ölçümdeki bu satırlar yalnız bilgi için, Qwen çıktısı kullanılmıyor).
+- Açık: insan notu sütunu doldurulmadı; telefon/gerçek ses yok; ilk çağrı soğuk/yavaş olabilir (Hazırla ile ısıt); counter/clarify cümleleri ölçekteki "bir ile on arasında" ifadesini soruyla tekrar ediyor (fazla uzun olabilir).

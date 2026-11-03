@@ -43,8 +43,22 @@ class FakeChat:
         return self.out(messages) if callable(self.out) else self.out
 
 
+ALL_CATEGORIES = ["counter", "clarify", "other", "weather", "chitchat", "joke"]   # mekanizma testleri tüm kategorilerde çalışır
+
+
 def replier(client=None, **cfg):
+    cfg.setdefault("categories", ALL_CATEGORIES)
     return F.FreeReplier(client or FakeChat(), cfg)
+
+
+def test_production_default_only_counter_and_clarify():
+    """2026-11-03 gerçek Qwen ölçümü (evidence/free-reply-eval-20261103-064415.*): hava/sohbet/şaka/diğer kategorilerinde
+    denetimden geçen ama uydurma ya da anlamsız cümleler çıktı; canlı varsayılan yalnızca counter + clarify."""
+    assert F.defaults()["categories"] == ["counter", "clarify"]
+    c = FakeChat()
+    r = F.FreeReplier(c)
+    assert r.eligible("counter") and r.eligible("clarify")
+    assert not any(r.eligible(x) for x in ("other", "weather", "chitchat", "joke", "identity", "support", "profanity"))
 
 
 def drv(*outputs, step="q3_1", free=None, seed=0, fast_path=False):

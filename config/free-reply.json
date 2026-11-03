@@ -10,7 +10,7 @@
   "max_sentences": 2,
   "max_questions": 0,
   "warm_check_ttl_s": 30,
-  "categories": ["counter", "clarify", "other", "weather", "chitchat", "joke"],
+  "categories": ["counter", "clarify"],
   "categories_note": "Serbest cevabın denendiği konu dışı kategoriler. Bilinçli olarak DIŞARIDA: identity (dürüst kimlik cevabı sabit metin, core-006), who / number_source / recording (KVKK ve hukuk metni, sabit), duration / purpose (olgusal bilgi; LLM süre uydurabilir), support (çağrı merkezi numarası sabit), profanity (gerginlikte sabit, gözden geçirilmiş özür), hold (bekleme). 3. art arda konu dışı kapanışı her zaman sabit metindir.",
   "banned_patterns": [
     "(?<![a-zçğıöşü])(?:veririm|verirdim|verirsem|vereyim|veriyorum|verdim)(?![a-zçğıöşü])",
