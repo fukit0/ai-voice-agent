@@ -21,6 +21,63 @@ function ThinkingStats({ stats }: { stats: NonNullable<Settings["stats"]> }) {
   );
 }
 
+
+/** off-004 (docs/serbest-cevap-genis-kapsam.md): kullanıcının yazdığı tam sistem istemi. Boş = varsayılan. Sabit çerçeve ve bilinen
+ *  gerçekler her istemin sonuna eklenir; çıktı denetimi istemden bağımsızdır ve buradan kapatılamaz. */
+function PromptEditor({ s, save }: { s: Settings; save: (p: Parameters<typeof setFreeReply>[0]) => Promise<void> }) {
+  const saved = s.system_prompt ?? s.default_system_prompt ?? "";
+  const [text, setText] = useState(saved);
+  const [fallback, setFallback] = useState(s.fallback_text ?? "");
+  const [preview, setPreview] = useState(false);
+  useEffect(() => setText(s.system_prompt ?? s.default_system_prompt ?? ""), [s.system_prompt, s.default_system_prompt]);
+  useEffect(() => setFallback(s.fallback_text ?? ""), [s.fallback_text]);
+  const max = s.system_prompt_max ?? 4000;
+  const fmax = s.fallback_text_max ?? 200;
+  const tooLong = text.length > max;
+  const dirty = text !== saved;
+  const custom = !!s.prompt.custom;
+  const never = (s.never_llm ?? ["identity", "hold", "support"]).join(", ");
+  return (
+    <>
+      <div className="setting">
+        <dt>Geniş kapsam (havuz yalnız yedek)<span>Açıkken LLM, anket cevabı olmayan HER turda konuşur: konu dışı, meta (kim arıyor, numara, kayıt, süre, amaç), sohbet ve akışın soruya cevap olarak anlayamadığı söz ("tam anlayamadım" yerine). LLM şu turlarda ÇALIŞMAZ: cevap, ret, DNC, geri arama, hızlı yol, realtime profiller ve sabit metinli {never}. Arka uçlar: {(s.wide_scope_backends ?? ["haiku"]).join(", ")} (Qwen ölçümü uydurma gösterdiği için config'te kapalı).</span></dt>
+        <dd>
+          <label>
+            <input type="checkbox" checked={s.use_pool_fallback_only !== false} onChange={(e) => save({ use_pool_fallback_only: e.target.checked })}
+              aria-label="Geniş kapsam" /> {s.use_pool_fallback_only !== false ? "Açık" : "Kapalı (eski kategori listesi)"}
+          </label>
+        </dd>
+      </div>
+      <div className="setting prompt-setting">
+        <dt>Sistem istemi{custom ? <span className="pill warn">Özel istem</span> : <span className="pill ok">Varsayılan</span>}
+          <span>Model bu metni aynen alır. {"{ASISTAN}"}, {"{MAX}"}, {"{WORDS}"} yer tutucuları doldurulur. Müşteri sözü her zaman ayrı ve etiket içinde VERİ olarak gider. Boş kaydederseniz varsayılana döner. Güvenlik denetimi (iade/indirim/ücret vaadi, istem sızıntısı, web adresi, uydurma telefon/adres, ad uydurma, yabancı dil, aşırı uzunluk) istemden bağımsızdır ve kapatılamaz: denetimden geçmeyen cümle söylenmez.</span></dt>
+        <dd className="prompt-dd">
+          <textarea value={text} onChange={(e) => setText(e.target.value)} aria-label="Sistem istemi" rows={14} spellCheck={false}
+            style={{ width: "100%", fontFamily: "var(--mono, monospace)", fontSize: 13 }} />
+          <div className="prompt-actions">
+            <span className={tooLong ? "pill err" : "meta"} aria-label="Karakter sayısı">{text.length} / {max}</span>
+            <button type="button" disabled={!dirty || tooLong} onClick={() => save({ system_prompt: text.trim() ? text : null })}>Kaydet</button>
+            <button type="button" disabled={!dirty} onClick={() => setText(saved)}>Geri al</button>
+            <button type="button" disabled={!custom} onClick={() => save({ system_prompt: null })}>Varsayılana sıfırla</button>
+            <button type="button" onClick={() => setPreview((v) => !v)} aria-expanded={preview}>{preview ? "Önizlemeyi gizle" : "Etkin istemi göster"}</button>
+          </div>
+          {preview && (
+            <pre className="note" aria-label="Etkin istem" style={{ whiteSpace: "pre-wrap" }}>{s.effective_system_prompt}</pre>
+          )}
+          <p className="meta">Sabit çerçeve (değiştirilemez): {s.frame}</p>
+        </dd>
+      </div>
+      <div className="setting">
+        <dt>LLM yedek cümlesi<span>LLM hata verirse, zaman aşımına düşerse, anahtar yoksa ya da cümlesi denetimden geçmezse söylenir; ardından anket sorusu okunur. Kayıt/numara/amaç/süre gibi bilgi sorularında bunun yerine gözden geçirilmiş sabit cevap konuşur. En fazla {fmax} karakter.</span></dt>
+        <dd>
+          <input value={fallback} onChange={(e) => setFallback(e.target.value)} aria-label="LLM yedek cümlesi" size={48} maxLength={fmax} />
+          <button type="button" disabled={fallback === (s.fallback_text ?? "")} onClick={() => save({ fallback_text: fallback.trim() || null })}>Kaydet</button>
+        </dd>
+      </div>
+    </>
+  );
+}
+
 const HAIKU_KEYS = ["backend", "haiku_model", "haiku_timeout_s"];
 const BACKEND_LABEL: Record<string, string> = {
   auto: "Otomatik (profilin LLM'ine göre)",
@@ -89,13 +146,14 @@ export function FreeReplySettings() {
   return (
     <>
       <div className="setting">
-        <dt>Serbest cevap<span>Yalnız konu dışı ve karşı soru turlarında ("sende kaç puan vereyim", "bunu neden soruyorsunuz"). Cevap, ret, DNC, geri arama ve hızlı yol turlarında çağrılmaz. Realtime profillerde (A2/A3) uygulanmaz.</span></dt>
+        <dt>Serbest cevap<span>Anket cevabı olmayan turlarda LLM müşterinin söylediğine anlamlı, kısa bir cevap verir; anket sorusunu kod ayrıca okur ve müşterinin cevabı LLM cümlesinden asla kaydedilmez. Cevap, ret, DNC, geri arama ve hızlı yol turlarında çağrılmaz. Realtime profillerde (A2/A3) uygulanmaz.</span></dt>
         <dd>
           <label>
             <input type="checkbox" checked={s.enabled} onChange={(e) => save({ enabled: e.target.checked })} aria-label="Serbest cevap" /> {s.enabled ? "Açık" : "Kapalı"}
           </label>
         </dd>
       </div>
+      {s.default_system_prompt !== undefined && <PromptEditor s={s} save={save} />}
       {hasBackend && (
         <>
           <div className="setting">
@@ -186,7 +244,7 @@ export function FreeReplySettings() {
       )}
       <p className="note">
         Qwen: soğuk modelde istek atılmaz (Qwen3 30B yüklemesi ~1 dk sürer): önce profil seçicideki Hazırla. Her tur kaydına cevabın kaynağı (qwen / haiku / pool),
-        süresi ve Haiku'da token ile tahmini maliyet yazılır. Kategoriler: {s.categories.join(", ")}. İstem {s.prompt.version} · {s.prompt.hash}.
+        süresi ve Haiku'da token ile tahmini maliyet yazılır. Kategoriler: {s.categories.join(", ")}. İstem {s.prompt.version} · {s.prompt.hash}{s.prompt.custom ? " (özel)" : ""}.
       </p>
       <p className="note">Mac'te ölçüm: <code>scripts/eval_free_reply.py --runs 3</code> (Qwen) ve <code>--backend haiku</code> (Haiku). Haiku serbest cevabı gerçek API ile henüz ölçülmedi.</p>
       {err && <p className="note err" role="alert">Değiştirilemedi: {err}</p>}

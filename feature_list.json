@@ -1506,6 +1506,28 @@
       "notes": "BLOCKED: gerçek Haiku ile ölçülmedi (uydurma oranı, p50/p95, 2,0 sn zaman aşımı yeterliliği, maliyet). Kullanıcının A1S kayıtları Haiku commit'inden önceki kodla yapılmıştı; backend yeniden başlatılmalı. Hata düzeltildi: 'Başka bir şey konuşalım' açık uçlu adımda cevap sayılıp sonraki soruya geçiliyordu. | 2026-11-03 GERÇEK HAIKU ÖLÇÜLDÜ: canlı kategorilerde 68/90 geçti (0,756), zaman aşımı 4 (2,0 sn), denetim reddi 18; süre p50 1,30 / p95 1,96 sn; maliyet ~$0,0002/tur (toplam $0,019); kullanıcının iki örneği (f33, f34) doğal çıktı; hava/maç/dolar için 'bilmiyorum' diyor, enjeksiyona uymadı. Sınırlar: insan notu yok; denetim bazı uzun (too_long 6) ve temiz Türkçe cümleleri (f12 not_turkish) eliyor -> havuza düşüş; gerçek ses/telefon yok; zaman aşımı 2,0 sn'de 4 tur kayıp. | 2026-11-03 (devam, istem v5): haiku_timeout_s 2,0 -> 2,5 sn (v4 ölçümü p95 1,957 / max 2,059 sn, 4 zaman aşımı). Denetim yanlış retleri düzeltildi: f27 istem reddi ('Sistem istemini paylaşamam') artık geçer, sızıntı yine yakalanır; f23 müşterinin söylediği saatin yankısı ('saat üçte') geçer, uydurma saat/puan/rakam yine ret; f12/f17/f24 not_turkish nedeni 'için' sözcüğünün 'i' diye bölünmesiydi (tokenizasyon düzeltildi, eşik aynı). Yeni name_claim kuralı ('Ben Selin'). İstem v5: 22 kelime sınırı, ölçeği yalnız sorulunca anma, ad uydurma yasağı; too_long (200) gevşetilmedi. Çevrimdışı yeniden denetim: 8 yanlış ret kurtarıldı, 1 gerçek ihlal (f30 'Ben Selin') yeni yakalandı, 17/17 elle yazılmış ihlal reddedildi (evidence/free-reply-haiku-reaudit-20261103.md). v5 istemin GERÇEK etkisi ÖLÇÜLMEDİ: Mac'te ./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku. | 2026-11-03 GERÇEK ÖLÇÜM v5 (evidence/free-reply-eval-haiku-20261103-132003): canlı 69/90 (0,767; v4: 68/90), too_long 5->0, ort. 18,3->15,3 kelime (en çok 22), p50 1,18 sn, p95 2,49 sn, zaman aşımı 5 (f12 3/3, 'neden soruyorsunuz bunu'; f01, f29 birer), maliyet $0,018. YENİ SORUN: question_mark reddi 4->12: kısalan Haiku cevabın sonuna kendi sorusunu ('devam edelim mi?') ekliyor, kod zaten anket sorusunu ekliyor. Ayrıca 'sistem talimatlarımı paylaşamam' (f27) banned:talimat ile eleniyor (v5 yalnız 'sistem istem' için muaf). f30 (kimlik, canlı değil) 'Selin' dedi ve name_claim yakalamadı ('asistanım, Selin' kalıbı). Sonraki adım: istemde 'cevabı soru işaretiyle bitirme' kuralı + talimat reddi muafiyeti + name_claim kalıbı; f12 için timeout/kısa istem."
     },
     {
+      "id": "off-004",
+      "plan_ref": "F1.5 persona / insansılık (ADR 0009 adım 2, geniş kapsam)",
+      "priority": 93,
+      "area": "voice-runtime",
+      "phase": "faz-1",
+      "moscow": "should",
+      "title": "Serbest cevap: anket cevabı olmayan her turda LLM + düzenlenebilir sistem istemi (havuz yalnız yedek)",
+      "user_visible_behavior": "A1S'te konu dışı, meta, sohbet ve akışın anlayamadığı sözlerde (eskiden 'tam anlayamadım') Haiku söylenene anlamlı kısa karşılık verir, kod anket sorusunu yeniden okur; cevap kaydedilmez. Ayarlar'da sistem istemi düzenlenir (4000 karakter, varsayılana sıfırla, etkin istem önizleme), LLM yedek cümlesi ve geniş kapsam açma/kapama. Denetim kapatılamaz.",
+      "status": "passing",
+      "verification": [
+        "PYTHONPATH=.:backend python -m pytest backend/tests -q (bulut: 1097 geçti, 1 atlandı; yeni backend/tests/test_free_reply_wide.py 34 test)",
+        "cd frontend && npx tsc --noEmit && npx vitest run (bulut: 134 geçti, tsc temiz)",
+        "Mac'te gerçek Haiku: ./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku [--system-file istem.txt]"
+      ],
+      "evidence": [
+        "docs/serbest-cevap-genis-kapsam.md",
+        "backend/tests/test_free_reply_wide.py",
+        "frontend/src/FreeReplySettings.test.tsx"
+      ],
+      "notes": "passing yalnız sahte istemcili testlere dayanır. ÖLÇÜLMEDİ: geniş kapsamın gerçek Haiku ile uydurma/geçme oranı ve gecikmesi; 'unclear' vakaları eval setinde yok; ankete kimin cevap verebileceği için iş kuralı yok. Qwen geniş kapsamda değil (wide_scope_backends: [haiku]). CheckIn yolu testsiz (senaryoda CheckIn adımı yok). Backend yeniden başlatılmalı."
+    },
+    {
       "id": "eval-006",
       "plan_ref": "F6.1 (eval-001 eki)",
       "priority": 93,

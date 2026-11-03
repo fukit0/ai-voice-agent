@@ -19,7 +19,15 @@ def _view(with_status: bool = True) -> dict:
     out = {"enabled": bool(cfg["enabled"]), "model": cfg["model"], "timeout_s": float(cfg["timeout_s"]),
            "defaults": {k: d[k] for k in F.OVERRIDABLE}, "overridden": sorted(ov), "categories": list(cfg.get("categories", [])),
            "haiku_categories": F.categories_for(cfg, "haiku"),   # off-003: Haiku'nun kategori kapsamı (Qwen: categories)
-           "timeout_range": list(F.TIMEOUT_RANGE), "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()},
+           "timeout_range": list(F.TIMEOUT_RANGE),
+           # off-004 (docs/serbest-cevap-genis-kapsam.md): düzenlenebilir sistem istemi, sabit çerçeve, bilinen gerçekler, yedek cümle
+           "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash(cfg), "custom": F.custom_prompt(cfg) is not None},
+           "system_prompt": F.custom_prompt(cfg), "default_system_prompt": F.DEFAULT_SYSTEM, "frame": F.FRAME,
+           "facts": list(cfg.get("facts") or []), "system_prompt_max": F.SYSTEM_PROMPT_MAX,
+           "effective_system_prompt": F.system_text(cfg, "Ayşe", int(cfg.get("max_chars", 200))),
+           "fallback_text": F.FreeReplier(F._NullClient(), cfg).fallback_text, "fallback_text_max": F.FALLBACK_TEXT_MAX,
+           "use_pool_fallback_only": bool(cfg.get("use_pool_fallback_only", True)),
+           "wide_scope_backends": list(cfg.get("wide_scope_backends", ["haiku"])), "never_llm": list(F.NEVER_LLM),
            "thinking": bool(cfg.get("thinking", False)), "thinking_model": cfg["thinking_model"],
            "thinking_timeout_s": float(cfg["thinking_timeout_s"]), "thinking_timeout_range": list(F.THINKING_TIMEOUT_RANGE),
            "thinking_max_tokens": int(cfg.get("thinking_max_tokens", 768)),
@@ -51,6 +59,9 @@ class FreeReplyBody(BaseModel):
     backend: str | None = None
     haiku_model: str | None = None
     haiku_timeout_s: float | None = None
+    system_prompt: str | None = None
+    fallback_text: str | None = None
+    use_pool_fallback_only: bool | None = None
 
 
 @router.put("")

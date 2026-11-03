@@ -378,7 +378,7 @@ export type FreeReplySettings = {
   overridden: string[];
   categories: string[];
   timeout_range: [number, number];
-  prompt: { version: string; hash: string };
+  prompt: { version: string; hash: string; custom?: boolean };
   status?: FreeReplyStatus;
   // Qwen thinking (yalnız ölçüm; docs/serbest-cevap-qwen.md). Eski backend bu alanları vermezse ekran satırı göstermez.
   thinking?: boolean;
@@ -397,6 +397,18 @@ export type FreeReplySettings = {
   haiku_timeout_range?: [number, number];
   haiku_max_tokens?: number;
   haiku_status?: { key_present: boolean; model: string; model_from_profile: boolean };
+  // off-004 (docs/serbest-cevap-genis-kapsam.md): düzenlenebilir sistem istemi. Eski backend bu alanları vermezse bölüm gösterilmez.
+  system_prompt?: string | null;        // null: varsayılan istem (default_system_prompt)
+  default_system_prompt?: string;
+  frame?: string;                       // sabit çerçeve (değiştirilemez)
+  facts?: string[];                     // bilinen gerçekler (config)
+  effective_system_prompt?: string;     // modele giden etkin istem (Ayşe ile doldurulmuş önizleme)
+  system_prompt_max?: number;
+  fallback_text?: string;
+  fallback_text_max?: number;
+  use_pool_fallback_only?: boolean;
+  wide_scope_backends?: string[];
+  never_llm?: string[];
 };
 
 export const fetchFreeReply = () => fetch("/api/free-reply").then((r) => json<FreeReplySettings>(r));
@@ -404,7 +416,8 @@ export const fetchFreeReply = () => fetch("/api/free-reply").then((r) => json<Fr
 /** Yalnız verilen alanlar değişir; null o alanı varsayılana döndürür. */
 export async function setFreeReply(patch: Partial<{ enabled: boolean | null; model: string | null; timeout_s: number | null;
   thinking: boolean | null; thinking_model: string | null; thinking_timeout_s: number | null;
-  backend: FreeReplyBackend | null; haiku_model: string | null; haiku_timeout_s: number | null }>): Promise<FreeReplySettings> {
+  backend: FreeReplyBackend | null; haiku_model: string | null; haiku_timeout_s: number | null;
+  system_prompt: string | null; fallback_text: string | null; use_pool_fallback_only: boolean | null }>): Promise<FreeReplySettings> {
   const res = await fetch("/api/free-reply", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

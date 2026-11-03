@@ -533,7 +533,10 @@ class VoiceSession:
                              ("backend", "free_reply_backend"), ("input_tokens", "free_reply_input_tokens"),
                              ("output_tokens", "free_reply_output_tokens"), ("cost_usd", "free_reply_cost_usd"),
                              # off-003: havuza neden düşüldüğü Aramalar ekranında okunabilsin (kategori + denetim kuralları / hata metni)
-                             ("category", "free_reply_category")):
+                             ("category", "free_reply_category"),
+                             # off-004: hangi istemle konuşuldu (özel/varsayılan + hash) ve LLM'in sondaki sorusu kırpıldı mı
+                             ("prompt_hash", "free_reply_prompt_hash"), ("prompt_custom", "free_reply_prompt_custom"),
+                             ("trimmed_question", "free_reply_trimmed_question")):
                 if free.get(src) is not None:
                     rec[dst] = free[src]
             if free.get("fails"):

@@ -88,6 +88,8 @@ def main() -> int:
     ap.add_argument("--thinking", action="store_true", help="thinking modeli + think:true ile ölç (gecikme kıyası; canlı varsayılan kapalı)")
     ap.add_argument("--compare", type=Path, default=None, help="önceki bir çıktı JSON'u: özet farkları (süre, geçme oranı) yazdırılır")
     ap.add_argument("--backend", choices=("qwen", "haiku"), default="qwen", help="qwen (Ollama, varsayılan) ya da haiku (Anthropic API)")
+    ap.add_argument("--system-file", type=Path, default=None,
+                    help="off-004: bu dosyadaki sistem istemiyle ölç (verilmezse Ayarlar'da kaydedilmiş istem, o da yoksa varsayılan)")
     args = ap.parse_args()
 
     cfg = F.settings()
@@ -136,11 +138,18 @@ def main() -> int:
                 return 2
             load_s = round(time.perf_counter() - t0, 2)
             print(f"ısındı ({load_s} sn)")
-    live_cats = set(F.categories_for(cfg, args.backend))   # canlıda bu arka ucun denediği kategoriler (Haiku listesi daha geniş)
+    if args.system_file is not None:
+        cfg = {**cfg, "system_prompt": F.clean_prompt(args.system_file.read_text(encoding="utf-8"))[:F.SYSTEM_PROMPT_MAX]}
+    live_rep = F.FreeReplier(FakeClient(backend=args.backend), cfg)
+    if live_rep.wide:   # off-004 geniş kapsam: canlıda NEVER_LLM dışındaki tüm kategoriler denenir
+        live_cats = {c["category"] for c in data["cases"]} - set(F.NEVER_LLM)
+    else:
+        live_cats = set(F.categories_for(cfg, args.backend))   # canlıda bu arka ucun denediği kategoriler (Haiku listesi daha geniş)
     # Değerlendirmede tüm kategoriler denenir (canlıda yalnız live_cats); denetim ve istem canlıyla aynı
     run_cfg = {**cfg, "model": model, "timeout_s": timeout, "thinking": args.thinking, "thinking_model": model, "thinking_timeout_s": timeout, "haiku_timeout_s": timeout,
                "categories": sorted({c["category"] for c in data["cases"]} | live_cats),
-               "haiku_categories": sorted({c["category"] for c in data["cases"]} | live_cats)}
+               "haiku_categories": sorted({c["category"] for c in data["cases"]} | live_cats),
+               "use_pool_fallback_only": False}   # ölçüm her vaka kategorisini dener (NEVER_LLM dahil); canlı kapsam live_eligible'da
     rep = F.FreeReplier(client, run_cfg, assistant, thinking_client=client if args.thinking else None)
     pool_rng = random.Random(0)
     rows = []
@@ -184,7 +193,7 @@ def main() -> int:
                "first_call_s": rows[0]["seconds"] if rows else None}
     meta = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "fake": args.fake, "model": model if not args.fake else "fake",
             "backend": args.backend,
-            "timeout_s": timeout, "thinking": args.thinking, "max_tokens": rep._max_tokens(), "cold_load_s": load_s, "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()},
+            "timeout_s": timeout, "thinking": args.thinking, "max_tokens": rep._max_tokens(), "cold_load_s": load_s, "prompt": rep.describe()["prompt"], "wide_scope_live": live_rep.wide,
             "samples": str(args.samples.relative_to(ROOT)) if args.samples.is_relative_to(ROOT) else str(args.samples),
             "live_categories": sorted(live_cats)}
     doc = {"meta": meta, "summary": summary, "rows": rows}

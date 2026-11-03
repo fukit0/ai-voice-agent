@@ -9,6 +9,7 @@ cevaplanır (identity_question), 'müsait değilim' türü sözler LLM ret/anla�
 off-001 (docs/offtopic-baglam-iyilestirme.md): konu dışı sözlere kategoriye göre kısa, dürüst karşılık + soruya köprü (smalltalk.py, config/smalltalk.json); aynı
 cümle art arda söylenmez; art arda 2. konu dışında geri arama önerilir, 3.'de nazikçe kapatılır. Bağlam: olumsuz duygulu cevaba empati,
 zaman söylenen geri arama isteğinde zaman yeniden sorulmaz. Hepsi LLM'siz (ek gecikme yok); cevap/DNC/ret kararlarını değiştirmez.
+off-004 (docs/serbest-cevap-genis-kapsam.md): geniş kapsamda anlaşılmayan söz (_retry, sayısız puan) da LLM karşılığı alır.
 ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): `free_reply` verilmişse (canlı kademeli arama, ayar açık) YALNIZ konu dışı turlarda ve
 seçili kategorilerde karşılık cümlesi lokal Qwen ile üretilmeye çalışılır; bekleyen soruyu yine kod okur. Denetim/zaman aşımı/soğuk modelde
 havuz cümlesi konuşur. answer/dnc/refuse/callback/fast path/kimlik/bekletme turlarında çağrılmaz; realtime hatta (coerce) hiç çağrılmaz.
@@ -28,6 +29,7 @@ from .. import persona as persona_mod
 from .. import scenario as S
 from ..llm_eval import parse_output
 from ..trnorm import number_to_words
+from . import free_reply as FR
 from . import smalltalk as T
 
 MAX_RETRIES = 2
@@ -660,11 +662,31 @@ class FlowDriver:
             # Qwen karşılığı kendi içinde soruya bağlanır; köprü yalnızca geri arama önerisi sırasıysa eklenir (karar kodda kalır)
             offer = " " + self._bridge() if self.offtopic_streak == OFFTOPIC_OFFER_AT and "randevu" in self.steps else ""
             reply.utterances.append(free + offer)
+        elif self._wide() and self.free_reply.eligible(cat) and cat not in FR.POOL_FALLBACK:
+            # off-004: geniş kapsamda LLM denendi ama başarısız (hata/zaman aşımı/denetim): havuz sohbet cümlesi DEĞİL, tek nötr yedek cümle
+            offer = " " + self._bridge() if self.offtopic_streak == OFFTOPIC_OFFER_AT and "randevu" in self.steps else ""
+            reply.utterances.append(self.free_reply.fallback_text + offer)
         else:
             pool = T.config()["replies"].get(cat) or T.config()["replies"]["other"]
             reply.utterances.append(self._say_pool(pool) + " " + self._bridge())
         reply.utterances.append(self.retry_of(key))
         return reply
+
+    def _wide(self) -> bool:
+        """off-004 (docs/serbest-cevap-genis-kapsam.md): serbest cevap anket cevabı olmayan HER turda mı çalışıyor (FreeReplier.wide).
+        free_reply yoksa (ayar kapalı, realtime, kıyas/eval koşuları) ya da realtime ses yolunda (coerce) False: eski davranış."""
+        return self.free_reply is not None and not self.coerce and bool(getattr(self.free_reply, "wide", False))
+
+    def _wide_lead(self, step: dict, utterance: str, reply: Reply, fallback: bool = True) -> str | None:
+        """off-004: akışın soruya cevap olarak anlayamadığı söz için LLM karşılığı (kategori 'unclear'). Söz boşsa (STT reddi, sessizlik)
+        LLM çağrılmaz. LLM başarısızsa fallback=True ise nötr yedek cümle, değilse None (çağıran eski sabit metni söyler).
+        Müşterinin cevabı LLM çıktısından ASLA türetilmez: bu yol yalnız söylenecek cümleyi seçer, answers'a yazmaz."""
+        if not self._wide() or not utterance.strip():
+            return None
+        free = self._free_text(step, utterance, "unclear", reply)
+        if free:
+            return free
+        return self.free_reply.fallback_text if fallback else None
 
     def _free_text(self, step: dict, utterance: str, category: str, reply: Reply) -> str | None:
         """ADR 0009 adım 2: konu dışı turda lokal Qwen ile kısa karşılık dener. free_reply yoksa (ayar kapalı, kıyas/eval koşuları) ya da
@@ -757,7 +779,7 @@ class FlowDriver:
             return reply
         if intent == "off_topic":
             return self._off_topic(step, utterance, reply)
-        return self._retry(step, reply)
+        return self._retry(step, reply, utterance)
 
     def _clarify_score(self, step: dict, utterance: str, reply: Reply) -> Reply | None:
         """Puan politikası 'clarify' (core-021): puan yalnızca müşterinin SÖYLEDİĞİ tek sayıdan gelir. Sayı yoksa ya da aralık/ondalık
@@ -779,15 +801,33 @@ class FlowDriver:
         elif nums and not valid:
             reply.utterances.append(f"Puanı {lo} ile {step['max']} arasında tam sayı olarak söyler misiniz? " + q)
         else:
-            reply.utterances.append(f"Puan olarak {lo} ile {step['max']} arasında bir sayı söyler misiniz? Örneğin sekiz. " + q)
+            # off-004: söylenende hiç sayı yoksa (ör. 'eşim yaptı galiba görüşmeyi') geniş kapsamda önce söylenene LLM karşılığı + kısa soru;
+            # LLM başarısızsa eski netleştirme cümlesi (yedek cümleden daha yönlendirici)
+            lead = self._wide_lead(step, utterance, reply, fallback=False)
+            if lead:
+                reply.utterances.append(lead + " " + self.retry_of(step["key"]))
+            else:
+                reply.utterances.append(f"Puan olarak {lo} ile {step['max']} arasında bir sayı söyler misiniz? Örneğin sekiz. " + q)
         return reply
 
-    def _retry(self, step: dict, reply: Reply) -> Reply:
+    def _retry(self, step: dict, reply: Reply, utterance: str = "") -> Reply:
         key = step["key"]
         if self.retries < MAX_RETRIES:
             self.retries += 1
             q = self.retry_of(key)
-            if self.retries == 1:
+            # off-004: geniş kapsamda 'tam anlayamadım' yerine söylenene anlamlı LLM karşılığı (ya da nötr yedek) + kısa soru metni.
+            # Deneme hakkı yine harcanır: müşteri iki turda cevap vermezse eski sınır (cevapsız geç / kapanış) aynen işler.
+            lead = self._wide_lead(step, utterance, reply)
+            if lead and self.retries == 1:
+                reply.utterances.append(lead + " " + q)
+            elif lead:
+                hint = HINTS.get(step["kind"]) or (
+                    "Lütfen " + (f"{'sıfır' if step['code'] == 'Q12' else 'bir'} ile on arasında bir puan söyleyin."
+                                 if step["kind"] == "Score" else
+                                 "şunlardan birini söyleyin: " + ", ".join(c["label"] for c in step["choices"]) + "."
+                                 if step["kind"] == "Choice" else "kısaca cevaplayın."))
+                reply.utterances.append(f"{lead} {q} {hint}")
+            elif self.retries == 1:
                 reply.utterances.append("Özür dilerim, tam anlayamadım. " + q)
             else:
                 hint = HINTS.get(step["kind"]) or (

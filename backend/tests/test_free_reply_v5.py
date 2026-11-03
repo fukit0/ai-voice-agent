@@ -131,7 +131,7 @@ def test_name_claim_uses_replier_assistant_name():
 
 # ---- istem v5 ----
 def test_prompt_v5_length_name_and_scale_rules():
-    assert F.PROMPT_VERSION == "5" and F.MAX_WORDS == 22
+    assert F.PROMPT_VERSION == "6" and F.MAX_WORDS == 22      # off-004: v6; v5 kuralları korundu
     msg = F.build_messages(STEPS["q2"], "soru", "x", "other", "Ayşe", 200)[0]["content"]
     assert "en fazla 22 kelime ve 200 karakter" in msg and "{WORDS}" not in msg and "{MAX}" not in msg
     assert "Adın yalnızca Ayşe" in msg and "ad, unvan, kimlik uydurma" in msg
@@ -152,7 +152,8 @@ def test_reaudit_recovers_false_rejects_and_keeps_real_violations():
     res = mod["reaudit"](json.loads(EVIDENCE.read_text(encoding="utf-8")))
     rec = {(x["id"], x["run"]) for x in res["recovered"]}
     assert rec == {("f12", 0), ("f23", 0), ("f23", 1), ("f23", 2), ("f24", 2), ("f27", 0), ("f27", 1), ("f27", 2)}
-    assert {(x["id"], x["run"]) for x in res["newly_rejected"]} == {("f30", 2)}       # gerçek "Ben Selin" çıktısı
+    # gerçek "Ben Selin" (run 2) ve off-004 ile yakalanan "Ben yapay zekâ destekli bir asistanım, Selin adıyla" (run 0, 1) çıktıları
+    assert {(x["id"], x["run"]) for x in res["newly_rejected"]} == {("f30", 0), ("f30", 1), ("f30", 2)}
     still = {(x["id"], x["run"]) for x in res["still_rejected"]}
     assert {("f31", 0), ("f31", 1), ("f31", 2), ("f07", 1), ("f33", 1)} <= still     # iade ve kendi puanı/fikri hâlâ ret
     assert res["violations_caught"] == len(res["violations"]) >= 15
