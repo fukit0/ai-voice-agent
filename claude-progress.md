@@ -513,3 +513,5 @@ agents do not update it automatically.
 
 - Session 046 (devam 4): Qwen thinking ayarı eklendi (7ddf760, sahte istemciyle test; gerçek ölçülmedi). v2 istem gerçek ölçümde geriledi (zaman aşımı 1 -> 19/96, p50 0,78 -> 1,37 sn counter+clarify); istem v3 (3 örnek). 907 backend test geçti (bulut). v3 gerçek koşu bekleniyor.
 - Session 046 (devam 5): istem v3 gerçek ölçüm: counter+clarify 32/42 geçti, zaman aşımı 6, p50 0,98 sn; ilk vaka (f01) 3/3 zaman aşımı (ısınma şüphesi). Öneri: ısınma turu + timeout 2,0 sn; uygulanmadı. off-002 blocked.
+
+- Session 046 (devam 6): 'Cevaba bağlı tepkiler' aç/kapa ayarı (a72116c). Oturum 05d1cd392eb3 (L2-EL) analizi: yavaşlık LLM düşünmesi değil; STT 9,95 sn + Qwen 5,4 sn, ikisi de ~20 dk boşta kalmış yerel modellerin ilk çağrısı (soğuk/ısınma şüphesi, kanıtlanmadı); docs/llm-yavaslik-05d1cd392eb3.md. AÇIK HATA: müşteri yeniden konuşunca atılan tur (barge-in, turn_id) akışa cevabı yine de kaydedip bir sonraki adıma geçiyor (session.py _flow_reply / _on_frame) -> müşteri KVKK sorusunu tekrar duydu. Düzeltilmedi. Yerel sağlayıcılar için arama başı ısınma yok (registry.prewarm yalnız uzak).
