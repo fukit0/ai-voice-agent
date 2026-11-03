@@ -31,6 +31,7 @@ export function BenchmarkPage() {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [run, setRun] = useState<Run | null>(null);
   const [mode, setMode] = useState<PfMode>("both");
+  const [recordAudio, setRecordAudio] = useState(false);   // eval-006: varsayılan kapalı (disk)
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const alive = useRef(true);
@@ -65,7 +66,7 @@ export function BenchmarkPage() {
     setBusy(true); setError(null);
     try { await fn(); await refresh(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
-  const start = () => act(async () => { if (active) setRun(await fetchRun((await startRun(active.id, mode)).run_id)); });
+  const start = () => act(async () => { if (active) setRun(await fetchRun((await startRun(active.id, mode, recordAudio)).run_id)); });
   const calls = run?.calls ?? [];
   const canRun = !!active && !!set?.ready && !runRunning && !busy && active.mode !== "realtime";
   const sessions = calls.filter((c) => c.session_id).length;
@@ -119,6 +120,13 @@ export function BenchmarkPage() {
           ))}
         </div>
         <p className="meta">{MODES.find((m) => m.id === mode)?.hint}. Süre profile bağlıdır; yerel modellerde 20 arama onlarca dakika sürebilir.</p>
+        <label>
+          <input type="checkbox" checked={recordAudio} onChange={(e) => setRecordAudio(e.target.checked)} /> Ses kaydını sakla
+        </label>
+        <p className="meta" data-testid="record-hint">
+          Her aramanın stereo WAV kaydı (sol müşteri, sağ ajan) Aramalar ekranında dinlenir. Boyut: ~7,5 MB / 2 dk arama; 20 aramalık koşu ~150 MB.
+          Müşteri tarafı sentetik persona sesidir (gerçek kişi sesi yok). Kayıt sıralıdır: söz kesme/çakışma yoktur, gerçek telefon kaydı gibi dinlenmemeli.
+        </p>
         <button type="button" className="primary" onClick={start} disabled={!canRun}>Test setini koştur</button>{" "}
         {runRunning && run && <button type="button" onClick={() => act(() => cancelRun(run.id))}>Durdur</button>}
 
@@ -131,7 +139,7 @@ export function BenchmarkPage() {
               {run.done}/{run.total} arama · {run.profile}{run.error && ` · ${run.error}`}
             </p>
             <div className="table-wrap"><table className="data-table" data-testid="run-table">
-              <thead><tr><th>#</th><th>Müşteri</th><th>Yol</th><th>Telefon</th><th>Durum</th><th>Sonuç</th><th>İlk ses p50</th><th>Cevap</th></tr></thead>
+              <thead><tr><th>#</th><th>Müşteri</th><th>Yol</th><th>Telefon</th><th>Durum</th><th>Sonuç</th><th>İlk ses p50</th><th>Cevap</th><th>Kayıt</th></tr></thead>
               <tbody>
                 {calls.map((c) => {
                   const st = STATUS[c.status] ?? { label: c.status, tone: "" as const };
@@ -145,6 +153,7 @@ export function BenchmarkPage() {
                       <td>{c.outcome ? OUTCOMES[c.outcome] ?? c.outcome : "—"}</td>
                       <td className="num">{sec(c.first_audio_p50_s)}</td>
                       <td className="num">{c.answers === undefined ? "—" : `${c.answers - (c.unanswered ?? 0)}/${c.answers}`}</td>
+                      <td>{c.has_audio ? <Link to="/calls" title={c.session_id}>Aramalar'da dinle</Link> : "—"}</td>
                     </tr>
                   );
                 })}

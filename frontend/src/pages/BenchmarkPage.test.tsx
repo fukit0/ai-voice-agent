@@ -116,3 +116,45 @@ describe("Kıyas koşusu", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("LLM soğuk");
   });
 });
+
+describe("Kıyas koşusu: ses kaydı (eval-006)", () => {
+  const handler = (calls: Record<string, unknown>[]) => (url: string, init?: RequestInit) => {
+    if (url === "/api/evalrun/set") return SET(true);
+    if (url === "/api/evalrun/runs" && init?.method === "POST") return new Response(JSON.stringify({ run_id: RUN("running", 0).id, total: 2 }), { status: 202 });
+    if (url === "/api/evalrun/runs") return [];
+    if (url.startsWith("/api/evalrun/runs/")) return { ...RUN("done", 2), record_audio: true, calls };
+  };
+
+  it("onay kutusu varsayılan kapalı; kapalıyken istek gövdesinde record_audio yok", async () => {
+    const f = mock(handler(CALLS("ok")));
+    open();
+    const box = await screen.findByRole("checkbox", { name: /Ses kaydını sakla/ });
+    expect(box).not.toBeChecked();
+    expect(screen.getByTestId("record-hint")).toHaveTextContent("~7,5 MB / 2 dk");
+    expect(screen.getByTestId("record-hint")).toHaveTextContent("~150 MB");
+    expect(screen.getByTestId("record-hint")).toHaveTextContent("sentetik persona");
+    const go = screen.getByRole("button", { name: "Test setini koştur" });
+    await waitFor(() => expect(go).toBeEnabled());
+    fireEvent.click(go);
+    await waitFor(() => expect(f.mock.calls.some(([u, i]) => u === "/api/evalrun/runs" && i?.method === "POST")).toBe(true));
+    const post = f.mock.calls.find(([u, i]) => u === "/api/evalrun/runs" && i?.method === "POST")!;
+    expect(JSON.parse(post[1]!.body as string)).not.toHaveProperty("record_audio");
+  });
+
+  it("işaretlenince record_audio: true gönderir ve kaydı olan satırda Aramalar'da dinle bağlantısı çıkar", async () => {
+    const rows = [{ ...CALLS("ok")[0], has_audio: true }, { ...CALLS("ok")[1], status: "ok", session_id: "b2", has_audio: false }];
+    const f = mock(handler(rows));
+    open();
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Ses kaydını sakla/ }));
+    expect(screen.getByRole("checkbox", { name: /Ses kaydını sakla/ })).toBeChecked();
+    const go = screen.getByRole("button", { name: "Test setini koştur" });
+    await waitFor(() => expect(go).toBeEnabled());
+    fireEvent.click(go);
+    await waitFor(() => expect(f.mock.calls.some(([u, i]) => u === "/api/evalrun/runs" && i?.method === "POST")).toBe(true));
+    const post = f.mock.calls.find(([u, i]) => u === "/api/evalrun/runs" && i?.method === "POST")!;
+    expect(JSON.parse(post[1]!.body as string)).toEqual({ profile: "L1", phone_filter: "both", record_audio: true });
+    const links = await screen.findAllByRole("link", { name: "Aramalar'da dinle" });
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAttribute("href", "/calls");
+  });
+});

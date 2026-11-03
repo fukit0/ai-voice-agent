@@ -584,3 +584,40 @@ def test_webrtc_without_record_flag_writes_no_wav(env):
     folder = env / "data" / "voice-sessions"
     assert list(folder.glob("*.json")) and not list(folder.glob("*.wav"))
     assert "audio" not in json.loads(next(folder.glob("*.json")).read_text(encoding="utf-8"))
+
+
+# ---- eval-006: sanal zaman çizelgesi (kıyas koşusu) ----
+def test_virtual_timeline_places_turns_sequentially_without_overlap(tmp_path):
+    import wave
+    from backend.app.voice.recording import StereoRecorder
+    rec = StereoRecorder(timeline="virtual")
+    rec.add_agent(np.full(24000, 16384, np.int16))           # ajan 0,5 sn (iki push = tek blok)
+    rec.add_agent(np.full(24000, 16384, np.int16))           # +0,5 sn
+    rec.add_user(np.full(8000, 0.5, np.float32))              # müşteri 0,5 sn: ajan bitince
+    rec.add_agent(np.full(48000, 16384, np.int16))           # ajan 1 sn: müşteri bitince
+    seg = rec.segments()
+    assert seg["agent"][0] == (0, 16000) and seg["user"] == [(16000, 24000)] and seg["agent"][1][0] == 24000
+    spans = sorted(seg["agent"] + seg["user"])
+    assert all(a[1] <= b[0] for a, b in zip(spans, spans[1:]))  # kanallar hiç çakışmaz
+    meta = rec.save(tmp_path / "v.wav")
+    with wave.open(str(tmp_path / "v.wav"), "rb") as w:
+        data = np.frombuffer(w.readframes(w.getnframes()), "<i2").reshape(-1, 2)
+    assert 2.45 <= meta["seconds"] <= 2.55 and "sanal" in meta["layout"]
+    assert data[8000, 1] > 5000 and data[8000, 0] == 0          # önce ajan
+    assert data[20000, 0] > 10000 and data[20000, 1] == 0       # sonra müşteri
+    assert data[32000, 1] > 5000 and data[32000, 0] == 0        # sonra yine ajan
+
+
+def test_virtual_timeline_respects_cap_and_wall_mode_is_unchanged(tmp_path, monkeypatch):
+    from backend.app.voice import recording
+    monkeypatch.setattr(recording, "MAX_SECONDS", 1)
+    rec = recording.StereoRecorder(timeline="virtual")
+    rec.add_user(np.zeros(16000, np.float32))
+    rec.add_agent(np.zeros(480, np.int16))                     # sınır aşıldı: yazılmaz
+    assert rec.truncated and rec.segments()["agent"] == []
+    with pytest.raises(ValueError):
+        recording.StereoRecorder(timeline="x")
+    live = recording.StereoRecorder()                          # varsayılan: duvar saati (canlı) davranışı
+    assert live.timeline == "wall"
+    live.add_user(np.full(160, 0.5, np.float32))
+    assert live._user_n == 160 and live._vuser == [] and live.save(tmp_path / "w.wav")["layout"] == "sol=müşteri (ham mikrofon), sağ=ajan"

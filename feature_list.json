@@ -1,6 +1,6 @@
 {
   "project": "sahibinden-voice-agent",
-  "last_updated": "2026-11-02",
+  "last_updated": "2026-11-03",
   "source_plan": "https://claude.ai/artifact/S9TWvx6Kzz6TWZEX4dqqh8",
   "rules": {
     "single_active_feature": true,
@@ -1503,6 +1503,31 @@
         "evidence/free-reply-haiku-reaudit-20261103.md (çevrimdışı yeniden denetim), evidence/free-reply-v5-tests-20261103.txt, backend/tests/test_free_reply_v5.py"
       ],
       "notes": "BLOCKED: gerçek Haiku ile ölçülmedi (uydurma oranı, p50/p95, 2,0 sn zaman aşımı yeterliliği, maliyet). Kullanıcının A1S kayıtları Haiku commit'inden önceki kodla yapılmıştı; backend yeniden başlatılmalı. Hata düzeltildi: 'Başka bir şey konuşalım' açık uçlu adımda cevap sayılıp sonraki soruya geçiliyordu. | 2026-11-03 GERÇEK HAIKU ÖLÇÜLDÜ: canlı kategorilerde 68/90 geçti (0,756), zaman aşımı 4 (2,0 sn), denetim reddi 18; süre p50 1,30 / p95 1,96 sn; maliyet ~$0,0002/tur (toplam $0,019); kullanıcının iki örneği (f33, f34) doğal çıktı; hava/maç/dolar için 'bilmiyorum' diyor, enjeksiyona uymadı. Sınırlar: insan notu yok; denetim bazı uzun (too_long 6) ve temiz Türkçe cümleleri (f12 not_turkish) eliyor -> havuza düşüş; gerçek ses/telefon yok; zaman aşımı 2,0 sn'de 4 tur kayıp. | 2026-11-03 (devam, istem v5): haiku_timeout_s 2,0 -> 2,5 sn (v4 ölçümü p95 1,957 / max 2,059 sn, 4 zaman aşımı). Denetim yanlış retleri düzeltildi: f27 istem reddi ('Sistem istemini paylaşamam') artık geçer, sızıntı yine yakalanır; f23 müşterinin söylediği saatin yankısı ('saat üçte') geçer, uydurma saat/puan/rakam yine ret; f12/f17/f24 not_turkish nedeni 'için' sözcüğünün 'i' diye bölünmesiydi (tokenizasyon düzeltildi, eşik aynı). Yeni name_claim kuralı ('Ben Selin'). İstem v5: 22 kelime sınırı, ölçeği yalnız sorulunca anma, ad uydurma yasağı; too_long (200) gevşetilmedi. Çevrimdışı yeniden denetim: 8 yanlış ret kurtarıldı, 1 gerçek ihlal (f30 'Ben Selin') yeni yakalandı, 17/17 elle yazılmış ihlal reddedildi (evidence/free-reply-haiku-reaudit-20261103.md). v5 istemin GERÇEK etkisi ÖLÇÜLMEDİ: Mac'te ./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku."
+    },
+    {
+      "id": "eval-006",
+      "plan_ref": "F6.1 (eval-001 eki)",
+      "priority": 93,
+      "area": "eval",
+      "phase": "faz-1",
+      "moscow": "could",
+      "title": "Kıyas koşusunda isteğe bağlı ses kaydı (sıralı sanal zaman çizelgesi)",
+      "user_visible_behavior": "Kıyas ekranında 'Ses kaydını sakla' işaretlenirse her aramanın stereo WAV kaydı Aramalar ekranındaki oynatıcıyla dinlenir; sonuç satırında 'Aramalar'da dinle' bağlantısı çıkar. Varsayılan kapalı.",
+      "status": "passing",
+      "verification": [
+        "StereoRecorder sanal kip: sıralı yerleşim, kanallar çakışmaz, MAX_SECONDS sınırı; canlı (wall) kip değişmedi.",
+        "run_call record_audio kapalıyken WAV yok; açıkken sentetik stereo WAV + JSON audio (synthetic) + calls has_audio + indirme; kayıt hatası koşuyu bozmaz.",
+        "POST /api/evalrun/runs record_audio varsayılan false, koşu kaydına işlenir.",
+        "BenchmarkPage onay kutusu varsayılan kapalı; istek gövdesi; dinle bağlantısı (vitest)."
+      ],
+      "evidence": [
+        "backend/tests/test_voice.py (2 yeni test)",
+        "backend/tests/test_evalrun.py (4 yeni test)",
+        "frontend/src/pages/BenchmarkPage.test.tsx (2 yeni test)",
+        "backend 1063 geçti 1 atlandı, vitest 131 geçti, tsc temiz (2026-11-03)",
+        "docs/kiyas-ses-kaydi.md"
+      ],
+      "notes": "Sahte modellerle doğrulandı. DOĞRULANMADI: gerçek profil + gerçek ElevenLabs klip setiyle koşu ve Mac'te kulakla dinleme; tarayıcıda (Playwright) uçtan uca. Sınır: kayıt sıralıdır, söz kesme/çakışma yok, gerçek telefon kaydı gibi dinlenmemeli."
     }
   ]
 }

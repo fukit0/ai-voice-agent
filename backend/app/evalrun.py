@@ -8,6 +8,10 @@ müşteri sesi mikrofon yerine klipten beslenir. Bitince oturum JSON'u data/voic
 
 Ne ölçülmez (açık): ajan sesi gerçek zamanlı çalınmaz, bu yüzden hoparlör yankısı/kendi sesini duyup kesilme ve ağ gecikmesi yoktur;
 müşteri ajanı hiç kesmez (söz kesme testi değildir). Gecikme tanımı canlı oturumla aynıdır (VAD konuşma bitişi -> ajanın ilk sesi).
+
+Ses kaydı (eval-006, isteğe bağlı, varsayılan kapalı): `record_audio=True` ile ajan sesi ve beslenen müşteri klibi StereoRecorder'ın
+sanal zaman çizelgesine yazılır, WAV oturum JSON'unun yanına düşer ve Aramalar ekranındaki oynatıcıyla dinlenir. Kayıt sıralıdır
+(çakışma/söz kesme yok); müşteri tarafı sentetik persona sesidir. Ayrıntı: docs/kiyas-ses-kaydi.md.
 """
 from __future__ import annotations
 
@@ -200,15 +204,18 @@ def apply_persona(clip: np.ndarray, persona: dict, seed: int = 0) -> np.ndarray:
 class HeadlessOut:
     """Ajanın sesini çöpe atan çıkış: çalma anında bitmiş sayılır (gerçek zamanlı bekleme yok)."""
 
-    def __init__(self) -> None:
+    def __init__(self, recorder=None) -> None:
         self.cb: Callable[[], None] = lambda: None
         self.seconds = 0.0
+        self.recorder = recorder          # eval-006: StereoRecorder(timeline="virtual") ya da None
 
     def set_on_drained(self, cb) -> None:
         self.cb = cb
 
     def push(self, pcm) -> None:
         self.seconds += len(pcm) / 48000
+        if self.recorder is not None:
+            self.recorder.add_agent(pcm)
 
     def flush(self) -> None:
         pass
@@ -242,14 +249,16 @@ def _summary(doc: dict) -> dict[str, Any]:
 async def run_call(*, profile_id: str, stt, llm, tts, persona: dict, path: dict, phone_filter: bool, cfg: dict, run_id: str,
                    scenario: str = "anket", clip_loader: Callable[[str, float, str], np.ndarray] = read_clip,
                    max_turns: int = MAX_TURNS, fast_path: bool = False,
-                   prompt_variant: str | None = None) -> dict[str, Any]:
+                   prompt_variant: str | None = None, record_audio: bool = False) -> dict[str, Any]:
     from .voice.flow import FlowDriver
+    from .voice.recording import StereoRecorder
     from .voice.session import VoiceSession
     cust = persona_mod.load()
     flow = FlowDriver(S.get(scenario), llm, persona_mod.scenario_values(cust), score_policy="clarify", persona=cust)
     flow.prompt_variant = prompt_variant      # None: aktif sürüm; script/kıyas sürümleri tek tek dener
     flow.fast_path = bool(fast_path)       # profilin hızlı yol ayarı kıyas koşusuna da uygulanır (canlı aramayla aynı davranış)
-    sid, events, out = uuid.uuid4().hex[:12], [], HeadlessOut()
+    recorder = StereoRecorder(timeline="virtual") if record_audio else None
+    sid, events, out = uuid.uuid4().hex[:12], [], HeadlessOut(recorder)
     session = VoiceSession(sid, profile_id, stt, llm, tts, out, events.append, flow=flow, phone_filter=phone_filter,
                            persona=persona_mod.system_prompt(cust), greeting=persona_mod.greeting(cust),
                            tts_speed=float(cust.get("speed", 1.0)), tts_tone=cust.get("tone"))
@@ -270,7 +279,10 @@ async def run_call(*, profile_id: str, stt, llm, tts, persona: dict, path: dict,
             visits[key] += 1
             said.append({"step": key, "text": text})
             audio = apply_persona(clip_loader(vid, persona["speed"], text), persona, seed=n)
-            session.feed(np.concatenate([audio, np.zeros(int(TRAIL_SILENCE_S * RATE), np.float32)]))
+            fed = np.concatenate([audio, np.zeros(int(TRAIL_SILENCE_S * RATE), np.float32)])
+            if recorder is not None:
+                recorder.add_user(fed)          # ham (telefon filtresi öncesi), canlıdaki sol kanal gibi
+            session.feed(fed)
             await asyncio.sleep(0)
         else:
             status = "max_turns"
@@ -279,8 +291,25 @@ async def run_call(*, profile_id: str, stt, llm, tts, persona: dict, path: dict,
         session.meta["eval"]["customer"] = said
     finally:
         path_json = await session.close()
+    has_audio = _save_recording(recorder, path_json) if recorder is not None else False
     doc = json.loads(path_json.read_text(encoding="utf-8")) if path_json else {}
-    return {"session_id": sid, "status": status, **_summary(doc)}
+    return {"session_id": sid, "status": status, **_summary(doc), **({"has_audio": has_audio} if record_audio else {})}
+
+
+def _save_recording(recorder, path_json: Path | None) -> bool:
+    """WAV'ı oturum JSON'unun yanına yazar, JSON'a canlıdakiyle aynı biçimde `audio` (+ synthetic) ekler. Hata koşuyu bozmaz."""
+    if path_json is None:
+        return False
+    try:
+        meta = recorder.save(path_json.with_suffix(".wav"))
+        if meta is not None:
+            meta.update(synthetic=True, timeline="virtual")
+        doc = json.loads(path_json.read_text(encoding="utf-8"))
+        doc["audio"] = meta
+        path_json.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+        return meta is not None
+    except Exception:  # noqa: BLE001 (kayıt yardımcı özelliktir; ölçüm sonucu yine döner)
+        return False
 
 
 # ---------- koşu yönetimi ----------
@@ -304,21 +333,25 @@ def active_run() -> dict | None:
     return next((r for r in RUNS.values() if r["status"] == "running"), None)
 
 
-def new_run(profile_id: str, pf_mode: str, cfg: dict, personas: list[str] | None, paths: list[str] | None) -> dict:
+def new_run(profile_id: str, pf_mode: str, cfg: dict, personas: list[str] | None, paths: list[str] | None,
+            record_audio: bool = False) -> dict:
     calls = plan_calls(cfg, pf_mode, personas, paths)
     for i, c in enumerate(calls):
         c["index"] = i
     run = {"id": datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6], "profile": profile_id, "phone_filter": pf_mode,
            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "finished_at": None, "status": "running",
-           "total": len(calls), "done": 0, "calls": calls, "error": None}
+           "total": len(calls), "done": 0, "calls": calls, "error": None,
+           "record_audio": bool(record_audio)}
     RUNS[run["id"]] = run
     _save(run)
     return run
 
 
 async def execute(run: dict, cfg: dict, stt, llm, tts, scenario: str = "anket", clip_loader=read_clip, fast_path: bool = False,
-                  prompt_variant: str | None = None) -> None:
+                  prompt_variant: str | None = None, record_audio: bool | None = None) -> None:
     run["fast_path"] = bool(fast_path)
+    rec = bool(run.get("record_audio", False) if record_audio is None else record_audio)
+    run["record_audio"] = rec                       # eval-006: kayıt seçeneği koşu kaydında kalır
     run["prompt_variant"] = prompt_variant          # koşunun hangi ayarla yapıldığı kayıtta kalır
     by_p = {p["id"]: p for p in cfg["personas"]}
     by_t = {t["id"]: t for t in cfg["paths"]}
@@ -332,7 +365,8 @@ async def execute(run: dict, cfg: dict, stt, llm, tts, scenario: str = "anket", 
                 res = await asyncio.wait_for(run_call(profile_id=run["profile"], stt=stt, llm=llm, tts=tts, persona=by_p[c["persona"]],
                                                       path=by_t[c["path"]], phone_filter=c["phone_filter"], cfg=cfg, run_id=run["id"],
                                                       scenario=scenario, clip_loader=clip_loader,
-                                                      fast_path=fast_path, prompt_variant=prompt_variant), timeout=900)
+                                                      fast_path=fast_path, prompt_variant=prompt_variant,
+                                                      record_audio=rec), timeout=900)
                 c.update(res)
             except Exception as exc:  # noqa: BLE001 - bir arama patlarsa diğerleri koşmaya devam eder
                 c.update(status="error", error=f"{type(exc).__name__}: {exc}")
@@ -388,4 +422,5 @@ def list_runs(limit: int = 30) -> list[dict]:
             except (OSError, ValueError):
                 continue
     out = sorted(rows.values(), key=lambda r: r["created_at"], reverse=True)[:limit]
-    return [{k: r[k] for k in ("id", "profile", "phone_filter", "created_at", "finished_at", "status", "total", "done")} for r in out]
+    return [{**{k: r[k] for k in ("id", "profile", "phone_filter", "created_at", "finished_at", "status", "total", "done")},
+             "record_audio": bool(r.get("record_audio"))} for r in out]

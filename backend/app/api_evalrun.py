@@ -2,7 +2,8 @@
 
 GET  /api/evalrun/set            — personalar, yollar, klip durumu, hazır mı
 POST /api/evalrun/set/build      — eksik klipleri ElevenLabs ile üretir (arka planda; GET /set ile izlenir)
-POST /api/evalrun/runs           — {profile, phone_filter: off|on|both, personas?, paths?} koşuyu başlatır (202)
+POST /api/evalrun/runs           — {profile, phone_filter: off|on|both, personas?, paths?, record_audio?} koşuyu başlatır (202);
+                                   record_audio (varsayılan false, eval-006) her aramanın sıralı stereo WAV'ını saklar
 GET  /api/evalrun/runs[/{id}]    — liste / ilerleme (her arama: persona, yol, telefon filtresi, oturum kimliği, sonuç)
 POST /api/evalrun/runs/{id}/cancel
 ADR 0001: profil sıcak olmalı (409 profile_not_warm). Aynı anda tek koşu: yerel modeller paylaşılır, çakışan koşu ölçümü bozar.
@@ -28,6 +29,7 @@ class RunBody(BaseModel):
     phone_filter: Literal["off", "on", "both"] = "both"
     personas: list[str] | None = None
     paths: list[str] | None = None
+    record_audio: bool = False          # eval-006: ~7,5 MB / 2 dk arama; varsayılan kapalı (disk)
 
 
 def _providers(profile):
@@ -79,7 +81,7 @@ async def start_run(body: RunBody) -> dict:
     if not evalrun.set_status(cfg)["ready"]:
         raise HTTPException(409, {"error": "set_not_ready", "message": "Persona sesleri hazır değil: önce 'Test setini hazırla'."})
     stt, llm, tts = _providers(profile)
-    run = evalrun.new_run(body.profile, body.phone_filter, cfg, body.personas, body.paths)
+    run = evalrun.new_run(body.profile, body.phone_filter, cfg, body.personas, body.paths, record_audio=body.record_audio)
     evalrun.start(run, cfg, stt, llm, tts, fast_path=bool(profile.fast_path))
     return {"run_id": run["id"], "total": run["total"]}
 

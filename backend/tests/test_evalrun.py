@@ -305,3 +305,65 @@ def test_variants_script_runs_each_prompt_version_and_records_which(ready):
         assert r["calls"][0]["prompt"]["version"] == r["variant"]            # oturum kaydı hangi sürümle yapıldığını söyler
     assert res[0]["calls"][0]["prompt"]["hash"] != res[1]["calls"][0]["prompt"]["hash"]
     assert all(t.get("fast_path") is None for r in res for t in r["calls"][0]["turns_detail"])   # hızlı yol kapalı
+
+
+# ---- eval-006: kıyas koşusunda ses kaydı ----
+def _one(**kw):
+    return run_set(personas=[CFG["personas"][0]["id"]], paths=[CFG["paths"][0]["id"]], **kw)
+
+
+def test_record_audio_off_by_default_writes_no_wav(ready):
+    run = _one()
+    assert run["record_audio"] is False and "has_audio" not in run["calls"][0]
+    assert not list((ready / "voice-sessions").glob("*.wav"))
+    doc = _sessions(ready)[0]
+    assert "audio" not in doc
+    assert calls.list_calls(ready / "voice-sessions", None, None, None, 10)["calls"][0]["has_audio"] is False
+
+
+def test_record_audio_saves_sequential_synthetic_stereo_wav_visible_in_calls(ready):
+    import wave
+    run = _one(record_audio=True)
+    c = run["calls"][0]
+    assert run["record_audio"] is True and c["status"] == "ok" and c["has_audio"] is True
+    wav = ready / "voice-sessions" / f"{c['session_id']}.wav"
+    doc = json.loads(wav.with_suffix(".json").read_text(encoding="utf-8"))
+    a = doc["audio"]
+    assert a["file"] == wav.name and a["channels"] == 2 and a["sample_rate"] == 16000 and a["synthetic"] is True
+    assert a["timeline"] == "virtual" and a["truncated"] is False and a["seconds"] > 1
+    with wave.open(str(wav), "rb") as w:
+        data = np.frombuffer(w.readframes(w.getnframes()), "<i2").reshape(-1, 2).astype(np.int32)
+    both = (np.abs(data[:, 0]) > 300) & (np.abs(data[:, 1]) > 300)
+    assert np.abs(data[:, 0]).max() > 1000 and np.abs(data[:, 1]).max() > 1000      # iki kanalda da ses var
+    assert both.sum() == 0                                                          # sıralı: müşteri ve ajan çakışmaz
+    row = calls.list_calls(ready / "voice-sessions", None, None, None, 10)["calls"][0]
+    assert row["has_audio"] is True                                                 # Aramalar oynatıcısı otomatik görür
+    with TestClient(app) as cl:
+        r = cl.get(f"/api/voice/recordings/{c['session_id']}.wav")
+        assert r.status_code == 200 and r.content[:4] == b"RIFF"
+
+
+def test_record_audio_failure_does_not_break_the_call(ready, monkeypatch):
+    from backend.app.voice import recording
+    monkeypatch.setattr(recording.StereoRecorder, "save", lambda self, p: (_ for _ in ()).throw(OSError("disk dolu")))
+    run = _one(record_audio=True)
+    assert run["calls"][0]["status"] == "ok" and run["calls"][0]["has_audio"] is False and run["calls"][0]["outcome"]
+
+
+def test_api_record_audio_field_defaults_false_and_is_stored_in_run(ready, monkeypatch):
+    fake_providers(monkeypatch)
+    from backend.app import api_evalrun
+    assert api_evalrun.RunBody(profile="L1").record_audio is False
+    with TestClient(app) as c:
+        r = c.post("/api/evalrun/runs", json={"profile": "L1", "phone_filter": "off", "personas": ["ayse_sakin"], "paths": ["ret"],
+                                              "record_audio": True})
+        assert r.status_code == 202
+        rid = r.json()["run_id"]
+        for _ in range(600):
+            body = c.get(f"/api/evalrun/runs/{rid}").json()
+            if body["status"] != "running":
+                break
+            time.sleep(0.1)
+        assert body["status"] == "done" and body["record_audio"] is True and body["calls"][0]["has_audio"] is True
+        assert c.get("/api/evalrun/runs").json()[0]["record_audio"] is True
+    assert json.loads((ready / "eval-runs" / f"{rid}.json").read_text(encoding="utf-8"))["record_audio"] is True
