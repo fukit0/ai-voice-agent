@@ -508,3 +508,5 @@ agents do not update it automatically.
 - Session 046 (devam): off-002 (blocked): lokal Qwen ile serbest cevap (commit a035d11, ADR 0009 adım 2), yalnızca konu dışı/meta turlarda; sahte istemciyle 881 backend + 117 frontend test geçti; GERÇEK QWEN ile ölçülmedi, Mac'te scripts/eval_free_reply.py --runs 3 çalıştırılacak. Maliyet slaydı (8) ElevenAgents tahmini güncellendi: 6,65 dk görüşme LLM $0,17 -> ~$0,105/dk, A1S'in ~3 katı.
 
 - Session 046 (devam 2): off-002 gerçek Qwen ölçümü (Mac, 96 tur): geçen 0,75, p50 0,78 / p95 1,23 sn. counter+clarify iyi; weather/chitchat/joke/other uydurma cümleler -> canlı kategoriler yalnızca counter+clarify. off-002 passing (yalnız bu kapsam). Backend 882 test geçti (bulut).
+
+- Session 046 (devam 3): serbest cevap istemi v2 (6 few-shot örnek; eski istemin 2 örneği eval setiyle aynıydı, v1 ölçümü şişmiş olabilir). 883 backend test geçti (bulut). v2 ile gerçek Qwen koşusu bekleniyor: scripts/eval_free_reply.py --runs 3; off-002 tekrar blocked.

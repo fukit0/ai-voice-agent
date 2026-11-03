@@ -438,3 +438,14 @@ def test_session_record_has_reply_source_and_duration(tmp_path, monkeypatch):
     assert [t["reply_source"] for t in src] == ["qwen", "pool"]
     assert all("free_reply_s" in t for t in src) and src[1]["free_reply_fallback"] == "audit"
     assert saved["config"]["free_reply"]["enabled"] is True and saved["config"]["free_reply"]["model"] == FakeChat.model
+
+
+def test_prompt_examples_do_not_leak_eval_utterances():
+    """Istemdeki örnek müşteri sözleri değerlendirme setindeki sözlerle aynı olmamalı; yoksa ölçüm şişer (2026-11-03)."""
+    import json as _json
+    from pathlib import Path as _P
+    samples = _json.loads((_P(__file__).resolve().parents[2] / "config" / "eval" / "free-reply-samples.json").read_text(encoding="utf-8"))
+    items = samples if isinstance(samples, list) else next(v for v in samples.values() if isinstance(v, list))
+    sysmsg = F.SYSTEM.casefold()
+    leaked = [x.get("utterance") for x in items if x.get("utterance") and x["utterance"].casefold() in sysmsg]
+    assert leaked == [], leaked

@@ -1467,7 +1467,7 @@
       "moscow": "should",
       "title": "Lokal Qwen ile serbest cevap (konu dışı/meta turlar)",
       "user_visible_behavior": "'Sende kaç puan vereyim?' gibi karşı soru ve açıklama isteklerinde ajan lokal Qwen ile 1-2 cümlelik doğal cevap verir, bekleyen soruyu kod aynen ekler; Qwen yoksa/soğuksa/yavaşsa/denetim başarısızsa sabit havuza düşer.",
-      "status": "passing",
+      "status": "blocked",
       "verification": [
         "Sahte istemciyle birim testleri (pytest 881 geçti, vitest 117).",
         "Mac'te gerçek Qwen ile: ./.venv/bin/python scripts/eval_free_reply.py --runs 3 (32 vaka); sonuçları insan okur (doğallık, denetimden geçme oranı, p95 gecikme)."
@@ -1478,7 +1478,7 @@
         "docs/serbest-cevap-qwen.md",
         "evidence/free-reply-eval-20261103-064415.json (+ .md): gerçek Qwen, 96 tur, geçen 0,75, p50 0,78 / p95 1,23 sn"
       ],
-      "notes": "BLOCKED: gerçek Qwen ile ölçülmedi (bulutta Ollama yok, Mac VM'inden localhost'a erişim yok). Doğrulanmayan: doğallık, denetim geçme oranı, p95 (>1,5 sn olabilir), gerçek ses/telefon. Varsayılan açık; Qwen soğuksa havuza düşer (ADR 0001, soğuk yükleme ~67 sn: demo öncesi Hazırla). | 2026-11-03: GERÇEK QWEN ÖLÇÜLDÜ. counter/clarify iyi; weather/chitchat/joke/other uydurma-anlamsız cümleler üretti ve denetimden geçti -> canlı kategoriler yalnızca counter+clarify (config/free-reply.json, test_production_default_only_counter_and_clarify). PASSING kapsamı: yalnız counter+clarify. Sınırlar: insan notu yok, telefon/gerçek ses yok, ilk çağrı zaman aşımına düşebilir (Hazırla)."
+      "notes": "BLOCKED: gerçek Qwen ile ölçülmedi (bulutta Ollama yok, Mac VM'inden localhost'a erişim yok). Doğrulanmayan: doğallık, denetim geçme oranı, p95 (>1,5 sn olabilir), gerçek ses/telefon. Varsayılan açık; Qwen soğuksa havuza düşer (ADR 0001, soğuk yükleme ~67 sn: demo öncesi Hazırla). | 2026-11-03: GERÇEK QWEN ÖLÇÜLDÜ. counter/clarify iyi; weather/chitchat/joke/other uydurma-anlamsız cümleler üretti ve denetimden geçti -> canlı kategoriler yalnızca counter+clarify (config/free-reply.json, test_production_default_only_counter_and_clarify). PASSING kapsamı: yalnız counter+clarify. Sınırlar: insan notu yok, telefon/gerçek ses yok, ilk çağrı zaman aşımına düşebilir (Hazırla). | 2026-11-03 (devam): istem v2 (few-shot, eval sözleriyle çakışma giderildi; eski istemin 2 örneği eval setiyle aynıydı, ilk ölçüm şişmiş olabilir). v2 ile gerçek Qwen koşusu bekleniyor -> blocked; v1 ölçümü evidence'ta."
     }
   ]
 }

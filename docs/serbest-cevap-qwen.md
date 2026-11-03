@@ -133,3 +133,8 @@ Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aş
 - **weather / chitchat / joke / other: denetimden geçip de kötü cümleler çıktı** ("Hava gerçekten sıcak geçiyor, içeriye girmek isterseniz" = ajan havayı bilmiyor; "hemen hemen her anket sonunda bir fıkra bekliyorum" = anlamsız; "çağrı merkezimiz takvim düzenlemeleri yapmaz" = geri arama özelliğiyle çelişen yanlış bilgi). Otomatik denetim bunları yakalamıyor.
 - Karar: canlı varsayılan kategoriler yalnızca counter ve clarify; diğerleri sabit havuzda. identity/profanity/support zaten dışarıdaydı (ölçümdeki bu satırlar yalnız bilgi için, Qwen çıktısı kullanılmıyor).
 - Açık: insan notu sütunu doldurulmadı; telefon/gerçek ses yok; ilk çağrı soğuk/yavaş olabilir (Hazırla ile ısıt); counter/clarify cümleleri ölçekteki "bir ile on arasında" ifadesini soruyla tekrar ediyor (fazla uzun olabilir).
+
+## İstem v2: few-shot örnekler (2026-11-03)
+- İstem artık 6 örnek içeriyor (3 karşı soru: puan/evet-hayır, 3 açıklama isteği); örnek cümleleri kopyalamamaları söyleniyor. Eski istemde 3 örnek vardı ve ikisi değerlendirme setiyle AYNI müşteri sözüydü ("sende kaç puan vereyim", "hava nasıl orada"): f01'in iyi çıkması kısmen bundan olabilir, 2026-11-03 ölçümü bu yüzden şişmiş olabilir.
+- v2'de örnek sözler değerlendirme setinden ayrıldı; `test_prompt_examples_do_not_leak_eval_utterances` bunu korur. PROMPT_VERSION = 2.
+- ÖLÇÜLMEDİ: v2 istemiyle gerçek Qwen koşusu. Mac'te: `./.venv/bin/python scripts/eval_free_reply.py --runs 3`
