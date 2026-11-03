@@ -512,3 +512,4 @@ agents do not update it automatically.
 - Session 046 (devam 3): serbest cevap istemi v2 (6 few-shot örnek; eski istemin 2 örneği eval setiyle aynıydı, v1 ölçümü şişmiş olabilir). 883 backend test geçti (bulut). v2 ile gerçek Qwen koşusu bekleniyor: scripts/eval_free_reply.py --runs 3; off-002 tekrar blocked.
 
 - Session 046 (devam 4): Qwen thinking ayarı eklendi (7ddf760, sahte istemciyle test; gerçek ölçülmedi). v2 istem gerçek ölçümde geriledi (zaman aşımı 1 -> 19/96, p50 0,78 -> 1,37 sn counter+clarify); istem v3 (3 örnek). 907 backend test geçti (bulut). v3 gerçek koşu bekleniyor.
+- Session 046 (devam 5): istem v3 gerçek ölçüm: counter+clarify 32/42 geçti, zaman aşımı 6, p50 0,98 sn; ilk vaka (f01) 3/3 zaman aşımı (ısınma şüphesi). Öneri: ısınma turu + timeout 2,0 sn; uygulanmadı. off-002 blocked.

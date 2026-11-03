@@ -194,3 +194,9 @@ Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aş
 - v1 (3 örnek) 0,99 zaman aşımı içinde, p50 0,78 ölçülmüştü ama 2 örnek eval sözleriyle aynıydı (ölçüm şişkin).
 - v3: 3 örnek (2 counter/clarify cümlesi eval setinden ayrı) -> istem v1 uzunluğunda. PROMPT_VERSION = 3. Test: eval sözleri istemde yok.
 - ÖLÇÜLMEDİ: v3 gerçek koşu. Mac'te önce `ollama ps` ile yalnız instruct modelin yüklü olduğunu doğrulayın (thinking modeli ayrı bellek ve gecikme yükü getirir), sonra: `./.venv/bin/python scripts/eval_free_reply.py --runs 3`.
+
+## İstem v3 gerçek ölçüm (2026-11-03, evidence/free-reply-eval-20261103-073921.*)
+- counter+clarify 42 tur: 32 geçti (v1 39, v2 23). Zaman aşımı 6 (v1 1, v2 18), denetim 4. Süre p50 0,98 / p95 1,52 / en çok 2,49 sn (v1 0,78 / 1,17 / 2,41). Tüm set: geçen 0,635, zaman aşımı içinde 0,906.
+- Kullanıcının örneği "sende kaç puan vereyim" (f01) 3/3 zaman aşımına düştü (2,49 ve 1,52 sn): koşunun ilk vakası; ilk çağrılar yavaş (v1'de de ilk çağrı 2,41 sn). Soğuk/ön bellek etkisi şüphesi, KANITLANMADI. Vaka sonrası süreler 0,8-1,3 sn.
+- Geçen çıktılar makul ("Sizin deneyiminiz en önemli. Bir ile on arasında, size uygun gelen puanı vermeniz yeterli."); 3 tur soru işareti nedeniyle denetimde elendi (model kendi soru cümlesi ekledi).
+- Öneri: demo öncesi birkaç ısınma turu (ya da Hazırla'da Qwen'e aynı sistem istemiyle sahte istek), timeout_s 1,5 -> 2,0 (Ayarlar'dan; en kötü +0,5 sn sessizlik). Ölçüm betiği ilk çağrıları ayrı raporlamalı. Bunlar UYGULANMADI.
