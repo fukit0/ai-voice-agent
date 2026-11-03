@@ -48,6 +48,7 @@ ALL_CATEGORIES = ["counter", "clarify", "other", "weather", "chitchat", "joke"] 
 
 def replier(client=None, **cfg):
     cfg.setdefault("categories", ALL_CATEGORIES)
+    cfg.setdefault("use_pool_fallback_only", False)   # bu dosya eski kategori mekanizmasını sınar; geniş kapsam test_free_reply_wide.py'de
     return F.FreeReplier(client or FakeChat(), cfg)
 
 
@@ -55,10 +56,12 @@ def test_production_default_only_counter_and_clarify():
     """2026-11-03 gerçek Qwen ölçümü (evidence/free-reply-eval-20261103-064415.*): hava/sohbet/şaka/diğer kategorilerinde
     denetimden geçen ama uydurma ya da anlamsız cümleler çıktı; canlı varsayılan yalnızca counter + clarify."""
     assert F.defaults()["categories"] == ["counter", "clarify"]
-    c = FakeChat()
-    r = F.FreeReplier(c)
-    assert r.eligible("counter") and r.eligible("clarify")
-    assert not any(r.eligible(x) for x in ("other", "weather", "chitchat", "joke", "identity", "support", "profanity"))
+    # Kullanıcı kararı (2026-11-03, off-004): geniş kapsam tüm arka uçlarda varsayılan açık; dar liste yalnız geniş kapsam kapalıyken (eski davranış)
+    narrow = F.FreeReplier(FakeChat(), {"use_pool_fallback_only": False})
+    assert narrow.eligible("counter") and narrow.eligible("clarify")
+    assert not any(narrow.eligible(x) for x in ("other", "weather", "chitchat", "joke", "identity", "support", "profanity"))
+    wide_default = F.FreeReplier(FakeChat())
+    assert wide_default.wide and not any(wide_default.eligible(x) for x in F.NEVER_LLM)
 
 
 def drv(*outputs, step="q3_1", free=None, seed=0, fast_path=False):

@@ -131,11 +131,10 @@ def test_identity_hold_support_stay_fixed():
     assert c.calls == [] and all(not fr.eligible(x) for x in F.NEVER_LLM)
 
 
-def test_qwen_and_flag_off_keep_old_behavior():
+def test_qwen_is_wide_and_flag_off_keeps_old_behavior():
     q = F.FreeReplier(FakeChat())
-    assert not q.wide                                         # Qwen wide_scope_backends'te yok (2026-11-03 ölçümü)
-    d, _ = drv(UNCLEAR, step="q3x", free=q)
-    assert d.handle(THIRD).utterances[0].startswith("Özür dilerim, tam anlayamadım.")
+    assert q.wide                                             # kullanıcı kararı: yerel Qwen de geniş kapsamda
+    assert q.backend == "qwen"
     fr, c = wide(use_pool_fallback_only=False)
     d2, _ = drv(UNCLEAR, step="q3x", free=fr)
     assert d2.handle(THIRD).utterances[0].startswith("Özür dilerim, tam anlayamadım.") and c.calls == []

@@ -50,6 +50,7 @@ class ParamChat(FakeChat):
 
 def think_replier(base=None, think=None, **cfg):
     cfg.setdefault("categories", ALL_CATEGORIES)
+    cfg.setdefault("use_pool_fallback_only", False)   # eski kategori mekanizması (geniş kapsam test_free_reply_wide.py)
     cfg.setdefault("thinking", True)
     return F.FreeReplier(base or ParamChat(), cfg, thinking_client=think or FakeThinkChat())
 
@@ -65,7 +66,7 @@ def test_defaults_thinking_off_with_separate_model_and_timeout():
 # ---- model / zaman aşımı / token seçimi ----
 def test_thinking_off_uses_instruct_client_and_live_limits():
     base, think = ParamChat(), FakeThinkChat()
-    r = F.FreeReplier(base, {"categories": ALL_CATEGORIES}, thinking_client=think)
+    r = F.FreeReplier(base, {"categories": ALL_CATEGORIES, "use_pool_fallback_only": False}, thinking_client=think)
     res = r.generate(STEP_Q31, "soru", "sende kaç puan vereyim", "counter")
     assert res.source == "qwen" and res.model == FakeChat.model and res.thinking is False
     assert base.params == [(1.5, 90)] and think.calls == []
@@ -130,7 +131,7 @@ def test_thinking_unreachable_and_timeout_fall_back():
     res = think_replier(think=FakeThinkChat(exc=httpx.ReadTimeout("yavaş"))).generate(STEP_Q31, "soru", "x y z", "counter")
     assert res.reason == "timeout" and res.text is None
     ticks = iter([0.0, 8.5])                                             # toplam süre thinking sınırını (8 sn) aşıyor
-    r = F.FreeReplier(ParamChat(), {"categories": ALL_CATEGORIES, "thinking": True}, clock=lambda: next(ticks),
+    r = F.FreeReplier(ParamChat(), {"categories": ALL_CATEGORIES, "thinking": True, "use_pool_fallback_only": False}, clock=lambda: next(ticks),
                       thinking_client=FakeThinkChat())
     res = r.generate(STEP_Q31, "soru", "x y z", "counter")
     assert res.reason == "timeout" and res.text is None and res.seconds == 8.5
@@ -139,7 +140,7 @@ def test_thinking_unreachable_and_timeout_fall_back():
 def test_thinking_slow_answer_within_thinking_timeout_is_kept():
     """3 sn canlı sınırı (1,5) aşar ama thinking sınırı (8) içinde: thinking açıkken söylenir (ölçüm amaçlı)."""
     ticks = iter([0.0, 3.0, 3.0, 3.0])
-    r = F.FreeReplier(ParamChat(), {"categories": ALL_CATEGORIES, "thinking": True}, clock=lambda: next(ticks),
+    r = F.FreeReplier(ParamChat(), {"categories": ALL_CATEGORIES, "thinking": True, "use_pool_fallback_only": False}, clock=lambda: next(ticks),
                       thinking_client=FakeThinkChat())
     assert r.generate(STEP_Q31, "soru", "x y z", "counter").source == "qwen"
 
@@ -279,7 +280,7 @@ def test_session_record_thinking_fields(tmp_path, monkeypatch):
 
 
 def test_session_record_thinking_off_fields(tmp_path, monkeypatch):
-    _, saved = _session_run(tmp_path, monkeypatch, F.FreeReplier(FakeChat(), {"categories": ALL_CATEGORIES}))
+    _, saved = _session_run(tmp_path, monkeypatch, F.FreeReplier(FakeChat(), {"categories": ALL_CATEGORIES, "use_pool_fallback_only": False}))
     t = next(t for t in saved["turns"] if "reply_source" in t)
     assert t["free_reply_thinking"] is False and t["free_reply_model"] == FakeChat.model and "free_reply_think_chars" not in t
     assert saved["config"]["free_reply"]["thinking"] is False

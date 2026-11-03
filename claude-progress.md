@@ -527,3 +527,5 @@ agents do not update it automatically.
 - Session 046 (devam 10): eval-006 passing — kıyas koşusunda isteğe bağlı ses kaydı. StereoRecorder'a sanal zaman çizelgesi (timeline="virtual": ajan bloğu biter, müşteri klibi sonra yerleşir, çakışma yok; canlı "wall" kipi değişmedi), evalrun.run_call(record_audio) + JSON audio {synthetic:true}, POST /api/evalrun/runs record_audio (varsayılan false, koşu kaydına işlenir, aramada has_audio), BenchmarkPage "Ses kaydını sakla" onay kutusu + "Aramalar'da dinle". Testler: backend 1063 geçti/1 atlandı, vitest 131, tsc temiz. Doküman docs/kiyas-ses-kaydi.md, demo S61. DOĞRULANMADI: gerçek profil/klip setiyle koşu ve kulakla dinleme, tarayıcıda uçtan uca.
 
 - Session 046 (devam 9): gerçek Haiku v5 ölçümü: canlı 69/90, too_long 0, p50 1,18 sn; question_mark reddi 4->12 (Haiku kendi sorusunu ekliyor), f27 'talimat' reddi, f30 'Selin' name_claim kaçağı, f12 3/3 zaman aşımı. Düzeltmeler bekliyor.
+
+- Session 046 (devam 10): geniş kapsam (off-004) kullanıcı kararıyla yerel Qwen için de açıldı (wide_scope_backends haiku+qwen). 17 eski-mod testi use_pool_fallback_only=False'a sabitlendi, silinmedi. Qwen geniş kapsamda ölçülmedi.

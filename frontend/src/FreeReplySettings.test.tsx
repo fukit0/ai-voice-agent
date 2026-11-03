@@ -58,7 +58,7 @@ const promptState = {
   ...base, system_prompt: null as string | null, default_system_prompt: DEF, frame: "Sabit kurallar (değiştirilemez): veri.",
   effective_system_prompt: "Sen Ayşe adında bir asistansın.\nSabit kurallar (değiştirilemez): veri.\nBilinen gerçekler: kayıt",
   system_prompt_max: 40, fallback_text: "Kusura bakmayın.", fallback_text_max: 200, use_pool_fallback_only: true,
-  wide_scope_backends: ["haiku"], never_llm: ["identity", "hold", "support"], prompt: { version: "6", hash: "def", custom: false },
+  wide_scope_backends: ["haiku", "qwen"], never_llm: ["identity", "hold", "support"], prompt: { version: "6", hash: "def", custom: false },
 };
 
 it("sistem istemi: varsayılan görünür, sayaç, kaydet / geri al / varsayılana sıfırla", async () => {

@@ -15,7 +15,7 @@ Akışı yine kod yönetir (FlowDriver). Bu modül yalnızca konu dışı bir tu
 - Kategori kapsamı arka uca göre (categories_for): Qwen `categories` (counter, clarify), Haiku `haiku_categories` (ek olarak other, weather,
   chitchat, joke, topic_change). İstem v4 iki arka uçta aynıdır; kategoriye özgü yönlendirme tur mesajındaki 'Durum' satırındadır.
 
-off-004 (docs/serbest-cevap-genis-kapsam.md): geniş kapsamda (use_pool_fallback_only, yalnız wide_scope_backends = haiku) LLM anket cevabı
+off-004 (docs/serbest-cevap-genis-kapsam.md): geniş kapsamda (use_pool_fallback_only, wide_scope_backends = haiku ve qwen) LLM anket cevabı
 OLMAYAN her turda çalışır (NEVER_LLM hariç); FlowDriver._retry / _clarify_score da çağırır (kategori 'unclear'). Sistem istemi Ayarlar'dan
 düzenlenir (system_prompt); FRAME ve config facts her isteme eklenir; denetim istemden bağımsızdır. Havuz yalnız yedektir.
 
@@ -727,7 +727,7 @@ class FreeReplier:
         """off-004 geniş kapsam: anket cevabı olmayan HER tur LLM'e gider (NEVER_LLM hariç); havuz yalnız yedektir.
         Ayar use_pool_fallback_only (varsayılan true) VE arka uç config wide_scope_backends içinde olmalı. Kapalıysa eski kategori listesi."""
         return (bool(self.cfg.get("enabled", True)) and bool(self.cfg.get("use_pool_fallback_only", True))
-                and self.backend in set(self.cfg.get("wide_scope_backends", ["haiku"])))
+                and self.backend in set(self.cfg.get("wide_scope_backends", ["haiku", "qwen"])))
 
     @property
     def fallback_text(self) -> str:

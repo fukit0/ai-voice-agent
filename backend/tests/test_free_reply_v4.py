@@ -67,7 +67,7 @@ def test_legal_factual_and_tense_categories_stay_fixed_on_both_backends(cat):
     # off-004 (docs/serbest-cevap-genis-kapsam.md 'Test güncellemeleri'): Haiku geniş kapsamda (use_pool_fallback_only, varsayılan) bu
     # kategoriler LLM'e gider (bilinen gerçekler istemde; başarısızlıkta havuz cümlesi). Qwen ve geniş kapsam KAPALI Haiku'da eski kural aynen.
     assert cat not in F.defaults()["categories"] and cat not in F.defaults()["haiku_categories"]
-    for client, cfg in ((FakeHaiku(), {"use_pool_fallback_only": False}), (FakeChat(), None)):
+    for client, cfg in ((FakeHaiku(), {"use_pool_fallback_only": False}), (FakeChat(), {"use_pool_fallback_only": False})):
         res = F.FreeReplier(client, cfg).generate(STEP_Q31, "soru", "x y", cat)
         assert res.reason == "category" and client.calls == [] and client.warm_checks == 0
     wide = FakeHaiku()
@@ -80,8 +80,11 @@ def test_legal_factual_and_tense_categories_stay_fixed_on_both_backends(cat):
 
 @pytest.mark.parametrize("cat", ["other", "weather", "chitchat", "joke", "topic_change"])
 def test_haiku_eligible_qwen_not(cat):
-    h, q = F.FreeReplier(FakeHaiku()), F.FreeReplier(FakeChat())
+    # eski kategori modu (geniş kapsam kapalı): Haiku listesi geniş, Qwen listesi dar; geniş kapsamda ikisi de uygun (test_free_reply_wide.py)
+    off = {"use_pool_fallback_only": False}
+    h, q = F.FreeReplier(FakeHaiku(), off), F.FreeReplier(FakeChat(), off)
     assert h.eligible(cat) and not q.eligible(cat)
+    assert F.FreeReplier(FakeChat()).eligible(cat)
     res = q.generate(STEP_Q31, "soru", "x y", cat)
     assert (res.source, res.reason, res.backend) == ("pool", "category", "qwen")
 
@@ -214,7 +217,7 @@ def test_user_examples_without_llm_still_acknowledge_not_swallow():
 
 
 def test_qwen_backend_user_example_2_category_fallback_recorded():
-    d, _ = drv(step="q12_neden", free=F.FreeReplier(FakeChat()))
+    d, _ = drv(step="q12_neden", free=F.FreeReplier(FakeChat(), {"use_pool_fallback_only": False}))   # eski dar mod
     r = d.handle(USER_2)
     ev = next(e for e in r.events if e["type"] == "free_reply")
     assert (ev["source"], ev["reason"], ev["backend"], ev["category"]) == ("pool", "category", "qwen", "topic_change")
@@ -288,10 +291,10 @@ def test_eval_live_eligible_depends_on_backend(tmp_path, monkeypatch):
         doc = json.loads(out.read_text(encoding="utf-8"))
         rows[be] = {r["id"]: r["live_eligible"] for r in doc["rows"]}
         cats = {r["category"] for r in doc["rows"]}
-        # off-004: Haiku geniş kapsamda canlı kategoriler = vakaların kategorileri - NEVER_LLM; Qwen listesi değişmedi
-        assert doc["meta"]["live_categories"] == sorted(cats - set(F.NEVER_LLM) if be == "haiku" else QWEN_LIST)
-        assert doc["meta"]["wide_scope_live"] is (be == "haiku")
+        # off-004 (kullanıcı kararı: tüm arka uçlar): geniş kapsamda canlı kategoriler = vakaların kategorileri - NEVER_LLM
+        assert doc["meta"]["live_categories"] == sorted(cats - set(F.NEVER_LLM))
+        assert doc["meta"]["wide_scope_live"] is True
         assert doc["summary"]["cases"] == 34
-    assert rows["haiku"]["f34"] is True and rows["qwen"]["f34"] is False and rows["haiku"]["f33"] is rows["qwen"]["f33"] is True
-    assert rows["haiku"]["f30"] is False and rows["qwen"]["f24"] is False         # kimlik iki arka uçta da canlı değil; hakaret Qwen'de değil
+    assert rows["haiku"] == rows["qwen"] and rows["haiku"]["f34"] is True and rows["haiku"]["f33"] is True
+    assert rows["haiku"]["f30"] is False and rows["qwen"]["f30"] is False         # kimlik iki arka uçta da canlı değil
     assert rows["haiku"]["f24"] is True                                            # off-004: Haiku geniş kapsamda hakarete LLM (yedek: havuz özrü)

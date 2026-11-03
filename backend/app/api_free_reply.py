@@ -27,7 +27,7 @@ def _view(with_status: bool = True) -> dict:
            "effective_system_prompt": F.system_text(cfg, "Ayşe", int(cfg.get("max_chars", 200))),
            "fallback_text": F.FreeReplier(F._NullClient(), cfg).fallback_text, "fallback_text_max": F.FALLBACK_TEXT_MAX,
            "use_pool_fallback_only": bool(cfg.get("use_pool_fallback_only", True)),
-           "wide_scope_backends": list(cfg.get("wide_scope_backends", ["haiku"])), "never_llm": list(F.NEVER_LLM),
+           "wide_scope_backends": list(cfg.get("wide_scope_backends", ["haiku", "qwen"])), "never_llm": list(F.NEVER_LLM),
            "thinking": bool(cfg.get("thinking", False)), "thinking_model": cfg["thinking_model"],
            "thinking_timeout_s": float(cfg["thinking_timeout_s"]), "thinking_timeout_range": list(F.THINKING_TIMEOUT_RANGE),
            "thinking_max_tokens": int(cfg.get("thinking_max_tokens", 768)),

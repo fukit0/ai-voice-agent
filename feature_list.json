@@ -1525,7 +1525,7 @@
         "backend/tests/test_free_reply_wide.py",
         "frontend/src/FreeReplySettings.test.tsx"
       ],
-      "notes": "passing yalnız sahte istemcili testlere dayanır. ÖLÇÜLMEDİ: geniş kapsamın gerçek Haiku ile uydurma/geçme oranı ve gecikmesi; 'unclear' vakaları eval setinde yok; ankete kimin cevap verebileceği için iş kuralı yok. Qwen geniş kapsamda değil (wide_scope_backends: [haiku]). CheckIn yolu testsiz (senaryoda CheckIn adımı yok). Backend yeniden başlatılmalı."
+      "notes": "passing yalnız sahte istemcili testlere dayanır. ÖLÇÜLMEDİ: geniş kapsamın gerçek Haiku ile uydurma/geçme oranı ve gecikmesi; 'unclear' vakaları eval setinde yok; ankete kimin cevap verebileceği için iş kuralı yok. Geniş kapsam tüm arka uçlarda (haiku+qwen, kullanıcı kararı); Qwen ile geniş kapsam ÖLÇÜLMEDİ (eski Qwen ölçümü uydurma gösterdi). CheckIn yolu testsiz (senaryoda CheckIn adımı yok). Backend yeniden başlatılmalı."
     },
     {
       "id": "eval-006",

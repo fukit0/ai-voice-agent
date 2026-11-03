@@ -40,7 +40,7 @@ function PromptEditor({ s, save }: { s: Settings; save: (p: Parameters<typeof se
   return (
     <>
       <div className="setting">
-        <dt>Geniş kapsam (havuz yalnız yedek)<span>Açıkken LLM, anket cevabı olmayan HER turda konuşur: konu dışı, meta (kim arıyor, numara, kayıt, süre, amaç), sohbet ve akışın soruya cevap olarak anlayamadığı söz ("tam anlayamadım" yerine). LLM şu turlarda ÇALIŞMAZ: cevap, ret, DNC, geri arama, hızlı yol, realtime profiller ve sabit metinli {never}. Arka uçlar: {(s.wide_scope_backends ?? ["haiku"]).join(", ")} (Qwen ölçümü uydurma gösterdiği için config'te kapalı).</span></dt>
+        <dt>Geniş kapsam (havuz yalnız yedek)<span>Açıkken LLM, anket cevabı olmayan HER turda konuşur: konu dışı, meta (kim arıyor, numara, kayıt, süre, amaç), sohbet ve akışın soruya cevap olarak anlayamadığı söz ("tam anlayamadım" yerine). LLM şu turlarda ÇALIŞMAZ: cevap, ret, DNC, geri arama, hızlı yol, realtime profiller ve sabit metinli {never}. Arka uçlar: {(s.wide_scope_backends ?? ["haiku", "qwen"]).join(", ")} (yerel ve API; Qwen'de geniş kapsam ölçülmedi).</span></dt>
         <dd>
           <label>
             <input type="checkbox" checked={s.use_pool_fallback_only !== false} onChange={(e) => save({ use_pool_fallback_only: e.target.checked })}
