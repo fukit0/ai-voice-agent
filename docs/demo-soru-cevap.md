@@ -444,3 +444,11 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Kısa cevap:** Konu dışı/meta turlarda (karşı soru, açıklama isteği, hava, sohbet) lokal Qwen 1-2 cümlelik cevabı yazar; bekleyen anket sorusunu kod aynen ekler. Normal cevap, dnc, ret, geri arama ve fast path turlarında LLM çağrılmaz, gecikme eklenmez.
 **Güvenlik:** Müşteri sözü veri olarak verilir; çıktı denetlenir (uzunluk, rakam/puan, yasaklı kalıp, URL, Türkçe dışı, tekrar); denetim geçmezse, 1,5 sn aşılırsa, Qwen soğuk/yoksa sabit havuz cümlesi söylenir. Kimlik, KVKK, süre, destek, hakaret sabit havuzda kalır.
 **Sınırlar (saklanmaz):** Gerçek Qwen ile henüz ölçülmedi (yalnızca sahte istemciyle test); doğallık ve p95 gecikme bilinmiyor; Qwen soğuk yüklemesi ~67 sn (demo öncesi Hazırla); production'da lokal LLM için GPU sunucu gerekir. Detay: docs/serbest-cevap-qwen.md.
+
+## S58 — Söz kesme neden bazen çalışmadı? (2026-11-03, oturumlar a75c42b14e09 ve 981040abd23b)
+**Kısa cevap:** Gürültü/öksürük süzgeci yüksek sesli (bağıran) konuşmayı öksürük sanıp eliyordu. Düzeltildi: kayıtlarda söz kesme 160 ms'de tetikleniyor. Offline yeniden oynatma; canlıda yeniden denenmedi.
+**Sınırlar (saklanmaz):** (1) Çok kısa iki heceli söylemler ("sekiz") hâlâ geç algılanabilir, kanıtlanamadı. (2) Hoparlörlü telefonda ajanın kendi sesinin yankısıyla yanlış kesme riski ölçülmedi. (3) Barge-in 0,34 sn ölçümü sentetik sesle. Ayrıntı docs/soz-kesme-analizi-a75c42b14e09-981040abd23b.md.
+
+## S59 — A1S'te serbest cevap (Haiku) nasıl çalışıyor? (2026-11-03)
+**Kısa cevap:** Konu dışı/karşı soru/konu değiştirme turlarında Haiku müşterinin sözüne kısa, doğal karşılık yazar ve ankete nazikçe döndürür; bekleyen soruyu kod aynen ekler. Hava/trafik gibi bilgiyi uydurmaz ("bilmiyorum" der). Kimlik, KVKK, hakaret gibi konular sabit metinde kalır. Qwen yolu yalnız karşı soru ve açıklama isteğinde.
+**Sınırlar:** Gerçek Haiku ile ölçülmedi (uydurma oranı, gecikme ~1 sn + zaman aşımı 2,0 sn, maliyet). Zaman aşımında sabit havuz cümlesi söylenir. Detay docs/serbest-cevap-haiku.md.
