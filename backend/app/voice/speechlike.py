@@ -22,6 +22,11 @@ PEAK_MIN = 0.75                   # normalleştirilmiş özilinti tepe eşiği (
 ZCR_MIN = 0.02                    # çerçeve başına sıfır geçiş oranı alt sınırı: <200 Hz'lik gümbürtü/kapı çarpması (≈0,01) konuşma değildir
 ZCR_MAX = 0.30                    # üst sınır: yüksek = gürültü/frikatif
 HF_MAX = 0.30                     # enerjinin ≥400 Hz payı ÜST sınırı: gerçek konuşma ≈0,08-0,26; yüksek pay = öksürük/boğaz temizleme
+# Güçlü perde: periyodiklik bu değerin üstündeyse HF_MAX uygulanmaz (zcr sınırları geçerli). Neden (2026-11-03, oturum a75c42b14e09 ve
+# 981040abd23b, docs/soz-kesme-analizi-a75c42b14e09-981040abd23b.md): yüksek sesle/bağırarak konuşmada açık ünlülerin F1'i 600-800 Hz'e çıkar,
+# enerjinin ≥400 Hz payı 0,5-0,9 olur; perde 0,93-1,00 olduğu hâlde çerçeveler 'sesli değil' sayıldı ve söz kesme ~2-8 sn gecikti/hiç olmadı.
+# Gerçek 33 kayıtta öksürük çerçevelerinin perdesi 0,58-0,68 (ADR 0011); 0,90 ile yanlış kesme artmadı, 0,85 bir öksürük ekledi. 0 = kapalı (eski davranış).
+PEAK_STRONG = 0.90
 
 
 def features(frame: np.ndarray) -> tuple[float, float, float]:
@@ -48,6 +53,11 @@ def features(frame: np.ndarray) -> tuple[float, float, float]:
     return min(1.0, max(0.0, best)), zcr, hf
 
 
-def is_voiced(frame: np.ndarray, peak_min: float = PEAK_MIN, zcr_min: float = ZCR_MIN, zcr_max: float = ZCR_MAX, hf_max: float = HF_MAX) -> bool:
+def is_voiced(frame: np.ndarray, peak_min: float = PEAK_MIN, zcr_min: float = ZCR_MIN, zcr_max: float = ZCR_MAX, hf_max: float = HF_MAX,
+              peak_strong: float = PEAK_STRONG) -> bool:
     peak, zcr, hf = features(frame)
-    return peak >= peak_min and zcr_min <= zcr <= zcr_max and hf <= hf_max
+    if not zcr_min <= zcr <= zcr_max:
+        return False
+    if peak_strong and peak >= peak_strong:     # çok belirgin perde: yüksek sesli konuşma (≥400 Hz payı yüksek) da sesli sayılır
+        return True
+    return peak >= peak_min and hf <= hf_max

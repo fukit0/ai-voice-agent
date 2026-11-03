@@ -610,7 +610,7 @@ class RealtimeVoiceSession:
         """core-015: yerel eşik anında; sunucu VAD'i (OpenAI) varsa yaklaşık karşılığıyla session.update ile güncellenir."""
         applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
                                      barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")),
-                                     voiced_min=cmd.get("voiced_min"))
+                                     voiced_min=cmd.get("voiced_min"), peak_strong=cmd.get("peak_strong"))
         self.stats["vad"] = applied
         note = self._server_vad_note(applied)
         self.emit({"type": "vad_settings", **applied, "server_side": note})

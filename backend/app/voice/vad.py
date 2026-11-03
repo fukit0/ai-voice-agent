@@ -10,7 +10,7 @@ from collections import deque
 
 import numpy as np
 
-from .speechlike import is_voiced
+from .speechlike import PEAK_STRONG, is_voiced
 
 SAMPLE_RATE = 16000
 FRAME = 320  # 20 ms
@@ -43,6 +43,7 @@ class Endpointer:
         self.barge_margin_db = BARGE_MARGIN_DB
         self.voiced_min = VOICED_MIN          # core-016 akıllı söz kesme: konuşma benzeri (perdeli) çerçeve sayısı; 0 = kapalı
         self.force_frames = FORCE_FRAMES
+        self.peak_strong = PEAK_STRONG        # güçlü perdede ≥400 Hz üst sınırı uygulanmaz (bağırarak konuşma); 0 = kapalı
         self.level = -120.0
         self.collecting = False
         self._run = 0       # ardışık konuşma çerçevesi (başlangıç doğrulaması)
@@ -66,9 +67,13 @@ class Endpointer:
         base = self.threshold_db if self.manual_db is not None else max(self.threshold_db, -45.0)
         return base + self.barge_margin_db
 
-    def configure(self, threshold_db=None, barge_frames=None, barge_margin_db=None, reset_threshold=False, voiced_min=None) -> dict:
+    def configure(self, threshold_db=None, barge_frames=None, barge_margin_db=None, reset_threshold=False, voiced_min=None,
+                  peak_strong=None) -> dict:
         """Çalışırken ayar (core-015). Değerler güvenli aralığa kırpılır; ne uygulandıysa döndürülür."""
         lo, hi = MANUAL_RANGE_DB
+        if peak_strong is not None:     # 0 = kapalı; aksi hâlde 0,75 (PEAK_MIN) ile 1,0 arası
+            ps = float(peak_strong)
+            self.peak_strong = 0.0 if ps <= 0 else max(0.75, min(1.0, ps))
         if voiced_min is not None:
             self.voiced_min = max(0, min(20, int(voiced_min)))
         if reset_threshold:
@@ -85,7 +90,7 @@ class Endpointer:
         return {"threshold_db": None if self.manual_db is None else round(self.manual_db, 1),
                 "effective_threshold_db": round(self.threshold_db, 1), "barge_frames": self.barge_frames,
                 "barge_margin_db": self.barge_margin_db, "barge_ms": self.barge_frames * 20,
-                "voiced_min": self.voiced_min, "force_ms": self.force_frames * 20}
+                "voiced_min": self.voiced_min, "force_ms": self.force_frames * 20, "peak_strong": self.peak_strong}
 
     def is_speech(self, frame: np.ndarray) -> bool:
         self.level = level_db(frame)
@@ -159,7 +164,7 @@ class BargeTracker:
         if self.run == 0:
             self.t0, self.voiced, self.fired = now, 0, False
         self.run += 1
-        if v.voiced_min > 0 and is_voiced(frame):
+        if v.voiced_min > 0 and is_voiced(frame, peak_strong=v.peak_strong):
             self.voiced += 1
         if self.fired or self.run < v.barge_frames:
             return None

@@ -213,7 +213,7 @@ class VoiceSession:
         """core-015: ekrandan giriş eşiği / söz kesme ayarı (oturum açıkken, sesi yeniden başlatmadan)."""
         applied = self.vad.configure(threshold_db=cmd.get("db"), barge_frames=cmd.get("barge_frames"),
                                      barge_margin_db=cmd.get("barge_margin_db"), reset_threshold=bool(cmd.get("auto")),
-                                     voiced_min=cmd.get("voiced_min"))
+                                     voiced_min=cmd.get("voiced_min"), peak_strong=cmd.get("peak_strong"))
         self.stats["vad"] = applied
         self.emit({"type": "vad_settings", **applied, "server_side": self._server_vad_note(applied)})
 

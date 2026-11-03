@@ -28,3 +28,12 @@ Gerekçe: PoC'de tekrarlanabilir, testli, bağımlılıksız ve gecikmeyi artır
 
 ## Kanıt
 `backend/tests/test_barge_gate.py`; `evidence/core-016-sentetik-*.json` (süzgeçli ve süzgeçsiz). Gerçek ölçüm: `python scripts/eval_barge_gate.py --dir <etiketli klasör>`.
+
+## Güncelleme 2026-11-03: güçlü perdede ≥400 Hz üst sınırı kalktı
+Canlı aramalarda (a75c42b14e09, 981040abd23b) müşteri bağırarak konuştu. Perde 0,93–1,00 olduğu hâlde ≥400 Hz payı 0,5–0,9 çıktı.
+HF_MAX=0,30 bu çerçeveleri "sesli değil" saydı. Söz kesme hiç olmadı ya da söylem başından 4,1 sn sonra oldu.
+Karar: perde ≥ `PEAK_STRONG` (0,90) ise HF_MAX uygulanmaz. Ayar `Endpointer.configure(peak_strong=)` ile değişir, 0 = eski kural.
+Gerçek 33 kayıtta sonuç değişmedi (0,85 bir öksürük ekliyordu). Yan etki: ajan TTS çerçevelerinin sesli oranı 0,33'ten 0,69'a çıktı.
+Bu yüzden yankı söz kesme seviyesini aşarsa kendini kesme riski artar. Benzetimde yankı ajan sesinin −8 dB altına çıkınca 112 sn'de 1 kesme oldu; ölçülen yankı ≈ −22 dB.
+Açık kalan: kısa kelimeler ("sekiz") 160 ms kesintisiz koşuyu dolduramıyor. Boşluk toleransı denendi, hmm/öksürük yanlış kesmesi eklediği için reddedildi.
+Ayrıntı: `docs/soz-kesme-analizi-a75c42b14e09-981040abd23b.md`.
