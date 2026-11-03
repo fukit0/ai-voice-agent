@@ -88,6 +88,8 @@ async def offer(req: OfferRequest) -> dict:
             flow = FlowDriver(S.get(req.scenario), llm, {**persona_mod.scenario_values(persona), **(req.values or {})},
                               score_policy=req.score_policy, persona=None if realtime else persona)
             flow.fast_path = bool(profile.fast_path) and not realtime
+            from . import reaction_setting
+            reaction_setting.apply_to(flow)   # hum-001 aç/kapa: arama başındaki değer; açık arama bu değerle sürer
             if not realtime:   # ADR 0009 adım 2: konu dışı turlarda lokal Qwen serbest cevap (ayar kapalıysa None; soğukta havuz)
                 from .voice import free_reply as free_reply_mod
                 flow.free_reply = free_reply_mod.make_default(persona_mod.scenario_values(persona).get("ASISTAN", "Ayşe"))

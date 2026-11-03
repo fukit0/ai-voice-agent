@@ -24,6 +24,7 @@ from .api_persona import router as persona_router
 from .api_profiles import router as profiles_router
 from .api_evalrun import router as evalrun_router
 from .api_free_reply import router as free_reply_router
+from .api_reactions import router as reactions_router
 from .api_matrix import router as matrix_router
 from .api_scenarios import router as scenarios_router
 from .api_stt import router as stt_router
@@ -48,6 +49,7 @@ app.include_router(calls_router)
 app.include_router(matrix_router)
 app.include_router(evalrun_router)
 app.include_router(free_reply_router)
+app.include_router(reactions_router)
 
 
 @app.get("/api/health")

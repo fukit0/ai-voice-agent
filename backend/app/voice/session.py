@@ -533,6 +533,11 @@ class VoiceSession:
                     rec[dst] = free[src]
         elif any(e.get("type") in ("off_topic", "identity") for e in reply.events):
             rec["reply_source"] = "pool"
+        rx = next((e for e in reply.events if e.get("type") == "reaction"), None)
+        if rx is not None:        # hum-001: cevaptan sonra söylenen tepki ve kaynağı (pool / ack / fixed_ack / context)
+            rec["reaction"] = {"source": rx.get("source"), "bucket": rx.get("bucket")}
+        elif any(e.get("type") == "reaction_skipped" for e in reply.events):
+            rec["reaction"] = {"source": "skipped", "bucket": None}
         if any(e.get("type") == "fast_path" for e in reply.events):
             rec["fast_path"] = True        # kural yolu: LLM çağrılmadı; llm_s yazılmaz (LLM süre istatistiğini kirletmesin)
         elif reply.llm_s is not None:
@@ -744,6 +749,9 @@ class VoiceSession:
             "config": {"fast_path": bool(getattr(self.flow, "fast_path", False)) if self.flow else None,
                        "free_reply": (getattr(self.flow, "free_reply", None).describe() if getattr(self.flow, "free_reply", None) is not None
                                       else {"enabled": False}) if self.flow else None,
+                       # hum-001 aç/kapa: persona yoksa (realtime) tepki katmanı hiç uygulanmaz -> None
+                       "reactions": ({"enabled": bool(getattr(self.flow, "reactions_enabled", True))}
+                                     if self.flow and getattr(self.flow, "persona", None) else None),
                        "tts_streaming": self._tts_streaming, "stt_streaming": self._stt_streaming},
             "stats": self.stats, "turns": self.turns, "transcript": self.transcript,
             "flow": None if self.flow is None else {"scenario": self.flow.sc["key"], "outcome": self.flow.outcome,

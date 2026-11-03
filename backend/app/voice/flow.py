@@ -478,6 +478,7 @@ class FlowDriver:
         self.prompt_variant: str | None = None   # None: config'teki aktif ayrıştırıcı prompt sürümü; kıyas koşusu sürümleri tek tek dener
         self.coerce = False          # True: realtime ses yolunda değer yumuşak dönüştürülür (coerce_obj)
         self.free_reply = None       # ADR 0009 adım 2: free_reply.FreeReplier | None (None = yalnız havuz, eski davranış; api_voice verir)
+        self.reactions_enabled = True   # hum-001 aç/kapa (Ayarlar; reaction_setting.apply_to arama başında kopyalar). False: eski sabit onay
         self.outcome: str | None = None
         self.answers: list[dict] = []
         self.path: list[str] = []
@@ -851,14 +852,22 @@ class FlowDriver:
         if (self.persona and not self.coerce and not unanswered and self.steps[nxt]["kind"] != "Terminal"
                 and step["kind"] != "CheckIn"):
             said = self._context_reaction(step, utterance, value)
-            if said is None:
+            source = "context" if said else None     # off-001: müşterinin söylediğine bağlı (aside/empati); ayardan bağımsız
+            if said is None and not self.reactions_enabled:
+                # Ayar kapalı: hum-001 öncesi davranış (core-005) — acknowledgements sırayla, oran uygulanmaz
+                ack = persona_mod.ack(self.persona, len(self.answers) - 1)
+                said, source = ((ack, "ack"), "fixed_ack") if ack else (None, None)
+            elif said is None:
                 # hum-001: cevaba bağlı kısa tepki (puan düşük/yüksek, evet/hayır...), aynı aramada tekrarsız, bazen hiç
                 ack, bucket = persona_mod.reaction(self.persona, step, None if unanswered else value, self._reactions_used, self.rng,
                                                    len(self.answers) - 1)
                 said = (ack, bucket) if ack else None
+                source = ("ack" if bucket == "ack" else "pool") if said else "skipped"
             if said:
                 reply.utterances.append(said[0])
-                reply.events.append({"type": "reaction", "step": key, "bucket": said[1], "text": said[0]})
+                reply.events.append({"type": "reaction", "step": key, "bucket": said[1], "text": said[0], "source": source})
+            elif source == "skipped":    # reaction_rate gereği bu cevapta tepki söylenmedi (kayıtta görünsün)
+                reply.events.append({"type": "reaction_skipped", "step": key})
         self._advance(nxt, reply)
         return reply
 

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ElevenLabsSettings } from "../ElevenLabsSettings";
 import { FastPathSettings } from "../FastPathSettings";
 import { FreeReplySettings } from "../FreeReplySettings";
+import { ReactionSettings } from "../ReactionSettings";
 import { useProfile } from "../ProfileContext";
 import { useTheme } from "../theme";
 
@@ -91,6 +92,12 @@ export function SettingsPage() {
             <h3>Konu dışı serbest cevap (Qwen)</h3>
             <p className="meta">Tüm kademeli profiller için; seçim kalıcıdır, yeni aramalara uygulanır.</p>
             <dl><FreeReplySettings /></dl>
+          </div>
+
+          <div className="panel" id="tepkiler">
+            <h3>Cevaba bağlı tepkiler</h3>
+            <p className="meta">Tüm kademeli profiller için; seçim kalıcıdır, yeni aramalara uygulanır.</p>
+            <dl><ReactionSettings /></dl>
           </div>
 
           <div className="panel" id="konusma">

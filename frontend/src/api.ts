@@ -400,3 +400,25 @@ export async function setFreeReply(patch: Partial<{ enabled: boolean | null; mod
   });
   return json<FreeReplySettings>(res);
 }
+
+/** Ayarlar > Cevaba bağlı tepkiler (hum-001 aç/kapa). Kapalıyken persona onay sözleri sırayla söylenir; havuz/oran saklanır. */
+export type ReactionSettings = {
+  enabled: boolean;
+  default: boolean;
+  overridden: boolean;
+  reaction_rate: number;
+  pool_sizes: Record<string, number>;
+  acknowledgements: string[];
+};
+
+export const fetchReactions = () => fetch("/api/reactions").then((r) => json<ReactionSettings>(r));
+
+/** null varsayılana (açık) döndürür. */
+export async function setReactions(enabled: boolean | null): Promise<ReactionSettings> {
+  const res = await fetch("/api/reactions", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled }),
+  });
+  return json<ReactionSettings>(res);
+}
