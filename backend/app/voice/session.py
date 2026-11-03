@@ -528,9 +528,13 @@ class VoiceSession:
             # Thinking ölçümü (docs/serbest-cevap-qwen.md 'Qwen thinking'): açık/kapalı kıyası Ayarlar ekranında bu alanlardan yapılır
             rec["free_reply_thinking"] = bool(free.get("thinking", False))
             rec["free_reply_model"] = free.get("model")
-            for src, dst in (("eval_tokens", "free_reply_eval_tokens"), ("think_chars", "free_reply_think_chars"), ("ollama_s", "free_reply_ollama_s")):
+            for src, dst in (("eval_tokens", "free_reply_eval_tokens"), ("think_chars", "free_reply_think_chars"), ("ollama_s", "free_reply_ollama_s"),
+                             # Haiku (docs/serbest-cevap-haiku.md): arka uç, token ve tahmini maliyet; aramanın usage bloğuna da ayrı kalem olarak girer
+                             ("backend", "free_reply_backend"), ("input_tokens", "free_reply_input_tokens"),
+                             ("output_tokens", "free_reply_output_tokens"), ("cost_usd", "free_reply_cost_usd")):
                 if free.get(src) is not None:
                     rec[dst] = free[src]
+            self.usage.add_free_reply(free)
         elif any(e.get("type") in ("off_topic", "identity") for e in reply.events):
             rec["reply_source"] = "pool"
         rx = next((e for e in reply.events if e.get("type") == "reaction"), None)

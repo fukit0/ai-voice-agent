@@ -371,6 +371,18 @@ class DeepgramLiveStream(StreamingSTT):
                 self._fail("bağlantı konuşma ortasında kapandı")
 
 
+ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+
+
+def anthropic_headers() -> dict:
+    """Anthropic Messages API başlıkları (AnthropicLLM ve serbest cevabın Haiku istemcisi ortak kullanır; voice/free_reply.py).
+    Anahtar ortamdan (ANTHROPIC_API_KEY, .env main.py'de yüklenir); yoksa KeyError: çağıran önce varlığını denetler."""
+    headers = {"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
+    if os.environ.get("ANTHROPIC_WORKSPACE_ID"):  # çalışma alanına bağlı olmayan anahtarlar bu başlığı ister
+        headers["anthropic-workspace-id"] = os.environ["ANTHROPIC_WORKSPACE_ID"]
+    return headers
+
+
 class AnthropicLLM(_Prewarm, LLMProvider):
     kind = "anthropic"
     required_env = ("ANTHROPIC_API_KEY",)
@@ -405,9 +417,7 @@ class AnthropicLLM(_Prewarm, LLMProvider):
             # metin üretmeden bitiyor (stop_reason=max_tokens, yalnız 'thinking' bloğu). Kısa yapılandırılmış cevapta düşünme kapatılır.
             payload["thinking"] = {"type": "disabled"}
         t0 = time.perf_counter()
-        headers = {"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-06-01"}
-        if os.environ.get("ANTHROPIC_WORKSPACE_ID"):  # çalışma alanına bağlı olmayan anahtarlar bu başlığı ister
-            headers["anthropic-workspace-id"] = os.environ["ANTHROPIC_WORKSPACE_ID"]
+        headers = anthropic_headers()
         try:
             while True:
                 try:

@@ -200,3 +200,6 @@ Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aş
 - Kullanıcının örneği "sende kaç puan vereyim" (f01) 3/3 zaman aşımına düştü (2,49 ve 1,52 sn): koşunun ilk vakası; ilk çağrılar yavaş (v1'de de ilk çağrı 2,41 sn). Soğuk/ön bellek etkisi şüphesi, KANITLANMADI. Vaka sonrası süreler 0,8-1,3 sn.
 - Geçen çıktılar makul ("Sizin deneyiminiz en önemli. Bir ile on arasında, size uygun gelen puanı vermeniz yeterli."); 3 tur soru işareti nedeniyle denetimde elendi (model kendi soru cümlesi ekledi).
 - Öneri: demo öncesi birkaç ısınma turu (ya da Hazırla'da Qwen'e aynı sistem istemiyle sahte istek), timeout_s 1,5 -> 2,0 (Ayarlar'dan; en kötü +0,5 sn sessizlik). Ölçüm betiği ilk çağrıları ayrı raporlamalı. Bunlar UYGULANMADI.
+
+## Haiku arka ucu (2026-11-03)
+A1S için serbest cevap artık Claude Haiku ile de çalışıyor (ayar `backend`: auto | haiku | qwen; auto profilin LLM'ine göre seçer, L2'de Qwen yolu değişmedi). Ayrıntı, kayıt/maliyet alanları ve ölçüm komutu: `docs/serbest-cevap-haiku.md`. Gerçek Haiku ile ÖLÇÜLMEDİ. Mac'te: `./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku`

@@ -16,10 +16,17 @@ function ThinkingStats({ stats }: { stats: NonNullable<Settings["stats"]> }) {
   return (
     <table className="calls-table small" aria-label="Thinking kıyası">
       <thead><tr><th>Thinking</th><th>Tur</th><th>Ort.</th><th>p50</th><th>p95</th><th>Havuza düşüş</th><th>Sebep</th></tr></thead>
-      <tbody>{row("Kapalı", stats.off)}{row("Açık", stats.on)}</tbody>
+      <tbody>{row("Kapalı", stats.off)}{row("Açık", stats.on)}{stats.haiku && stats.haiku.turns > 0 && row("Haiku (düşünme yok)", stats.haiku)}</tbody>
     </table>
   );
 }
+
+const HAIKU_KEYS = ["backend", "haiku_model", "haiku_timeout_s"];
+const BACKEND_LABEL: Record<string, string> = {
+  auto: "Otomatik (profilin LLM'ine göre)",
+  haiku: "Claude Haiku (API)",
+  qwen: "Lokal Qwen (Ollama)",
+};
 
 /** Ayarlar > Konu dışı serbest cevap (ADR 0009 adım 2). Konu dışı/meta sözlere sabit havuz yerine lokal Qwen kısa bir karşılık yazar;
  *  bekleyen soruyu kod okur. Model soğuksa, zaman aşımında ya da denetimden geçmezse havuz cümlesi konuşur. */
@@ -30,8 +37,12 @@ export function FreeReplySettings() {
   const [timeout, setTimeoutS] = useState("");
   const [thinkModel, setThinkModel] = useState("");
   const [thinkTimeout, setThinkTimeout] = useState("");
+  const [haikuModel, setHaikuModel] = useState("");
+  const [haikuTimeout, setHaikuTimeout] = useState("");
 
   const apply = (v: Settings) => {
+    setHaikuModel(v.haiku_model ?? "");
+    setHaikuTimeout(v.haiku_timeout_s == null ? "" : String(v.haiku_timeout_s));
     setS(v);
     setModel(v.model);
     setTimeoutS(String(v.timeout_s));
@@ -67,18 +78,58 @@ export function FreeReplySettings() {
   const thinkPill = !s.thinking || !ts ? null : !ts.reachable
     ? <span className="pill err">Ollama'ya ulaşılamıyor → havuz</span>
     : ts.warm ? <span className="pill ok">Sıcak</span> : <span className="pill warn">Thinking modeli soğuk → havuz</span>;
+  const hasBackend = s.backend !== undefined;            // eski backend: arka uç satırları gösterilmez
+  const [hlo, hhi] = s.haiku_timeout_range ?? [0.3, 5];
+  const ht = Number(haikuTimeout.replace(",", "."));
+  const haikuTimeoutOk = Number.isFinite(ht) && ht >= hlo && ht <= hhi;
+  const hs = s.haiku_status;
+  const keyPill = !hs ? null : hs.key_present
+    ? <span className="pill ok">Anahtar var</span>
+    : <span className="pill warn">ANTHROPIC_API_KEY yok → havuz</span>;
   return (
     <>
       <div className="setting">
-        <dt>Serbest cevap (lokal Qwen)<span>Yalnız konu dışı ve karşı soru turlarında ("sende kaç puan vereyim", "bunu neden soruyorsunuz", "hava nasıl"). Cevap, ret, DNC, geri arama ve hızlı yol turlarında çağrılmaz. Realtime profillerde uygulanmaz.</span></dt>
+        <dt>Serbest cevap<span>Yalnız konu dışı ve karşı soru turlarında ("sende kaç puan vereyim", "bunu neden soruyorsunuz"). Cevap, ret, DNC, geri arama ve hızlı yol turlarında çağrılmaz. Realtime profillerde (A2/A3) uygulanmaz.</span></dt>
         <dd>
           <label>
             <input type="checkbox" checked={s.enabled} onChange={(e) => save({ enabled: e.target.checked })} aria-label="Serbest cevap" /> {s.enabled ? "Açık" : "Kapalı"}
           </label>
         </dd>
       </div>
+      {hasBackend && (
+        <>
+          <div className="setting">
+            <dt>Arka uç<span>Otomatik: aramanın profilindeki LLM Anthropic ise (A1, A1S) Claude Haiku, Ollama ise (L1–L5) lokal Qwen. Haiku ve Qwen aynı istemi, aynı denetimi ve aynı havuza düşüşü kullanır.</span></dt>
+            <dd>
+              <select value={s.backend} onChange={(e) => save({ backend: e.target.value as NonNullable<Settings["backend"]> })} aria-label="Serbest cevap arka ucu">
+                {(s.backends ?? ["auto", "haiku", "qwen"]).map((b) => <option key={b} value={b}>{BACKEND_LABEL[b] ?? b}</option>)}
+              </select>
+            </dd>
+          </div>
+          <div className="setting">
+            <dt>Haiku modeli<span>Boş bırakılırsa profilin LLM modeli kullanılır (A1S: {s.haiku_default_model ?? "claude-haiku-5-5"}). Düşünme her zaman kapalı; token sınırı {s.haiku_max_tokens ?? "–"} (config). Soğuk model yok; anahtar yoksa istek atılmadan havuz konuşur.</span></dt>
+            <dd>
+              <input value={haikuModel} onChange={(e) => setHaikuModel(e.target.value)} aria-label="Haiku modeli" size={28}
+                placeholder={`profilden (${s.haiku_default_model ?? "claude-haiku-5-5"})`} />
+              <button type="button" disabled={haikuModel.trim() === (s.haiku_model ?? "")}
+                onClick={() => save({ haiku_model: haikuModel.trim() || null })}>Kaydet</button>
+              {keyPill}
+            </dd>
+          </div>
+          <div className="setting">
+            <dt>Haiku zaman aşımı (sn)<span>Bu sürede cevap gelmezse havuz cümlesi konuşur. Varsayılan 2,0 sn bir varsayımdır (ayrıştırıcıda ölçülen Haiku p50 ~0,95 sn; serbest cevap için ölçülmedi). Aralık {hlo}–{hhi} sn.</span></dt>
+            <dd>
+              <input value={haikuTimeout} onChange={(e) => setHaikuTimeout(e.target.value)} aria-label="Haiku zaman aşımı" size={5} inputMode="decimal" />
+              <button type="button" disabled={!haikuTimeoutOk || ht === s.haiku_timeout_s} onClick={() => save({ haiku_timeout_s: ht })}>Kaydet</button>
+              {s.overridden.some((k) => HAIKU_KEYS.includes(k)) && (
+                <button type="button" onClick={() => save({ backend: null, haiku_model: null, haiku_timeout_s: null })}>Arka ucu varsayılana dön</button>
+              )}
+            </dd>
+          </div>
+        </>
+      )}
       <div className="setting">
-        <dt>Model<span>Ollama model adı; L2 ayrıştırıcısıyla aynı model bellekte tek kopya kalır.</span></dt>
+        <dt>Qwen modeli<span>Ollama model adı; L2 ayrıştırıcısıyla aynı model bellekte tek kopya kalır. Yalnız Qwen arka ucunda kullanılır.</span></dt>
         <dd>
           <input value={model} onChange={(e) => setModel(e.target.value)} aria-label="Serbest cevap modeli" size={36} />
           <button type="button" disabled={!model.trim() || model === s.model} onClick={() => save({ model: model.trim() })}>Kaydet</button>
@@ -86,11 +137,11 @@ export function FreeReplySettings() {
         </dd>
       </div>
       <div className="setting">
-        <dt>Zaman aşımı (sn)<span>Bu sürede cevap gelmezse havuz cümlesi konuşur. Aralık {lo}–{hi} sn.</span></dt>
+        <dt>Qwen zaman aşımı (sn)<span>Bu sürede cevap gelmezse havuz cümlesi konuşur. Aralık {lo}–{hi} sn.</span></dt>
         <dd>
           <input value={timeout} onChange={(e) => setTimeoutS(e.target.value)} aria-label="Serbest cevap zaman aşımı" size={5} inputMode="decimal" />
           <button type="button" disabled={!timeoutOk || t === s.timeout_s} onClick={() => save({ timeout_s: t })}>Kaydet</button>
-          {s.overridden.some((k) => !THINKING_KEYS.includes(k)) && (
+          {s.overridden.some((k) => !THINKING_KEYS.includes(k) && !HAIKU_KEYS.includes(k)) && (
             <button type="button" onClick={() => save({ enabled: null, model: null, timeout_s: null })}>Varsayılana dön</button>
           )}
         </dd>
@@ -98,7 +149,7 @@ export function FreeReplySettings() {
       {hasThinking && (
         <>
           <div className="setting">
-            <dt>Qwen thinking (yalnız ölçüm, yavaşlatır)<span>Açıkken serbest cevap ayrı thinking modeliyle ve düşünme açık (think) istenir; düşünme metni ayıklanır, yalnız son cevap denetlenip söylenir. Serbest cevap kapalıysa etkisizdir (Qwen çağrılmaz). Amaç gecikme farkını ölçmek.</span></dt>
+            <dt>Qwen thinking (yalnız ölçüm, yavaşlatır)<span>Açıkken serbest cevap ayrı thinking modeliyle ve düşünme açık (think) istenir; düşünme metni ayıklanır, yalnız son cevap denetlenip söylenir. Serbest cevap kapalıysa ya da arka uç Haiku ise etkisizdir. Amaç gecikme farkını ölçmek.</span></dt>
             <dd>
               <label>
                 <input type="checkbox" checked={!!s.thinking} onChange={(e) => save({ thinking: e.target.checked })} aria-label="Qwen thinking" /> {s.thinking ? "Açık" : "Kapalı"}
@@ -126,17 +177,18 @@ export function FreeReplySettings() {
           </div>
           {s.stats && (
             <div className="note">
-              Son {s.stats.turns} serbest cevap turu (en çok {s.stats.last}; süre uçtan uca, yalnız Qwen'e istek giden turlar):
+              Son {s.stats.turns} serbest cevap turu (en çok {s.stats.last}; süre uçtan uca, yalnız LLM'e istek giden turlar)
+              {s.stats.haiku?.cost_usd_total != null && ` · Haiku tahmini maliyet ${s.stats.haiku.cost_usd_total.toFixed(4)} USD`}:
               <ThinkingStats stats={s.stats} />
             </div>
           )}
         </>
       )}
       <p className="note">
-        Soğuk modelde istek atılmaz (Qwen3 30B yüklemesi ~1 dk sürer): önce profil seçicideki Hazırla. Her tur kaydına cevabın kaynağı (qwen / pool) ve
-        süresi yazılır. Kategoriler: {s.categories.join(", ")}. İstem {s.prompt.version} · {s.prompt.hash}.
+        Qwen: soğuk modelde istek atılmaz (Qwen3 30B yüklemesi ~1 dk sürer): önce profil seçicideki Hazırla. Her tur kaydına cevabın kaynağı (qwen / haiku / pool),
+        süresi ve Haiku'da token ile tahmini maliyet yazılır. Kategoriler: {s.categories.join(", ")}. İstem {s.prompt.version} · {s.prompt.hash}.
       </p>
-      <p className="note">Gerçek Qwen çıktısı bu PoC'de bulutta ölçülmedi; Mac'te <code>scripts/eval_free_reply.py</code> ile ölçülür.</p>
+      <p className="note">Mac'te ölçüm: <code>scripts/eval_free_reply.py --runs 3</code> (Qwen) ve <code>--backend haiku</code> (Haiku). Haiku serbest cevabı gerçek API ile henüz ölçülmedi.</p>
       {err && <p className="note err" role="alert">Değiştirilemedi: {err}</p>}
     </>
   );

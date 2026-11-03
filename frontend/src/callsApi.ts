@@ -21,7 +21,9 @@ export type CallList = { calls: CallRow[]; total: number; facets: { profiles: st
 export type CallTurn = { turn: number; greeting?: boolean; stt_s?: number; llm_s?: number; tts_first_s?: number; tts_total_s?: number;
   first_audio_after_end_s?: number; held_s?: number; stt_rejected?: boolean; user_seconds?: number; stt_conf?: number;
   // Serbest cevap (docs/serbest-cevap-qwen.md): kaynak, süre, thinking açık mıydı, hangi model
-  reply_source?: "qwen" | "pool"; free_reply_s?: number; free_reply_fallback?: string; free_reply_thinking?: boolean; free_reply_model?: string };
+  reply_source?: "qwen" | "haiku" | "pool"; free_reply_s?: number; free_reply_fallback?: string; free_reply_thinking?: boolean; free_reply_model?: string;
+  // Haiku serbest cevap (docs/serbest-cevap-haiku.md): arka uç, token ve tahmini maliyet
+  free_reply_backend?: "qwen" | "haiku"; free_reply_input_tokens?: number; free_reply_output_tokens?: number; free_reply_cost_usd?: number };
 export type CallAnswer = { step: string; code?: string; title?: string; kind?: string; value: unknown; utterance?: string; unanswered?: boolean };
 // Detayda `turns` ve `answers` özetteki sayıların yerine listelerdir (backend calls.detail).
 // eval-003: arama başına kaynak ve maliyet (backend usage.py). Sağlayıcı sayı vermediyse kalem null'dır.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): konu dışı/meta müşteri sözlerine lokal Qwen (Ollama) ile kısa, serbest karşılık. LLM yalnızca 1-2 kısa cümle yazar; bekleyen anket sorusunu kod aynen ekler. Çıktı denetimden geçmezse, zaman aşımında, Ollama'ya ulaşılamazsa ya da model soğuksa (bellekte değilse) config/smalltalk.json havuz cevabı kullanılır. Ekrandan değiştirilen enabled/model/timeout_s değerleri data/free-reply.json'a yazılır; buradaki değerler varsayılandır.",
+  "description": "ADR 0009 adım 2 (docs/serbest-cevap-qwen.md): konu dışı/meta müşteri sözlerine lokal Qwen (Ollama) ile kısa, serbest karşılık. LLM yalnızca 1-2 kısa cümle yazar; bekleyen anket sorusunu kod aynen ekler. Çıktı denetimden geçmezse, zaman aşımında, Ollama'ya ulaşılamazsa ya da model soğuksa (bellekte değilse) config/smalltalk.json havuz cevabı kullanılır. Ekrandan değiştirilen enabled/model/timeout_s değerleri data/free-reply.json'a yazılır; buradaki değerler varsayılandır. Arka uç (docs/serbest-cevap-haiku.md): backend auto/haiku/qwen; Haiku aynı istem, ayraç, denetim ve havuz düşüşüyle çalışır.",
   "enabled": true,
   "model": "qwen3:30b-a3b-instruct-2507-q4_K_M",
   "timeout_s": 1.5,
@@ -15,6 +15,13 @@
   "thinking_timeout_s": 8.0,
   "thinking_max_tokens": 768,
   "thinking_note": "Yalnız ÖLÇÜM içindir (docs/serbest-cevap-qwen.md 'Qwen thinking'): thinking'in serbest cevap gecikmesini ne kadar artırdığını görmek. Varsayılan KAPALI; canlı demoda kapalı tutulur. Açıkken instruct model yerine thinking_model kullanılır ve Ollama'ya think:true gönderilir (qwen3 instruct-2507 thinking desteklemez). thinking_model etiketinin Ollama'da var olduğu bu repoda DOĞRULANMADI: Mac'te `ollama list` ile doğrula; yoksa `ollama pull <etiket>` ya da Ayarlar ekranından var olan bir thinking modeline değiştir. thinking_timeout_s yalnız thinking açıkken kullanılır (1-30 sn). thinking_max_tokens düşünme + cevap tokenlarının toplam sınırıdır; 90 tokenla düşünme yarıda kesilir ve cevap boş kalır. Serbest cevap (enabled) kapalıysa thinking açık olsa da Qwen çağrılmaz.",
+  "backend": "auto",
+  "backend_note": "auto (varsayılan): aramanın profilindeki LLM Anthropic ise (A1, A1S) Haiku, Ollama ise (L1-L5) Qwen. haiku | qwen profilden bağımsız zorlar. Realtime profillerde (A2/A3) serbest cevap hiç uygulanmaz. Qwen thinking ayarı yalnız Qwen yoluna uygulanır; Haiku'da düşünme her zaman kapalıdır (thinking: disabled).",
+  "haiku_model": null,
+  "haiku_default_model": "claude-haiku-5-5",
+  "haiku_timeout_s": 2.0,
+  "haiku_max_tokens": 120,
+  "haiku_note": "haiku_model null = profilin Anthropic LLM modeli (A1S: claude-haiku-5-5); profil Anthropic değilse ve backend haiku zorlanmışsa haiku_default_model. Ekrandan değiştirilebilir. haiku_timeout_s 2,0 sn VARSAYIMDIR: ayrıştırıcıda ölçülen Haiku p50 ~0,95 sn (A1S, kısa JSON çıktısı); serbest cevap daha uzun metin (~30-60 token) üretir ve p95 daha yüksek olabilir. Serbest cevap için gerçek Haiku süresi ÖLÇÜLMEDİ: Mac'te `./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku` ile ölçülüp gerekirse ayarlanmalı (aralık 0,3-5 sn). Soğuk model kavramı yok (yoklama/ısınma yapılmaz); ANTHROPIC_API_KEY yoksa istek atılmadan havuz konuşur (reason no_key). haiku_max_tokens 120: Türkçe ~200 karakterlik iki cümle Claude tokenizer'ında ~60-80 token tahmini (ÖLÇÜLMEDİ); denetim zaten 200 karakteri aşanı reddeder. Maliyet config/pricing.json (anthropic:claude-haiku-5-5) ile hesaplanır.",
   "categories": [
     "counter",
     "clarify"

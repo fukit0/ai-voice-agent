@@ -171,7 +171,8 @@ function CallDetailPanel({ id, onClose }: { id: string; onClose: () => void }) {
                   <tr key={t.turn}>
                     <td>{t.greeting ? "açılış" : t.turn}</td>
                     <td>{sec(t.first_audio_after_end_s)}</td><td>{sec(t.stt_s)}</td><td>{sec(t.llm_s)}</td><td>{sec(t.tts_first_s)}</td>
-                    <td title={t.free_reply_model}>
+                    <td title={[t.free_reply_model, t.free_reply_input_tokens != null ? `token ${t.free_reply_input_tokens}/${t.free_reply_output_tokens ?? "?"}` : null,
+                      t.free_reply_cost_usd != null ? `~${t.free_reply_cost_usd.toFixed(6)} USD` : null].filter(Boolean).join(" · ") || undefined}>
                       {t.free_reply_s == null ? "—" : `${sec(t.free_reply_s)} ${t.reply_source ?? ""}${t.free_reply_fallback ? ` (${t.free_reply_fallback})` : ""}${t.free_reply_thinking ? " · thinking" : ""}`}
                     </td>
                   </tr>

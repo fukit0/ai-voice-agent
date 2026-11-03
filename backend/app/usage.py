@@ -32,6 +32,10 @@ class UsageMeter:
         self.stt = {"calls": 0, "audio_s": 0.0, "seconds": 0.0}
         self.llm = {"calls": 0, "input_tokens": 0, "output_tokens": 0, "seconds": 0.0, "tokens_missing": 0}
         self.tts = {"calls": 0, "chars": 0, "audio_s": 0.0, "seconds": 0.0}
+        # Serbest cevap (docs/serbest-cevap-haiku.md): Haiku'ya giden konu dışı karşılık istekleri AYRI sayılır (llm_* ayrıştırıcı içindir).
+        # Hiç Haiku isteği yoksa rapora alan eklenmez (Qwen/L2 ve eski aramaların raporu birebir aynı kalır).
+        self.free_reply = {"calls": 0, "input_tokens": 0, "output_tokens": 0, "seconds": 0.0, "tokens_missing": 0, "cost_usd": 0.0,
+                           "cost_verified": True, "unpriced": 0, "models": []}
 
     def add_stt(self, audio_s: float, seconds: float) -> None:
         self.stt["calls"] += 1
@@ -63,6 +67,27 @@ class UsageMeter:
             self.llm["tokens_missing"] += 1     # bu cagrinin tokeni bilinmiyor: toplam eksik sayilir
         self.llm["input_tokens"] += i or 0
         self.llm["output_tokens"] += o or 0
+
+    def add_free_reply(self, event: dict) -> None:
+        """Tur olayı `free_reply` (FreeResult.event). Yalnız Haiku'ya GERÇEKTEN istek giden denemeler sayılır (anahtar yok / kategori dışı /
+        kapalı sayılmaz). Zaman aşımı ya da hata istisnasında token bilinmez: `tokens_missing` artar (API yine ücretlendirmiş olabilir)."""
+        if event.get("backend") != "haiku" or event.get("reason") in ("disabled", "category", "no_key", "cold", "unreachable"):
+            return
+        fr = self.free_reply
+        fr["calls"] += 1
+        fr["seconds"] += float(event.get("seconds") or 0.0)
+        i, o = event.get("input_tokens"), event.get("output_tokens")
+        if i is None or o is None:
+            fr["tokens_missing"] += 1
+        fr["input_tokens"] += i or 0
+        fr["output_tokens"] += o or 0
+        if event.get("cost_usd") is not None:
+            fr["cost_usd"] += float(event["cost_usd"])
+        elif i is not None and o is not None:
+            fr["unpriced"] += 1                  # token var ama config/pricing.json'da bu modelin fiyatı yok
+        fr["cost_verified"] = fr["cost_verified"] and bool(event.get("cost_verified", False))
+        if event.get("model") and event["model"] not in fr["models"]:
+            fr["models"].append(event["model"])
 
     def add_tts(self, chars: int, audio_s: float, seconds: float) -> None:
         self.tts["calls"] += 1
@@ -96,6 +121,19 @@ def _lookup(table: dict, spec: dict | None) -> dict | None:
     if not spec:
         return None
     return table.get(_key(spec)) or table.get(spec["provider"])
+
+
+def llm_cost(provider: str, model: str | None, input_tokens: int | None, output_tokens: int | None,
+             pricing: dict | None = None) -> tuple[float | None, bool]:
+    """(USD, fiyat doğrulandı mı). config/pricing.json 'llm' tablosundan (report ile aynı arama: 'saglayici:model', yoksa 'saglayici').
+    Fiyat ya da token yoksa None. Yerel sağlayıcı 0 (API ücreti yok)."""
+    pricing = pricing if pricing is not None else load_pricing()
+    if provider in set(pricing.get("local_providers", [])):
+        return 0.0, True
+    p = _lookup(pricing.get("llm", {}), {"provider": provider, "model": model})
+    if not p or input_tokens is None or output_tokens is None:
+        return None, bool(p and p.get("verified"))
+    return (input_tokens * p["input_per_mtok"] + output_tokens * p["output_per_mtok"]) / 1e6, bool(p.get("verified"))
 
 
 def report(meter: UsageMeter, *, duration_s: float, user_speech_s: float, agent_speech_s: float,
@@ -149,6 +187,19 @@ def report(meter: UsageMeter, *, duration_s: float, user_speech_s: float, agent_
             unpriced.append("llm(token yok)")
         else:
             cost[kind] = (items["llm_input_tokens"] * p["input_per_mtok"] + items["llm_output_tokens"] * p["output_per_mtok"]) / 1e6
+    fr = getattr(meter, "free_reply", None)
+    if fr and fr["calls"]:
+        # Serbest cevap (Haiku) ayrı kalem: by_component.free_reply, toplam maliyete dahil. Token eksikse maliyet alt sınırdır.
+        items.update({"free_reply_calls": fr["calls"], "free_reply_input_tokens": fr["input_tokens"],
+                      "free_reply_output_tokens": fr["output_tokens"], "free_reply_s": round(fr["seconds"], 3),
+                      "free_reply_models": list(fr["models"])})
+        cost["free_reply"] = fr["cost_usd"]
+        verified = verified and fr["cost_verified"]
+        if fr["unpriced"]:
+            unpriced.append("free_reply")
+        if fr["tokens_missing"]:
+            missing.append("free_reply_tokens")
+            items["free_reply_tokens_missing"] = fr["tokens_missing"]
     priced = [v for v in cost.values() if v is not None]
     return {"items": items, "missing": missing,
             "cost": {"currency": pricing.get("currency", "USD"), "by_component": {k: None if v is None else round(v, 6) for k, v in cost.items()},

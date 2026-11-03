@@ -361,12 +361,14 @@ export async function setFastPath(profile: string, enabled: boolean | null): Pro
   await json(res);
 }
 
-/** ADR 0009 adım 2: konu dışı turlarda lokal Qwen ile serbest cevap (docs/serbest-cevap-qwen.md). */
+/** ADR 0009 adım 2: konu dışı turlarda serbest cevap; lokal Qwen ya da Claude Haiku (docs/serbest-cevap-qwen.md, docs/serbest-cevap-haiku.md). */
 /** Thinking açık/kapalı serbest cevap turlarının özeti (backend free_reply.thinking_stats; süre yalnız LLM'e istek giden turlardan). */
 export type FreeReplyStatsGroup = {
   turns: number; called: number; qwen_rate: number | null; fallback_rate: number | null; fallback_reasons: Record<string, number>;
   mean_s: number | null; p50_s: number | null; p95_s: number | null; models: string[];
+  cost_usd_total?: number | null; cost_usd_mean?: number | null;   // yalnız haiku grubunda
 };
+export type FreeReplyBackend = "auto" | "haiku" | "qwen";
 export type FreeReplyStatus = { reachable: boolean; warm: boolean; model: string };
 export type FreeReplySettings = {
   enabled: boolean;
@@ -385,14 +387,24 @@ export type FreeReplySettings = {
   thinking_timeout_range?: [number, number];
   thinking_max_tokens?: number;
   thinking_status?: FreeReplyStatus;
-  stats?: { last: number; turns: number; off: FreeReplyStatsGroup; on: FreeReplyStatsGroup };
+  stats?: { last: number; turns: number; off: FreeReplyStatsGroup; on: FreeReplyStatsGroup; haiku?: FreeReplyStatsGroup };
+  // Arka uç (docs/serbest-cevap-haiku.md). Eski backend bu alanları vermezse ekran satırları gösterilmez.
+  backend?: FreeReplyBackend;
+  backends?: FreeReplyBackend[];
+  haiku_model?: string | null;          // null: profilin Anthropic LLM modeli
+  haiku_default_model?: string;
+  haiku_timeout_s?: number;
+  haiku_timeout_range?: [number, number];
+  haiku_max_tokens?: number;
+  haiku_status?: { key_present: boolean; model: string; model_from_profile: boolean };
 };
 
 export const fetchFreeReply = () => fetch("/api/free-reply").then((r) => json<FreeReplySettings>(r));
 
 /** Yalnız verilen alanlar değişir; null o alanı varsayılana döndürür. */
 export async function setFreeReply(patch: Partial<{ enabled: boolean | null; model: string | null; timeout_s: number | null;
-  thinking: boolean | null; thinking_model: string | null; thinking_timeout_s: number | null }>): Promise<FreeReplySettings> {
+  thinking: boolean | null; thinking_model: string | null; thinking_timeout_s: number | null;
+  backend: FreeReplyBackend | null; haiku_model: string | null; haiku_timeout_s: number | null }>): Promise<FreeReplySettings> {
   const res = await fetch("/api/free-reply", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

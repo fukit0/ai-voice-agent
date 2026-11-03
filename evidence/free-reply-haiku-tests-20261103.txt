@@ -1,0 +1,13 @@
+# Serbest cevap Haiku arka ucu - test çıktıları (bulut çalışma kopyası, 2026-11-03). Gerçek Haiku API ile ÖLÇÜLMEDİ; sahte istemci/HTTP.
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests/test_free_reply_haiku.py -q
+..................................                                       [100%]
+34 passed in 2.21s
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests -q
+953 passed, 1 skipped in 74.32s (0:01:14)
+
+$ cd frontend && npx tsc --noEmit && npx vitest run
+tsc: temiz
+ Test Files  25 passed (25)
+      Tests  127 passed (127)

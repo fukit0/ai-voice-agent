@@ -8,7 +8,10 @@ Akışı yine kod yönetir (FlowDriver). Bu modül yalnızca konu dışı bir tu
   tekrar, Türkçe olmayan metin). Herhangi biri başarısızsa, zaman aşımında, Ollama'ya ulaşılamazsa ya da model SOĞUKSA (bellekte değilse)
   None döner ve çağıran mevcut smalltalk havuz cevabını kullanır. Soğuk modelde istek ATILMAZ: Qwen3 30B'nin yüklenmesi ~67 sn sürer
   (ADR 0001); yükleme 'Hazırla' ile yapılır.
-- Her deneme FreeResult olarak döner (kaynak qwen|pool, düşüş sebebi, süre); FlowDriver bunu tur olayına, oturum kaydı da tura yazar.
+- Her deneme FreeResult olarak döner (kaynak qwen|haiku|pool, düşüş sebebi, süre); FlowDriver bunu tur olayına, oturum kaydı da tura yazar.
+- Arka uç (docs/serbest-cevap-haiku.md): ayar `backend` = auto (varsayılan; aramanın profilindeki LLM Anthropic ise Haiku, değilse Qwen)
+  | haiku | qwen. Haiku (AnthropicChatClient) aynı istem, aynı ayraç, aynı denetim ve aynı havuza düşüşle çalışır; soğuk model kavramı yoktur
+  (yoklama/ısınma yok), anahtar yoksa istek atılmadan havuz konuşur (reason no_key). Qwen thinking ayarı yalnız Qwen yoluna uygulanır.
 
 Güvenlik: müşteri sözü istemde VERİ olarak tırnak + <musteri> ayracı içinde verilir, ayraç karakterleri temizlenir; sistem istemi talimat
 değiştirme isteklerine uymamasını söyler. Asıl savunma çıktı denetimidir: model istem enjeksiyonuna uysa bile puan/sayı/söz/insan iddiası
@@ -32,8 +35,11 @@ from ..trnorm import number_to_words
 
 ROOT = Path(__file__).resolve().parents[3]
 CONFIG = ROOT / "config" / "free-reply.json"
-OVERRIDABLE = ("enabled", "model", "timeout_s", "thinking", "thinking_model", "thinking_timeout_s")      # ekrandan değişebilen alanlar
+OVERRIDABLE = ("enabled", "model", "timeout_s", "thinking", "thinking_model", "thinking_timeout_s",
+               "backend", "haiku_model", "haiku_timeout_s")      # ekrandan değişebilen alanlar
 TIMEOUT_RANGE = (0.3, 5.0)
+HAIKU_TIMEOUT_RANGE = (0.3, 5.0)       # canlı sınır Qwen ile aynı: konu dışı turda müşteri 5 sn'den uzun sessizlik beklememeli
+BACKENDS = ("auto", "haiku", "qwen")
 THINKING_TIMEOUT_RANGE = (1.0, 30.0)   # thinking yalnız ölçüm içindir; düşünme yüzlerce token sürebilir, canlı sınır (5 sn) burada uygulanmaz
 PROMPT_VERSION = "3"
 
@@ -60,10 +66,13 @@ def load_overrides() -> dict:
     for key in ("enabled", "thinking"):
         if isinstance(raw.get(key), bool):
             out[key] = raw[key]
-    for key in ("model", "thinking_model"):
+    for key in ("model", "thinking_model", "haiku_model"):
         if isinstance(raw.get(key), str) and raw[key].strip():
             out[key] = raw[key].strip()
-    for key, (lo, hi) in (("timeout_s", TIMEOUT_RANGE), ("thinking_timeout_s", THINKING_TIMEOUT_RANGE)):
+    if raw.get("backend") in BACKENDS:
+        out["backend"] = raw["backend"]
+    for key, (lo, hi) in (("timeout_s", TIMEOUT_RANGE), ("thinking_timeout_s", THINKING_TIMEOUT_RANGE),
+                          ("haiku_timeout_s", HAIKU_TIMEOUT_RANGE)):
         t = raw.get(key)
         if isinstance(t, (int, float)) and not isinstance(t, bool) and lo <= t <= hi:
             out[key] = float(t)
@@ -86,10 +95,12 @@ def save_overrides(patch: dict) -> dict:
             continue
         if k in ("enabled", "thinking") and not isinstance(v, bool):
             raise ValueError(f"{k} true/false olmalı")
-        if k in ("model", "thinking_model") and (not isinstance(v, str) or not v.strip() or len(v) > 120):
+        if k in ("model", "thinking_model", "haiku_model") and (not isinstance(v, str) or not v.strip() or len(v) > 120):
             raise ValueError(f"{k} adı boş olamaz")
-        if k in ("timeout_s", "thinking_timeout_s"):
-            lo, hi = TIMEOUT_RANGE if k == "timeout_s" else THINKING_TIMEOUT_RANGE
+        if k == "backend" and v not in BACKENDS:
+            raise ValueError(f"backend {', '.join(BACKENDS)} olmalı")
+        if k in ("timeout_s", "thinking_timeout_s", "haiku_timeout_s"):
+            lo, hi = {"timeout_s": TIMEOUT_RANGE, "thinking_timeout_s": THINKING_TIMEOUT_RANGE, "haiku_timeout_s": HAIKU_TIMEOUT_RANGE}[k]
             if isinstance(v, bool) or not isinstance(v, (int, float)) or not lo <= v <= hi:
                 raise ValueError(f"{k} {lo}-{hi} sn arasında olmalı")
             v = float(v)
@@ -214,6 +225,96 @@ def ollama_client(model: str, ttl_s: float = 30.0, think: bool = False) -> Ollam
         if c is None:
             c = _clients[(url, model, bool(think))] = OllamaChatClient(model, url, ttl_s, think=think)
         return c
+
+
+class AnthropicChatClient:
+    """Serbest cevap için Claude Haiku (Anthropic Messages API). Ayrıştırıcıdaki AnthropicLLM ile AYNI anahtar/başlık ve AYNI paylaşılan
+    bağlantı havuzu (providers/remote.py: anthropic_headers, _request; keep-alive sayesinde A1S'te ayrıştırıcının açtığı bağlantı kullanılır).
+
+    Farklar ve sebepleri:
+    - Zaman aşımı çağrı başına (haiku_timeout_s, varsayılan 2,0 sn); AnthropicLLM 60 sn bekler, konu dışı tur bunu bekleyemez.
+    - Düşünme her zaman kapalı (thinking: disabled): kısa max_tokens düşünmeye harcanırsa cevap boş kalır (core-012 ölçümü). Model 'disabled'ı
+      reddederse alan bir daha gönderilmez; 'temperature' reddi için de aynı (AnthropicLLM ile aynı kural). Düşünme kapatılamaz ve cevap boş
+      gelirse büyütülmüş bütçeyle tekrar DENENMEZ (gecikme): denetim 'empty' ile havuza düşürür.
+    - Soğuk model kavramı yok: is_warm ağ çağrısı yapmaz; anahtar varsa True, yoksa None ve `unready_reason` = no_key (istek atılmaz).
+    - Zaman aşımı ve ağ hataları httpx istisnası olarak yükselir (FreeReplier adından 'timeout'/'error' ayırır)."""
+    backend = "haiku"
+    unready_reason = "no_key"
+
+    def __init__(self, model: str, url: str | None = None):
+        self.model = model
+        self.url = url
+        self._no_temperature = False
+        self._no_thinking_param = False
+
+    def is_warm(self) -> bool | None:
+        return True if os.environ.get("ANTHROPIC_API_KEY") else None
+
+    def chat(self, messages, timeout_s, max_tokens, temperature):
+        from ..providers import remote
+        from ..providers.base import ProviderError
+
+        system = "\n".join(m["content"] for m in messages if m["role"] == "system")
+        payload: dict = {"model": self.model, "max_tokens": max_tokens, "messages": [m for m in messages if m["role"] != "system"]}
+        if system:
+            payload["system"] = system
+        if not self._no_temperature:
+            payload["temperature"] = temperature
+        if not self._no_thinking_param:
+            payload["thinking"] = {"type": "disabled"}
+        url = self.url or remote.ANTHROPIC_MESSAGES_URL
+        headers = remote.anthropic_headers()
+        t0 = time.perf_counter()
+        for _ in range(3):
+            res = remote._request("POST", url, timeout_s, json=payload, headers=headers)
+            if res.status_code < 400:
+                break
+            msg = (res.text or "").lower()
+            if res.status_code == 400 and "temperature" in msg and "temperature" in payload:
+                payload.pop("temperature")
+                self._no_temperature = True
+            elif res.status_code == 400 and "thinking" in msg and "thinking" in payload:
+                payload.pop("thinking")
+                self._no_thinking_param = True
+            else:
+                raise ProviderError(f"Anthropic HTTP {res.status_code}: {(res.text or '')[:200]}")
+        else:
+            raise ProviderError(f"Anthropic HTTP {res.status_code}: {(res.text or '')[:200]}")
+        body = res.json()
+        text = "".join(b.get("text", "") for b in body.get("content", []) if b.get("type") == "text")
+        u = body.get("usage") or {}
+        meta = {"input_tokens": u.get("input_tokens"), "output_tokens": u.get("output_tokens"),
+                "api_s": round(time.perf_counter() - t0, 3), "stop_reason": body.get("stop_reason")}
+        return ChatReply(text, "", {k: v for k, v in meta.items() if v is not None})
+
+
+_anthropic: dict[str, AnthropicChatClient] = {}
+
+
+def anthropic_client(model: str) -> AnthropicChatClient:
+    """Süreç içinde model başına tek istemci (reddedilen parametre bilgisi aramalar arasında paylaşılır)."""
+    with _clients_lock:
+        c = _anthropic.get(model)
+        if c is None:
+            c = _anthropic[model] = AnthropicChatClient(model)
+        return c
+
+
+def resolve_backend(cfg: dict, llm_spec: dict | None) -> str:
+    """auto: aramanın profilindeki LLM Anthropic ise haiku, değilse (Ollama/Qwen ya da bilinmiyor) qwen; haiku | qwen zorlanmış seçimdir."""
+    b = cfg.get("backend", "auto")
+    if b in ("haiku", "qwen"):
+        return b
+    return "haiku" if (llm_spec or {}).get("provider") == "anthropic" else "qwen"
+
+
+def haiku_model(cfg: dict, llm_spec: dict | None = None) -> str:
+    """Öncelik: ekrandan seçilen haiku_model > profilin Anthropic LLM modeli (A1S: claude-haiku-5-5) > config haiku_default_model."""
+    if cfg.get("haiku_model"):
+        return cfg["haiku_model"]
+    if (llm_spec or {}).get("provider") == "anthropic" and llm_spec.get("model"):
+        return llm_spec["model"]
+    return cfg.get("haiku_default_model") or "claude-haiku-5-5"
 
 
 # ---- istem ---------------------------------------------------------------------------------------------------------------------
@@ -380,8 +481,8 @@ def echoes(text: str, utterance: str, n: int = 4) -> bool:
 @dataclass
 class FreeResult:
     text: str | None                 # söylenecek karşılık (soru HARİÇ); None -> çağıran havuzu kullanır
-    source: str                      # "qwen" | "pool"
-    reason: str | None = None        # havuza düşüş sebebi: disabled | category | cold | unreachable | timeout | error | audit
+    source: str                      # "qwen" | "haiku" | "pool"
+    reason: str | None = None        # havuza düşüş sebebi: disabled | category | cold | unreachable | no_key | timeout | error | audit
     seconds: float = 0.0             # serbest cevap denemesinin süresi (sıcaklık denetimi + LLM + denetim)
     model: str | None = None
     category: str | None = None
@@ -391,6 +492,11 @@ class FreeResult:
     think_chars: int | None = None   # ayıklanan düşünme metninin uzunluğu (metnin kendisi kaydedilmez/söylenmez)
     eval_tokens: int | None = None   # Ollama eval_count: üretilen TÜM tokenlar (thinking açıkken düşünme + cevap; Ollama ayrı sayı vermez)
     ollama_s: float | None = None    # Ollama total_duration (sn): sunucu tarafı süre; `seconds` ise ağ + yoklama dahil uçtan uca
+    backend: str | None = None       # "qwen" | "haiku": hangi arka uç denendi (havuza düşse de)
+    input_tokens: int | None = None  # Haiku usage.input_tokens (Qwen: None; Ollama'da yalnız eval_tokens tutulur)
+    output_tokens: int | None = None # Haiku usage.output_tokens
+    cost_usd: float | None = None    # tahmini API maliyeti (config/pricing.json; usage.llm_cost). Qwen: None (yerel, API ücreti yok)
+    cost_verified: bool | None = None  # fiyat config'te doğrulanmış mı
 
     def event(self, step_key: str) -> dict:
         d = {k: v for k, v in asdict(self).items() if v not in (None, [])}
@@ -410,7 +516,9 @@ class FreeReplier:
     def __init__(self, client: ChatClient, cfg: dict | None = None, assistant: str = "Ayşe", clock=time.perf_counter,
                  thinking_client: ChatClient | None = None):
         self.cfg = {**defaults(), **(cfg or {})}
-        self.thinking = bool(self.cfg.get("thinking", False))
+        # Arka uç istemciden gelir (AnthropicChatClient.backend = haiku; Ollama ve eski sahte istemciler = qwen). Qwen thinking Haiku'ya uygulanmaz.
+        self.backend = getattr(client, "backend", "qwen")
+        self.thinking = bool(self.cfg.get("thinking", False)) and self.backend == "qwen"
         if self.thinking and thinking_client is None:
             thinking_client = ollama_client(self.cfg["thinking_model"], float(self.cfg.get("warm_check_ttl_s", 30)), think=True)
         self.base_client = client
@@ -419,9 +527,13 @@ class FreeReplier:
         self.clock = clock
 
     def _timeout(self) -> float:
+        if self.backend == "haiku":
+            return float(self.cfg.get("haiku_timeout_s", 2.0))
         return float(self.cfg.get("thinking_timeout_s", 8.0) if self.thinking else self.cfg.get("timeout_s", 1.5))
 
     def _max_tokens(self) -> int:
+        if self.backend == "haiku":
+            return int(self.cfg.get("haiku_max_tokens", 120))
         return int(self.cfg.get("thinking_max_tokens", 768) if self.thinking else self.cfg.get("max_tokens", 90))
 
     def eligible(self, category: str | None) -> bool:
@@ -430,8 +542,8 @@ class FreeReplier:
     def describe(self) -> dict:
         d = {"enabled": bool(self.cfg.get("enabled", True)), "model": getattr(self.client, "model", None),
              "timeout_s": self._timeout(), "categories": list(self.cfg.get("categories", [])),
-             "prompt": {"version": PROMPT_VERSION, "hash": prompt_hash()}, "thinking": self.thinking}
-        if self.thinking:
+             "prompt": {"version": PROMPT_VERSION, "hash": prompt_hash()}, "thinking": self.thinking, "backend": self.backend}
+        if self.thinking or self.backend == "haiku":
             d["max_tokens"] = self._max_tokens()
         return d
 
@@ -439,7 +551,7 @@ class FreeReplier:
         """require_warm=False yalnızca değerlendirme betiği içindir (soğuk modeli bilerek yükler); canlı akış her zaman True."""
         cat = category or "other"
         model = getattr(self.client, "model", None)
-        th = {"thinking": self.thinking}
+        th = {"thinking": self.thinking, "backend": self.backend}
         if not self.cfg.get("enabled", True):
             return FreeResult(None, "pool", "disabled", 0.0, model, cat, **th)
         if not self.eligible(cat):
@@ -452,7 +564,8 @@ class FreeReplier:
             except Exception:  # noqa: BLE001
                 warm = None
             if warm is not True:   # thinking modeli bellekte değilse de bekleme yok: havuz (yükleme ölçüme girmesin, tur takılmasın)
-                return FreeResult(None, "pool", "cold" if warm is False else "unreachable", round(self.clock() - t0, 3), model, cat, **th)
+                reason = "cold" if warm is False else (getattr(self.client, "unready_reason", None) or "unreachable")   # Haiku: no_key
+                return FreeResult(None, "pool", reason, round(self.clock() - t0, 3), model, cat, **th)
         msgs = build_messages(step, question, utterance, cat, self.assistant, int(self.cfg.get("max_chars", 200)))
         try:
             raw = self.client.chat(msgs, timeout, self._max_tokens(), float(self.cfg.get("temperature", 0.6)))
@@ -465,21 +578,32 @@ class FreeReplier:
         meta = getattr(raw, "meta", None) or {}
         m = {**th, "eval_tokens": meta.get("eval_tokens"), "ollama_s": meta.get("ollama_s"),
              "think_chars": len(thought) if (thought or self.thinking) else None}
+        if self.backend == "haiku":     # token ve tahmini maliyet (zaman aşımı/denetim düşüşünde de: istek ücretlendirildi)
+            from .. import usage as usage_mod
+            i, o = meta.get("input_tokens"), meta.get("output_tokens")
+            try:
+                cost, verified = usage_mod.llm_cost("anthropic", model, i, o)
+            except (OSError, ValueError, KeyError):
+                cost, verified = None, False
+            m.update({"input_tokens": i, "output_tokens": o, "cost_usd": None if cost is None else round(cost, 8), "cost_verified": verified})
         text = normalize(answer)
         if elapsed > timeout:            # httpx zaman aşımı işlem başınadır; toplam süre de sınırı aşmamalı
             return FreeResult(None, "pool", "timeout", round(elapsed, 3), model, cat, candidate=text[:300] or None, **m)
         fails = audit(text, utterance=utterance, step=step, cfg=self.cfg)
         if fails:
             return FreeResult(None, "pool", "audit", round(self.clock() - t0, 3), model, cat, fails, text[:300], **m)
-        return FreeResult(text, "qwen", None, round(self.clock() - t0, 3), model, cat, **m)
+        return FreeResult(text, "haiku" if self.backend == "haiku" else "qwen", None, round(self.clock() - t0, 3), model, cat, **m)
 
 
-def make_default(assistant: str = "Ayşe") -> FreeReplier | None:
+def make_default(assistant: str = "Ayşe", llm_spec: dict | None = None, realtime: bool = False) -> FreeReplier | None:
     """Canlı arama için: ayar kapalıysa None (FlowDriver eski davranışla çalışır, hiçbir ağ çağrısı yapılmaz).
-    Serbest cevap kapalıysa thinking ayarı ne olursa olsun None (Qwen hiç çağrılmaz). Thinking yalnız açık serbest cevabın modelini değiştirir."""
+    Serbest cevap kapalıysa thinking ayarı ne olursa olsun None (Qwen hiç çağrılmaz). Thinking yalnız açık serbest cevabın modelini değiştirir.
+    `llm_spec`: aramanın profilindeki LLM ({provider, model}); auto seçimi bundan yapılır (yoksa Qwen: eski davranış). Realtime: None."""
     cfg = settings()
-    if not cfg.get("enabled", True):
+    if realtime or not cfg.get("enabled", True):
         return None
+    if resolve_backend(cfg, llm_spec) == "haiku":
+        return FreeReplier(anthropic_client(haiku_model(cfg, llm_spec)), cfg, assistant)
     ttl = float(cfg.get("warm_check_ttl_s", 30))
     think = ollama_client(cfg["thinking_model"], ttl, think=True) if cfg.get("thinking") else None
     return FreeReplier(ollama_client(cfg["model"], ttl), cfg, assistant, thinking_client=think)
@@ -494,6 +618,13 @@ def status(cfg: dict | None = None) -> dict:
     return {"reachable": state is not None, "warm": state is True, "model": cfg["model"]}
 
 
+def haiku_status(cfg: dict | None = None) -> dict:
+    """Ayarlar ekranı için Haiku durumu. Ağ çağrısı YOK (soğuk model kavramı yok); yalnız anahtarın ortamda olup olmadığı."""
+    cfg = cfg or settings()
+    return {"key_present": bool(os.environ.get("ANTHROPIC_API_KEY")), "model": haiku_model(cfg, None),
+            "model_from_profile": not cfg.get("haiku_model")}
+
+
 # ---- thinking ölçüm özeti (Ayarlar ekranı) -------------------------------------------------------------------------------------
 NOT_CALLED = ("cold", "unreachable", "category", "disabled")   # bu sebeplerde LLM'e istek gitmedi: süre istatistiğine girmez
 
@@ -506,7 +637,7 @@ def _pct(xs: list[float], q: float) -> float | None:
 
 
 def thinking_stats(folder: Path, last: int = 200) -> dict:
-    """Son `last` serbest cevap denemesini (oturum kayıtlarından, en yeni önce) thinking açık / kapalı diye ayırıp özetler.
+    """Son `last` serbest cevap denemesini (oturum kayıtlarından, en yeni önce) Qwen thinking kapalı / açık ve Haiku diye ayırıp özetler.
     Süre (`free_reply_s`, uçtan uca) yalnız LLM'e gerçekten istek giden turlardan hesaplanır; soğuk/ulaşılamıyor turları ayrıca sayılır.
     Eski kayıtlarda `free_reply_thinking` yoktur: o turlar kapalı sayılır (thinking ayarı eklenmeden önce hep kapalıydı)."""
     turns: list[tuple[str, dict]] = []
@@ -526,19 +657,31 @@ def thinking_stats(folder: Path, last: int = 200) -> dict:
             break
     turns = turns[:last]
     out: dict = {"last": last, "turns": len(turns)}
-    for key, on in (("off", False), ("on", True)):
-        g = [t for _, t in turns if bool(t.get("free_reply_thinking", False)) is on]
-        called = [float(t["free_reply_s"]) for t in g if t.get("free_reply_fallback") not in NOT_CALLED]
+    llm = ("qwen", "haiku")       # LLM cevabı konuştu (havuz değil)
+    groups = (("off", lambda t: _backend(t) == "qwen" and not t.get("free_reply_thinking", False)),
+              ("on", lambda t: _backend(t) == "qwen" and bool(t.get("free_reply_thinking", False))),
+              ("haiku", lambda t: _backend(t) == "haiku"))
+    for key, sel in groups:
+        g = [t for _, t in turns if sel(t)]
+        called = [float(t["free_reply_s"]) for t in g if t.get("free_reply_fallback") not in NOT_CALLED + ("no_key",)]
         reasons: dict[str, int] = {}
         for t in g:
-            if t.get("reply_source") != "qwen":
+            if t.get("reply_source") not in llm:
                 r = t.get("free_reply_fallback") or "?"
                 reasons[r] = reasons.get(r, 0) + 1
         out[key] = {"turns": len(g), "called": len(called),
-                    "qwen_rate": round(sum(t.get("reply_source") == "qwen" for t in g) / len(g), 3) if g else None,
-                    "fallback_rate": round(sum(t.get("reply_source") != "qwen" for t in g) / len(g), 3) if g else None,
+                    "qwen_rate": round(sum(t.get("reply_source") in llm for t in g) / len(g), 3) if g else None,   # ad eski: LLM cevabı oranı
+                    "fallback_rate": round(sum(t.get("reply_source") not in llm for t in g) / len(g), 3) if g else None,
                     "fallback_reasons": reasons, "mean_s": round(statistics.mean(called), 3) if called else None,
                     "p50_s": _pct(called, 0.5), "p95_s": _pct(called, 0.95),
                     "models": sorted({t["free_reply_model"] for t in g if t.get("free_reply_model")})}
+        if key == "haiku":
+            costs = [float(t["free_reply_cost_usd"]) for t in g if isinstance(t.get("free_reply_cost_usd"), (int, float))]
+            out[key]["cost_usd_total"] = round(sum(costs), 6) if costs else None
+            out[key]["cost_usd_mean"] = round(statistics.mean(costs), 8) if costs else None
     return out
 
+
+def _backend(turn: dict) -> str:
+    """Eski kayıtlarda free_reply_backend yoktur: o turlar Qwen'dir (Haiku desteği eklenmeden önce tek arka uç Qwen'di)."""
+    return turn.get("free_reply_backend") or "qwen"

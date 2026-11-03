@@ -90,9 +90,11 @@ async def offer(req: OfferRequest) -> dict:
             flow.fast_path = bool(profile.fast_path) and not realtime
             from . import reaction_setting
             reaction_setting.apply_to(flow)   # hum-001 aç/kapa: arama başındaki değer; açık arama bu değerle sürer
-            if not realtime:   # ADR 0009 adım 2: konu dışı turlarda lokal Qwen serbest cevap (ayar kapalıysa None; soğukta havuz)
+            if not realtime:   # ADR 0009 adım 2: konu dışı turlarda serbest cevap (ayar kapalıysa None; Qwen soğukta / Haiku anahtarsız havuz)
                 from .voice import free_reply as free_reply_mod
-                flow.free_reply = free_reply_mod.make_default(persona_mod.scenario_values(persona).get("ASISTAN", "Ayşe"))
+                # arka uç 'auto': profilin LLM'i Anthropic ise (A1S) Haiku, Ollama ise Qwen (docs/serbest-cevap-haiku.md)
+                flow.free_reply = free_reply_mod.make_default(persona_mod.scenario_values(persona).get("ASISTAN", "Ayşe"),
+                                                              llm_spec=profile.component("llm"))
         except KeyError:
             raise HTTPException(404, {"error": "unknown_scenario", "message": f"Senaryo bulunamadı: {req.scenario}"}) from None
     conn = RtcVoiceConnection(req.profile, stt, llm, tts, flow=flow, phone_filter=req.phone_filter,
