@@ -531,9 +531,13 @@ class VoiceSession:
             for src, dst in (("eval_tokens", "free_reply_eval_tokens"), ("think_chars", "free_reply_think_chars"), ("ollama_s", "free_reply_ollama_s"),
                              # Haiku (docs/serbest-cevap-haiku.md): arka uç, token ve tahmini maliyet; aramanın usage bloğuna da ayrı kalem olarak girer
                              ("backend", "free_reply_backend"), ("input_tokens", "free_reply_input_tokens"),
-                             ("output_tokens", "free_reply_output_tokens"), ("cost_usd", "free_reply_cost_usd")):
+                             ("output_tokens", "free_reply_output_tokens"), ("cost_usd", "free_reply_cost_usd"),
+                             # off-003: havuza neden düşüldüğü Aramalar ekranında okunabilsin (kategori + denetim kuralları / hata metni)
+                             ("category", "free_reply_category")):
                 if free.get(src) is not None:
                     rec[dst] = free[src]
+            if free.get("fails"):
+                rec["free_reply_fails"] = [str(f)[:120] for f in free["fails"][:5]]
             self.usage.add_free_reply(free)
         elif any(e.get("type") in ("off_topic", "identity") for e in reply.events):
             rec["reply_source"] = "pool"

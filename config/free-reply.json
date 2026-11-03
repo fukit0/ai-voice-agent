@@ -26,7 +26,17 @@
     "counter",
     "clarify"
   ],
-  "categories_note": "Serbest cevabın denendiği konu dışı kategoriler. Bilinçli olarak DIŞARIDA: identity (dürüst kimlik cevabı sabit metin, core-006), who / number_source / recording (KVKK ve hukuk metni, sabit), duration / purpose (olgusal bilgi; LLM süre uydurabilir), support (çağrı merkezi numarası sabit), profanity (gerginlikte sabit, gözden geçirilmiş özür), hold (bekleme). 3. art arda konu dışı kapanışı her zaman sabit metindir.",
+  "haiku_categories": [
+    "counter",
+    "clarify",
+    "other",
+    "weather",
+    "chitchat",
+    "joke",
+    "topic_change"
+  ],
+  "haiku_categories_note": "Yalnız Haiku arka ucunda (A1S) serbest cevabın denendiği kategoriler (docs/serbest-cevap-haiku.md 'Kategori kapsamı', 2026-11-03): müşterinin sohbetine (hava, hal hatır, şaka, konu değiştirme / güncel bilgi sorusu, diğer) sabit cümle yerine sözüne karşılık veren doğal cevap. Qwen listesi (categories) DEĞİŞMEDİ: 2026-11-03 Qwen ölçümünde bu kategorilerde uydurma çıktı. Haiku ile bu kategorilerde gerçek ölçüm YAPILMADI; istem v4 güncel bilgiyi uydurmamayı söyler, denetimin realworld_claim kuralı bilmediğini söylemeyen hava/trafik/uçuş/maç/kur iddiasını reddeder. Dışarıda kalanlar categories_note ile aynı.",
+  "categories_note": "Serbest cevabın denendiği konu dışı kategoriler (Qwen ve haiku_categories tanımlı değilse Haiku). Bilinçli olarak DIŞARIDA: identity (dürüst kimlik cevabı sabit metin, core-006), who / number_source / recording (KVKK ve hukuk metni, sabit), duration / purpose (olgusal bilgi; LLM süre uydurabilir), support (çağrı merkezi numarası sabit), profanity (gerginlikte sabit, gözden geçirilmiş özür), hold (bekleme). 3. art arda konu dışı kapanışı her zaman sabit metindir.",
   "banned_patterns": [
     "(?<![a-zçğıöşü])(?:veririm|verirdim|verirsem|vereyim|veriyorum|verdim)(?![a-zçğıöşü])",
     "(?<![a-zçğıöşü])ben\\s+olsa(?:m|ydım)",
@@ -37,6 +47,7 @@
     "(?<![a-zçğıöşü])(?:iade|indirim|ücretsiz|hediye|kampanya|tazminat)",
     "(?:bağlıyorum|aktarıyorum|yönlendiriyorum)",
     "(?:talimat|sistem\\s+istem|prompt|json|intent|kurallarım)",
-    "(?<![a-zçğıöşü])(?:adresim|numaram|şirketimiz\\s+\\w+\\s+yılında|merkezimiz\\s+\\w+da)"
+    "(?<![a-zçğıöşü])(?:adresim|numaram|şirketimiz\\s+\\w+\\s+yılında|merkezimiz\\s+\\w+da)",
+    "(?<![a-zçğıöşü])(?:evdeyim|ofisteyim|dışarıdayım|yoldayım|tatildeyim|yemek\\s+yedim|kahve\\s+içiyorum|çay\\s+içiyorum)"
   ]
 }

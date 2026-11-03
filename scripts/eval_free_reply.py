@@ -136,10 +136,11 @@ def main() -> int:
                 return 2
             load_s = round(time.perf_counter() - t0, 2)
             print(f"ısındı ({load_s} sn)")
-    live_cats = set(cfg.get("categories", []))
+    live_cats = set(F.categories_for(cfg, args.backend))   # canlıda bu arka ucun denediği kategoriler (Haiku listesi daha geniş)
     # Değerlendirmede tüm kategoriler denenir (canlıda yalnız live_cats); denetim ve istem canlıyla aynı
     run_cfg = {**cfg, "model": model, "timeout_s": timeout, "thinking": args.thinking, "thinking_model": model, "thinking_timeout_s": timeout, "haiku_timeout_s": timeout,
-               "categories": sorted({c["category"] for c in data["cases"]} | live_cats)}
+               "categories": sorted({c["category"] for c in data["cases"]} | live_cats),
+               "haiku_categories": sorted({c["category"] for c in data["cases"]} | live_cats)}
     rep = F.FreeReplier(client, run_cfg, assistant, thinking_client=client if args.thinking else None)
     pool_rng = random.Random(0)
     rows = []

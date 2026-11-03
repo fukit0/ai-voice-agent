@@ -203,3 +203,6 @@ Model qwen3:30b-a3b-instruct-2507-q4_K_M, 32 vaka x 3 tekrar = 96 tur, zaman aş
 
 ## Haiku arka ucu (2026-11-03)
 A1S için serbest cevap artık Claude Haiku ile de çalışıyor (ayar `backend`: auto | haiku | qwen; auto profilin LLM'ine göre seçer, L2'de Qwen yolu değişmedi). Ayrıntı, kayıt/maliyet alanları ve ölçüm komutu: `docs/serbest-cevap-haiku.md`. Gerçek Haiku ile ÖLÇÜLMEDİ. Mac'te: `./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku`
+
+## İstem v4 ve Haiku kapsamı (2026-11-03, off-003)
+Qwen'in kategori listesi **değişmedi** (`counter`, `clarify`). İstem v4 ise iki arka uçta ortak (tek kaynak). Qwen'e giden sistem istemi değişti: doğal ton, güncel bilgi uydurma yasağı, 2 yeni örnek, 2357 karakter (v3: 1970). Kategoriye özgü sohbet yönergeleri yalnız tur mesajında ve yalnız Haiku'nun kategorilerinde gidiyor. Yeni denetim kuralı `realworld_claim` iki arka uca da uygulanıyor. **v4 Qwen ile ÖLÇÜLMEDİ.** v3 ölçümleri (p50 0,98 sn) v4'e taşınamaz. Mac'te: `./.venv/bin/python scripts/eval_free_reply.py --runs 3`. Ayrıntı: `docs/serbest-cevap-haiku.md` 'off-003'.

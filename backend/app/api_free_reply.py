@@ -18,6 +18,7 @@ def _view(with_status: bool = True) -> dict:
     cfg, d, ov = F.settings(), F.defaults(), F.load_overrides()
     out = {"enabled": bool(cfg["enabled"]), "model": cfg["model"], "timeout_s": float(cfg["timeout_s"]),
            "defaults": {k: d[k] for k in F.OVERRIDABLE}, "overridden": sorted(ov), "categories": list(cfg.get("categories", [])),
+           "haiku_categories": F.categories_for(cfg, "haiku"),   # off-003: Haiku'nun kategori kapsamı (Qwen: categories)
            "timeout_range": list(F.TIMEOUT_RANGE), "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()},
            "thinking": bool(cfg.get("thinking", False)), "thinking_model": cfg["thinking_model"],
            "thinking_timeout_s": float(cfg["thinking_timeout_s"]), "thinking_timeout_range": list(F.THINKING_TIMEOUT_RANGE),

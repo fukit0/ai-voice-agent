@@ -178,8 +178,9 @@ def test_audit_failure_pool_with_candidate_and_cost():
 
 
 def test_category_outside_list_never_calls():
+    # off-003 (2026-11-03): 'weather' artık Haiku listesinde (haiku_categories); kapsam dışı örneği destek talebi (sabit çağrı merkezi metni)
     c = FakeHaiku()
-    res = F.FreeReplier(c).generate(STEP_Q31, "soru", "hava nasıl", "weather")
+    res = F.FreeReplier(c).generate(STEP_Q31, "soru", "paramı iade edecek misiniz", "support")
     assert res.reason == "category" and c.calls == [] and c.warm_checks == 0
 
 

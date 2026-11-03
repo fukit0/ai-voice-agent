@@ -38,7 +38,73 @@ Kullanıcının isteğiyle serbest cevaba ikinci bir arka uç eklendi: **Claude 
 - `config/free-reply.json`: `backend` "auto", `haiku_model` null, `haiku_default_model`, `haiku_timeout_s` 2,0, `haiku_max_tokens` 120, `backend_note` ve `haiku_note`. Varsayımlar ve "ÖLÇÜLMEDİ" notu bu açıklamalarda yazılı.
 - Ekran: **Ayarlar › Konu dışı serbest cevap**. Arka uç seçimi, Haiku modeli (boş bırakılırsa profilden), anahtar durumu ("Anahtar var" ya da "ANTHROPIC_API_KEY yok → havuz"), Haiku zaman aşımı ve ayrı bir "Arka ucu varsayılana dön" düğmesi var. Qwen alanları "Qwen modeli" ve "Qwen zaman aşımı" olarak adlandırıldı.
 - API: `PUT /api/free-reply {backend?, haiku_model?, haiku_timeout_s?}` (null → varsayılan). GET yanıtına `backend`, `backends`, `haiku_*` alanları ve `haiku_status` eklendi. `haiku_status` ağ çağrısı yapmaz, yalnız anahtarın varlığına bakar.
-- Kategori listesi değişmedi (`counter`, `clarify`). Haiku için kategori genişletme bu işin kapsamında değil.
+- Kategori listesi bu ilk ekte değişmedi (`counter`, `clarify`). Haiku için genişletme sonraki ekte yapıldı: aşağıdaki 'off-003' bölümü.
+
+## off-003 (2026-11-03): Haiku'da doğal sohbet: kategori kapsamı, istem v4, açık uçlu adımlar
+Durum: uygulandı, sahte istemciyle test edildi. **Gerçek Haiku ile ÖLÇÜLMEDİ**: Haiku'nun bu kategorilerde ne yazdığı, ne kadar uydurduğu, süresi ve maliyeti bilinmiyor.
+
+**Neden.** Kullanıcı A1S'te ElevenAgents'taki gibi doğal bir deneyim istiyor: ajan müşterinin sözüne gerçekten karşılık versin, sohbetten kopmasın, müşteriyi nazikçe ankete geri götürsün. A1S'te yaşanan iki kötü örnek:
+1. Q12_NEDEN'de müşteri: "Seviyorum gari. Yüzünden sence niye verdin?" Kategori `counter` (sence). Serbest cevap konuşmadı, sabit havuz cümlesi + köprü çıktı ("Burada önemli olan sizin görüşünüz… Şimdi soruya döneyim.").
+2. Aynı adımda müşteri: "Başka bir şey konuşalım ya. Mesela havaalan nasıl bugün?" Bu söz **açık uçlu adımın cevabı olarak kaydedildi** ve ajan sonraki soruya geçti ("Eklemek istediğiniz bir konu var mı?"). Müşterinin sözü hiç karşılanmadı. Sebep: açık uçlu adımda LLM çağrılmıyor. Konu dışı tespiti (`smalltalk.pure_meta`) yalnızca ≤7 kelimelik sözlere bakıyordu ve "konu değiştirme" kategorisi yoktu.
+
+**1. Kategori kapsamı arka uca göre** (`free_reply.categories_for`, `config/free-reply.json`)
+| Arka uç | Serbest cevap denenen kategoriler | Kaynak |
+|---|---|---|
+| Qwen | `counter`, `clarify` (**değişmedi**) | `categories` |
+| Haiku | `counter`, `clarify`, `other`, `weather`, `chitchat`, `joke`, `topic_change` | `haiku_categories` |
+| İkisi de değil (sabit havuz) | `identity` (dürüst kimlik, core-006), `who` / `number_source` / `recording` (KVKK ve hukuk), `duration` / `purpose` (olgusal), `support` (çağrı merkezi numarası), `profanity` (gözden geçirilmiş özür), `hold` | — |
+
+- Qwen'in listesi bilerek dar kaldı. 2026-11-03 Qwen ölçümünde hava, sohbet, şaka ve diğer kategorilerinde denetimden geçen ama uydurma cümleler çıktı (docs/serbest-cevap-qwen.md). Haiku için aynı risk ölçülmeden kabul edildi. Karşılığında iki önlem alındı: istem güncel bilgiyi uydurmamayı söylüyor, denetime de `realworld_claim` kuralı eklendi.
+- Yeni kategori `topic_change` (`smalltalk.PATTERNS` listesinin sonunda). İki tür sözü kapsar. Birincisi açık konu değiştirme: "başka bir şey konuşalım", "konuyu değiştirelim", "biraz sohbet edelim", "laflayalım". İkincisi ankette olmayan güncel bilgi sorusu: havaalanı, trafik, uçuş, maç, kur ya da dolar + "nasıl/kaç/var mı…" ve "saat kaç". "Başka bir zaman konuşalım" bu kategoriye girmez, geri arama olarak kalır. Havuz cümleleri: `config/smalltalk.json` → `replies.topic_change`.
+- Kategori listeleri yalnızca config'ten değişir, ekrandan değiştirilemez (gözden geçirme gerekir). `GET /api/free-reply` artık `haiku_categories` alanını da döner. Arama kaydındaki `config.free_reply.categories` o aramanın arka ucunun listesini gösterir.
+
+**2. İstem v4** (`free_reply.SYSTEM`, `PROMPT_VERSION = "4"`, hash kategori ipuçlarını da kapsar)
+- Ton: "sıcak ve doğal bir temsilci gibi müşterinin SÖYLEDİĞİNE kısa, somut karşılık". Genel bir "anlıyorum" ile geçiştirme yasak. Konu değiştirilirse kırmadan kısa tutulur ve "ankete kısaca devam edelim" önerilir; azarlama yok.
+- Güncel bilgi uydurma yasağı: hava, haber, saat, trafik, uçuş, maç ve kur bilgisine erişim yok, ajan "bilmiyorum" der. Kendi adına puan, fikir ya da cevap yok. Söz verme yok. Soru işareti yok, çünkü soruyu kod ekliyor. En fazla 2 kısa cümle. İnsan iddiası ve yaşantı uydurma yok. `<musteri>` ayracı ve enjeksiyon kuralı **aynen korundu**.
+- **Tek kaynak, iki arka uç aynı istemi alır.** Haiku'ya ayrı bir sistem istemi gerekmedi. Kategoriye özgü yönlendirme (havayı bilmiyorsun, kendine yaşantı uydurma, konu değiştirmede nazikçe ankete dön) tur mesajındaki `Durum:` satırına (`CATEGORY_HINT`) yazılıyor. Qwen yalnızca counter/clarify gördüğü için bu yönergeler ona hiç gitmez. Sistem istemi 2357 karakter (v3: 1970). Uzunluk sınırı testte: ≤2400. Sebep: v2'nin uzun istemi Qwen'de zaman aşımlarıyla birlikte görülmüştü (nedeni kanıtlanmadı).
+- Örnekler: 2 counter/clarify (v3'ten), 1 güncel bilgi ("yollar kalabalık mı şu an"), 1 konu değiştirme ("bırak anketi biraz laflayalım"). Kullanıcının iki cümlesi istemde **örnek olarak kullanılmadı**. Bunlar değerlendirme setine eklendi: f33 (`counter`, Q12_NEDEN) ve f34 (`topic_change`, Q12_NEDEN). İkisi de Haiku'da canlı kapsamda; f34 Qwen'de değil. Set artık 34 vaka.
+- Sızıntı testi genişletildi (`test_prompt_examples_disjoint_from_eval_set_including_user_examples`). İstemdeki örnek sözler hiçbir eval sözüyle aynı olamaz ve onlarla 3 kelimelik ortak dizi taşıyamaz. Kullanıcının cümlelerindeki "havaalan", "seviyorum" ve "konuşalım" kelimeleri istemde geçmez. Eski test (`test_prompt_examples_do_not_leak_eval_utterances`) korunuyor.
+
+**3. Açık uçlu adımlarda konu dışı sohbet** (Q12_NEDEN, Q4, son adım Q8 "Eklemek istediğiniz bir konu var mı?")
+- `pure_meta` iki yönde genişledi. Açık konu değiştirme sözü 16 kelimeye kadar cevap sayılmıyor. Kısa (≤7 kelime) soru biçimli hava, hal hatır ve güncel bilgi sözleri de cevap sayılmıyor. Böyle bir sözde müşteriye önce karşılık verilir (Haiku ya da havuz), sonra aynı soru (Q8'de "Eklemek istediğiniz bir konu var mı?") yeniden sorulur. Art arda 2. konu dışı sözde geri arama önerilir, 3.'de sabit kapanış gelir (değişmedi).
+- Bilinçli sınırlar: şaka kalıpları ("şaka", "evlen") gerçek bir açık uçlu cevabın içinde geçebildiği için açık uçlu adımda hâlâ cevap sayılıyor. Güncel bilgi kelimesi uzun bir cevabın içinde geçerse ("temsilci trafik cezası nasıl ödenir anlattı…") söz yine cevap olarak kaydedilir. "Yok, başka bir şey yok" da cevaptır.
+- Serbest cevap düşse bile (Qwen, anahtar yok, zaman aşımı) ikinci örnek artık yutulmuyor: `topic_change` havuz cümlesi + köprü + soru.
+- Offline off-001 ölçümü (`scripts/eval_offtopic.py`, LLM'siz): genel başarı 0,989 → **0,9957**. Konu dışı 0,984 → 0,9937, ilgili cevap 0,9934, robotik şablon 0,032 → 0,0159. LLM çağrısı değişmedi (415/525 tur).
+
+**4. "Serbest cevap neden devreye girmedi?" kaydı**
+- Tur kaydına iki yeni alan eklendi: `free_reply_category` (hangi konu dışı kategorisi) ve havuza düşüldüyse `free_reply_fails` (denetim kuralları ya da hata metni, en çok 5 tane). Mevcut `reply_source`, `free_reply_fallback` ve `free_reply_backend` alanları aynı.
+- Aramalar › detay › Tur gecikmeleri › Serbest cevap: hücrede "0,00 sn pool (category · qwen)" görünür. İpucunda okunur bir açıklama var, örneğin "kategori bu arka uçta kapsam dışı (sabit havuz) [qwen, topic_change]" ya da "denetimden geçmedi: realworld_claim [haiku, weather]". Bu metni `callsApi.freeReplyReason` üretiyor.
+- Hiç `free_reply` olayı yoksa (açık uçlu adımda söz cevap sayıldıysa ya da serbest cevap üreticisi verilmediyse) hücre "—" gösterir. Kullanıcının 2. örneği bu durumdaydı.
+- **A1S auto gerçekten Haiku mu seçiyor?** Testte evet: A1S profilinin gerçek LLM tanımıyla (`anthropic`, `claude-haiku-5-5`) `make_default` Haiku'yu ve geniş listeyi seçiyor, L2'de Qwen'i (`test_a1s_auto_really_selects_haiku_with_wide_list_l2_qwen`). Mac'teki kayıtlarda bulgu şu: bugünkü A1S aramalarının (08:37–08:47 UTC, ör. `2f419d1e94fe`) `config.free_reply` alanında `backend` yok ve model Qwen. Yani bu aramalar Haiku eki commit'lenmeden (08:52) **önceki kodla** yapılmış: serbest cevap Qwen'e gitmiş, Qwen bellekte değilse havuz konuşmuş. Kullanıcının örneğindeki arama Mac'teki `data/voice-sessions` içinde bulunamadı. Hangi arka uca düştüğü bu yüzden **doğrulanamadı**. Backend süreci yeni kodla yeniden başlatılmadıysa A1S hâlâ Qwen yolundadır. Kontrol: yeni bir A1S aramasında Aramalar › kayıt › `config.free_reply.backend` = `haiku` olmalı.
+
+**Denetim eklemeleri**
+- `realworld_claim`: cümlede güncel bilgi iddiası var ("hava güneşli/sıcak/güzel", trafik, uçuş, rötar, havaalanı, maç, skor, haber, kur, dolar, borsa) ama bilmediğini söyleyen bir ifade yok ("bilmiyorum", "göremiyorum", "erişimim yok", "ulaşamıyorum", "keşke söyleyebilsem"…) → havuz. 2026-11-03 Qwen ölçümündeki "Hava gerçekten sıcak geçiyor" bu kuralla yakalanırdı. Kural sezgiseldir: "Hava güzel ama bilmiyorum" gibi çelişik bir cümleyi geçirir.
+- Yeni yasak kalıp: kendine yaşantı uydurma ("evdeyim", "ofisteyim", "yoldayım", "çay içiyorum"…).
+
+**Riskler (dürüst durum)**
+- **Uydurma riski.** Haiku, Qwen'den daha iyi talimat izleyebilir ama bu ölçülmedi. Denetim kural tabanlı: sayı içermeyen, listede olmayan bir uydurmayı (ör. "Şu an çok yoğunuz") yakalayamaz. İnsan gözden geçirmesi şart (eval md'deki "İnsan notu" sütunu).
+- **Gecikme.** Ayrıştırıcıdaki Haiku p50'si ~0,95 sn (kısa JSON). Serbest cevap bundan sonra sırayla çalışır, bu yüzden konu dışı turda ~2 sn ve üstü sessizlik olabilir. Zaman aşımı 2,0 sn: gelmezse havuz konuşur. Kapsam genişlediği için bu gecikme artık hava, sohbet ve şaka turlarında da görülür. Açık uçlu adımda ayrıştırıcı çağrılmadığı için orada yalnız serbest cevap süresi eklenir.
+- **Maliyet.** İstek başına ~900 giriş + ~30 çıkış token (tahmin) → ~$0,0001 (config/pricing.json). Kapsam genişlediği için arama başına istek sayısı artabilir; yine de arama başına sent altında kalması beklenir (ölçülmedi). Her istek kayıtta ve usage tablosunda ayrı kalem.
+- Kişisel veri: müşteri sözü Anthropic API'sine gider. Ayrıştırıcı zaten aynı metni gönderiyor; yeni bir veri türü eklenmedi.
+
+**Doğrulama (bulut çalışma kopyası)**
+- Önce `PYTHONPATH=.:backend python -m pytest backend/tests -q` → 964 passed, 1 skipped. Sonra → **1021 passed, 1 skipped**. Artışın 57'si `backend/tests/test_free_reply_v4.py` dosyasından. Mevcut bir test güncellendi: `test_free_reply_haiku.py::test_category_outside_list_never_calls`. Bu test `weather`'ın Haiku'da kapsam dışı olduğunu sınıyordu, artık kapsamda; kapsam dışı örneği `support` oldu (amaç aynı). Silinen ya da zayıflatılan test yok.
+- Frontend: `npx tsc --noEmit` temiz. `npx vitest run` → **26 dosya, 129 test** (önce 25/127; +2: `FreeReplyReason.test.tsx`).
+- Çıktılar: `evidence/free-reply-v4-tests-20261103.txt`
+- Değişen dosyalar (off-003): `backend/app/voice/free_reply.py`, `backend/app/voice/smalltalk.py`, `backend/app/voice/session.py`, `backend/app/api_free_reply.py`, `config/free-reply.json`, `config/smalltalk.json`, `config/eval/free-reply-samples.json`, `scripts/eval_free_reply.py`, `frontend/src/callsApi.ts`, `frontend/src/pages/CallsPage.tsx`, `backend/tests/test_free_reply_haiku.py` (tek test güncellendi), bu doküman ve `docs/serbest-cevap-qwen.md`. Yeni dosyalar: `backend/tests/test_free_reply_v4.py`, `frontend/src/FreeReplyReason.test.tsx`, `evidence/free-reply-v4-tests-20261103.txt`. `flow.py`'ye dokunulmadı: açık uçlu adım davranışı `smalltalk.pure_meta` üzerinden değişti.
+- Testlerin kapsadığı konular: kategori-backend eşlemesi; Qwen listesinin değişmemesi; 9 sabit kategoride iki arka uçta da sıfır çağrı; A1S → Haiku ve geniş liste; API; istem v4 kuralları, uzunluk sınırı ve iki arka uçta aynı istem; ipucunun tur mesajında olması; hash; genişletilmiş sızıntı testi; `realworld_claim` ret ve kabul vakaları; yaşantı uydurma; kullanıcının iki cümlesinin Q12_NEDEN akışı (sahte Haiku: karşılık + soru birebir, cevap kaydı yok, 2.'de geri arama önerisi, 3.'de kapanış); LLM'siz düşüşte de yutulmama; Qwen'de `category` sebebinin olaya yazılması; Q8'de sohbet → karşılık + Q8; Q8'de gerçek cevapların kaydedilmesi; `pure_meta` vakaları; tur kaydında `free_reply_category` / `free_reply_fails`; eval betiğinde canlı kapsamın arka uca göre hesaplanması.
+
+**Kullanıcının Mac'te çalıştıracağı ölçüm** (ANTHROPIC_API_KEY `.env`'de)
+```bash
+cd ~/sahibinden-voice-agent
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku
+```
+34 vaka × 3 = 102 istek, tahmini ~$0,01. `live_eligible` artık arka uca göre hesaplanır: Haiku'da f14–f23, f26–f29, f32–f34 de canlı kapsamda. Özellikle f14–f21, f33 ve f34 satırlarının "İnsan notu" sütunu doldurulmalı (uydurma var mı, doğal mı). Backend süreci yeniden başlatıldıktan sonra A1S ile iki örnek cümle canlı da denenmeli.
+
+**Demoda anlatım notu (off-003)**
+- "A1S'te müşteri sohbete kayarsa ('hava nasıl', 'başka bir şey konuşalım') ajan artık sabit cümle okumuyor. Haiku sözüne kısa ve sıcak karşılık veriyor, bilmediği güncel bilgiyi dürüstçe bilmediğini söylüyor, nazikçe ankete dönüyor. Soruyu yine kod okuyor."
+- "Kimlik, KVKK, kayıt, süre, destek ve hakaret cevapları bilerek sabit metinde; LLM'e bırakılmadı. L2'deki Qwen yalnız karşı soru ve açıklama isteğine cevap veriyor, çünkü ölçümde hava ve sohbette uydurdu."
+- **Bu sınırlamayı bil:** Haiku'nun bu kategorilerdeki cevapları gerçek API ile ölçülmedi. Demodan önce `--backend haiku` koşusu yapılıp rapor insan gözüyle okunmalı. Konu dışı turda iki Haiku çağrısı art arda gittiği için 2 sn civarı sessizlik olabilir. Bu "ilk yükleme" değil, tasarım gereği sıralı çağrı. Backend yeni kodla başlatılmadıysa A1S hâlâ Qwen'e gider: bugünkü A1S kayıtları eski koddaydı. Ekranda neden havuza düşüldüğü Aramalar › Tur gecikmeleri › Serbest cevap hücresinde yazar.
 
 ## Gerçek Haiku ile ölçüm (kullanıcı Mac'te çalıştıracak)
 ```bash

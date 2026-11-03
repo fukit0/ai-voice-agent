@@ -1,0 +1,80 @@
+off-003 (2026-11-03) bulut çalışma kopyası test çıktısı. Gerçek Haiku ile ÖLÇÜLMEDİ.
+$ PYTHONPATH=.:backend python -m pytest backend/tests/test_free_reply_v4.py -v
+backend/tests/test_free_reply_v4.py::test_qwen_list_unchanged_and_haiku_list_wider PASSED [  1%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[identity] PASSED [  3%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[who] PASSED [  5%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[number_source] PASSED [  7%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[recording] PASSED [  8%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[duration] PASSED [ 10%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[purpose] PASSED [ 12%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[support] PASSED [ 14%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[profanity] PASSED [ 15%]
+backend/tests/test_free_reply_v4.py::test_legal_factual_and_tense_categories_stay_fixed_on_both_backends[hold] PASSED [ 17%]
+backend/tests/test_free_reply_v4.py::test_haiku_eligible_qwen_not[other] PASSED [ 19%]
+backend/tests/test_free_reply_v4.py::test_haiku_eligible_qwen_not[weather] PASSED [ 21%]
+backend/tests/test_free_reply_v4.py::test_haiku_eligible_qwen_not[chitchat] PASSED [ 22%]
+backend/tests/test_free_reply_v4.py::test_haiku_eligible_qwen_not[joke] PASSED [ 24%]
+backend/tests/test_free_reply_v4.py::test_haiku_eligible_qwen_not[topic_change] PASSED [ 26%]
+backend/tests/test_free_reply_v4.py::test_describe_reports_backend_categories PASSED [ 28%]
+backend/tests/test_free_reply_v4.py::test_a1s_auto_really_selects_haiku_with_wide_list_l2_qwen PASSED [ 29%]
+backend/tests/test_free_reply_v4.py::test_api_exposes_haiku_categories PASSED [ 31%]
+backend/tests/test_free_reply_v4.py::test_prompt_v4_rules_and_single_source PASSED [ 33%]
+backend/tests/test_free_reply_v4.py::test_category_hint_goes_into_turn_message_not_system PASSED [ 35%]
+backend/tests/test_free_reply_v4.py::test_prompt_hash_covers_category_hints PASSED [ 36%]
+backend/tests/test_free_reply_v4.py::test_prompt_examples_disjoint_from_eval_set_including_user_examples PASSED [ 38%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_realworld_claims[Bug\xfcn hava \xe7ok g\xfczel, keyifli bir g\xfcn.] PASSED [ 40%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_realworld_claims[Havaalan\u0131 \u015fu an olduk\xe7a sakin g\xf6r\xfcn\xfcyor.] PASSED [ 42%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_realworld_claims[Ma\xe7 iyi ge\xe7ti bence de.] PASSED [ 43%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_realworld_claims[Trafik \u015fu an a\xe7\u0131k, rahat gidersiniz.] PASSED [ 45%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_realworld_claims[Hava ger\xe7ekten s\u0131cak ge\xe7iyor.] PASSED [ 47%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Havaalan\u0131n\u0131n durumunu buradan bilemiyorum, maalesef. \u0130sterseniz ankete k\u0131saca devam edelim.] PASSED [ 49%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Sordu\u011funuz i\xe7in \xe7ok te\u015fekk\xfcr ederim, ne nazik. Kald\u0131\u011f\u0131m\u0131z yerden k\u0131saca devam edelim.] PASSED [ 50%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Puan\u0131 siz verdiniz, nedenini en iyi siz bilirsiniz. Akl\u0131n\u0131za gelenleri k\u0131saca anlatman\u0131z yeterli.] PASSED [ 52%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Ke\u015fke s\xf6yleyebilsem, buradan havay\u0131 g\xf6remiyorum.] PASSED [ 54%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Trafi\u011fi buradan g\xf6remiyorum, maalesef bilmiyorum. \u0130sterseniz ankete k\u0131saca devam edelim.] PASSED [ 56%]
+backend/tests/test_free_reply_v4.py::test_audit_accepts_honest_unknown_and_social_replies[Hava durumunu maalesef bilmiyorum. Ankete k\u0131saca devam edelim.] PASSED [ 57%]
+backend/tests/test_free_reply_v4.py::test_audit_rejects_invented_self_life PASSED [ 59%]
+backend/tests/test_free_reply_v4.py::test_haiku_realworld_claim_falls_back_to_pool_with_candidate PASSED [ 61%]
+backend/tests/test_free_reply_v4.py::test_user_examples_flow_on_q12_neden PASSED [ 63%]
+backend/tests/test_free_reply_v4.py::test_user_examples_without_llm_still_acknowledge_not_swallow PASSED [ 64%]
+backend/tests/test_free_reply_v4.py::test_qwen_backend_user_example_2_category_fallback_recorded PASSED [ 66%]
+backend/tests/test_free_reply_v4.py::test_last_step_chat_gets_reply_then_question_again[nas\u0131ls\u0131n\u0131z bug\xfcn-chitchat-Sordu\u011funuz i\xe7in \xe7ok te\u015fekk\xfcr ederim, ne nazik. Kald\u0131\u011f\u0131m\u0131z yerden k\u0131saca devam edelim.] PASSED [ 68%]
+backend/tests/test_free_reply_v4.py::test_last_step_chat_gets_reply_then_question_again[Ba\u015fka bir \u015fey konu\u015fal\u0131m ya. Mesela havaalan nas\u0131l bug\xfcn?-topic_change-Havaalan\u0131n\u0131n durumunu buradan bilemiyorum, maalesef. \u0130sterseniz ankete k\u0131saca devam edelim.] PASSED [ 70%]
+backend/tests/test_free_reply_v4.py::test_last_step_chat_gets_reply_then_question_again[saat ka\xe7 acaba-topic_change-Havaalan\u0131n\u0131n durumunu buradan bilemiyorum, maalesef. \u0130sterseniz ankete k\u0131saca devam edelim.] PASSED [ 71%]
+backend/tests/test_free_reply_v4.py::test_last_step_real_answers_still_recorded[yok te\u015fekk\xfcr ederim] PASSED [ 73%]
+backend/tests/test_free_reply_v4.py::test_last_step_real_answers_still_recorded[ba\u015fka bir \u015fey yok te\u015fekk\xfcrler] PASSED [ 75%]
+backend/tests/test_free_reply_v4.py::test_last_step_real_answers_still_recorded[temsilci \xe7ok ilgiliydi ama bekleme uzundu] PASSED [ 77%]
+backend/tests/test_free_reply_v4.py::test_last_step_real_answers_still_recorded[temsilci bana trafik cezas\u0131 nas\u0131l \xf6denir anlatt\u0131 \xe7ok iyiydi] PASSED [ 78%]
+backend/tests/test_free_reply_v4.py::test_last_step_real_answers_still_recorded[evet bir \u015fey eklemek istiyorum ilan onay\u0131 \xe7ok ge\xe7 geliyor] PASSED [ 80%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[Seviyorum gari. Y\xfcz\xfcnden sence niye verdin?-counter] PASSED [ 82%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[Ba\u015fka bir \u015fey konu\u015fal\u0131m ya. Mesela havaalan nas\u0131l bug\xfcn?-topic_change] PASSED [ 84%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[konuyu de\u011fi\u015ftirelim biraz-topic_change] PASSED [ 85%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[biraz sohbet edelim mi-topic_change] PASSED [ 87%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[nas\u0131ls\u0131n\u0131z-chitchat] PASSED [ 89%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[hava nas\u0131l orada-weather] PASSED [ 91%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[ba\u015fka bir zaman konu\u015fal\u0131m-None] PASSED [ 92%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[yok eklemek istedi\u011fim bir \u015fey yok-None] PASSED [ 94%]
+backend/tests/test_free_reply_v4.py::test_pure_meta_open_text[benimle evlenir misin-None] PASSED [ 96%]
+backend/tests/test_free_reply_v4.py::test_session_record_has_fallback_reason_category_and_fails PASSED [ 98%]
+backend/tests/test_free_reply_v4.py::test_eval_live_eligible_depends_on_backend PASSED [100%]
+============================== 57 passed in 2.44s ==============================
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests -q
+1021 passed, 1 skipped in 75.64s (0:01:15)
+
+$ cd frontend && npx tsc --noEmit && npx vitest run
+tsc: temiz
+ Test Files  26 passed (26)
+      Tests  129 passed (129)
+
+$ python scripts/eval_offtopic.py (offline, LLM'siz)
+vaka 66, koşu 470, genel başarı 0.9957
+  offtopic  başarı 0.9937  (35 vaka)  başarısız: o27
+  safety    başarı 1.0  (10 vaka)  başarısız: -
+  context   başarı 1.0  (15 vaka)  başarısız: -
+  dialog    başarı 1.0  (6 vaka)  başarısız: -
+  konu dışı: ilgili cevap 0.9934, soruya dönüş 1.0, uydurma cevap yok 1.0, yasak metin yok 1.0, robotik şablon oranı 0.0159
+  LLM etiketine göre: {'dataset': 0.9943, 'override:unclear': 0.9929}
+  bağlam: uygun tepki 1.0, yanlış ton yok 1.0
+  diyalog: art arda aynı cevap 0, tekrar eden açılış cümlesi 0
+  gecikme: LLM çağrısı 415 / 525 tur, katman p50 0.155 ms, en çok 2.39 ms

@@ -23,6 +23,8 @@ CONFIG = Path(__file__).resolve().parents[3] / "config" / "smalltalk.json"
 OFFTOPIC_CLOSE_AT = 3          # art arda bu kadar konu dışı (kimlik hariç) -> nazik kapanış; 2. seferde geri arama önerilir
 META = ("identity", "who", "number_source", "recording", "duration", "purpose")    # cevapla birlikte gelse de kısaca yanıtlanır
 ASKS_BACK = ("counter", "clarify")    # ADR 0009 adım 2: karşı soru / açıklama isteği; açık uçlu adımda cevap olarak kaydedilmez
+CHAT_ASKS = ("weather", "chitchat", "topic_change")   # off-003 (docs/serbest-cevap-haiku.md): açık uçlu adımda kısa soru biçimli sohbet cevap değildir
+TOPIC_SWITCH_MAX_TOKENS = 16          # açık 'başka bir şey konuşalım' sözü bu uzunluğa kadar açık uçlu adımda da cevap sayılmaz
 
 
 @lru_cache(maxsize=1)
@@ -39,6 +41,12 @@ def _rx(*parts: str) -> re.Pattern:
 
 
 B = r"(?<![a-zçğıöşü])"        # kelime başı (Türkçe harfler dahil)
+# Açık konu değiştirme sözü: 'başka bir şey konuşalım', 'konuyu değiştirelim', 'biraz sohbet edelim'
+TOPIC_SWITCH_SRC = "|".join((
+    B + r"başka\s+(?:bir\s+)?(?:şey|şeyler|konu\w*)\s+(?:\w+\s+)?(?:konuş|sohbet|anlat|lafla)\w*",
+    B + r"konu(?:yu)?\s+değiştir\w*",
+    B + r"(?:biraz\s+)?(?:sohbet|muhabbet)\s+(?:ed(?:elim|er\s+mi\w*|ebilir\s+mi\w*)|yapalım)",
+    B + r"laflayalım"))
 # Sıra önemli: ilk eşleşen kategori kazanır (kimlik > numara > kayıt > kim > süre > amaç > bekletme > destek > hakaret > şaka > hava > hal hatır)
 PATTERNS: list[tuple[str, re.Pattern]] = [
     ("identity", _rx(B + r"(?:bot|robot|makine|bilgisayar|yapay\s+zek\w*|insan|gerçek\s+(?:bir\s+)?(?:insan|kişi))\s*(?:y?la|y?le|ile)\s+m[ıi]\s+konuş",
@@ -76,7 +84,14 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
     ("clarify", _rx(B + r"(?:bu|o|şu|bunun|onun)\s+ne\s+demek", B + r"ne\s+demek\s+(?:ist|yani|oluyor)", B + r"ne\s+kastet\w*", B + r"kastınız", B + r"nasıl\s+yani",
                     B + r"yani\s+ne(?![a-zçğıöşü])", B + r"(?:bunu|bunları|neden|niye|niçin)\s+(?:\w+\s+)?sor(?:uyorsunuz|uyorsun|uluyor)",
                     B + r"anlamadım\s+(?:ne|neyi|soruyu|bunu)", B + r"(?:açar|açıklar)\s+m[ıi]s[ıi]n\w*", B + r"daha\s+açık\s+(?:söyle|anlat)")),
+    # off-003 (docs/serbest-cevap-haiku.md): konuyu değiştirme isteği ya da ankette olmayan güncel bilgi sorusu (havaalanı, trafik, uçuş, maç,
+    # kur, saat). Listenin SONUNDA: hava/şaka/hal hatır gibi daha özel kategoriler önce kazanır. 'başka zaman konuşalım' geri aramadır, burada yok.
+    ("topic_change", _rx(TOPIC_SWITCH_SRC,
+                         B + r"(?:havaalan|havaliman|trafik|yollar|uçuş|uçak|maç|borsa|dolar|euro|altın)\w*\s+(?:\w+\s+){0,2}?"
+                             r"(?:nasıl|ne\s+durumda|kaç|var\s+m|açık\s+m|kalabalık\s+m|oldu\s+mu|bitti\s+mi|ne\s+kadar)",
+                         B + r"saat\s+kaç(?![a-zçğıöşü])", B + r"haberler\w*\s+(?:\w+\s+)?(?:ne|nasıl|var\s+m)")),
 ]
+_TOPIC_SWITCH = re.compile(TOPIC_SWITCH_SRC)
 
 _DNC = _rx(B + r"bir\s+daha\s+(?:beni\s+)?ara(?:may|mayın|mayınız|maz)", B + r"beni\s+(?:bir\s+daha\s+)?aramay", B + r"aramayın\s+artık",
            B + r"artık\s+(?:beni\s+)?aramay", B + r"hiç\s+(?:beni\s+)?aramay", B + r"liste\w*\s+(?:den\s+)?çıkar", B + r"numaramı\s+sil",
@@ -127,14 +142,23 @@ def pure_meta(utterance: str) -> str | None:
     """Açık uçlu adımda (LLM çağrılmayan) soru biçimli, kısa, META kategorisinde söz: cevap olarak kaydedilmemeli. Kategori ya da None."""
     t = low(utterance)
     toks = re.findall(r"[a-zçğıöşü0-9]+", t)
-    if not toks or len(toks) > 7:
+    if not toks:
+        return None
+    if len(toks) <= TOPIC_SWITCH_MAX_TOKENS and _TOPIC_SWITCH.search(t):
+        # off-003: 'başka bir şey konuşalım ya, mesela havaalanı nasıl bugün' (9 kelime) eskiden açık uçlu adımın CEVABI sayılıp
+        # bir sonraki soruya geçiliyordu (müşterinin sözü yok sayılıyordu). Açık konu değiştirme sözü uzun da olsa cevap değildir.
+        cat = categorize(t)
+        return cat if cat in ASKS_BACK + CHAT_ASKS or cat in META else "topic_change"
+    if len(toks) > 7:
         return None
     cat = categorize(t)
-    if cat in ASKS_BACK:         # kalıpların kendisi soru biçimli ('sen ne düşünüyorsun', 'bunu neden soruyorsunuz'): soru eki şartı yok
+    if cat in ASKS_BACK or cat == "chitchat":   # kalıpların kendisi soru biçimli ('sen ne düşünüyorsun', 'nasılsınız'): soru eki şartı yok
         return cat
     if not _QUESTIONISH.search(t):
         return None
-    return cat if cat in META else None
+    # off-003: kısa soru biçimli sohbet ('nasılsınız', 'hava nasıl', 'saat kaç') da cevap değildir. Şaka bilinçli olarak YOK: kalıpları
+    # ('şaka', 'evlen') gerçek bir açık uçlu cevabın içinde geçebilir.
+    return cat if cat in META or cat in CHAT_ASKS else None
 
 
 def meta_category(utterance: str) -> str | None:

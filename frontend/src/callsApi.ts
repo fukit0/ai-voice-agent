@@ -23,7 +23,29 @@ export type CallTurn = { turn: number; greeting?: boolean; stt_s?: number; llm_s
   // Serbest cevap (docs/serbest-cevap-qwen.md): kaynak, süre, thinking açık mıydı, hangi model
   reply_source?: "qwen" | "haiku" | "pool"; free_reply_s?: number; free_reply_fallback?: string; free_reply_thinking?: boolean; free_reply_model?: string;
   // Haiku serbest cevap (docs/serbest-cevap-haiku.md): arka uç, token ve tahmini maliyet
-  free_reply_backend?: "qwen" | "haiku"; free_reply_input_tokens?: number; free_reply_output_tokens?: number; free_reply_cost_usd?: number };
+  free_reply_backend?: "qwen" | "haiku"; free_reply_input_tokens?: number; free_reply_output_tokens?: number; free_reply_cost_usd?: number;
+  // off-003: hangi konu dışı kategorisi ve (havuza düşüldüyse) denetim kuralları / hata metni
+  free_reply_category?: string; free_reply_fails?: string[] };
+
+/** off-003 (docs/serbest-cevap-haiku.md): serbest cevabın neden devreye girmediğinin okunur açıklaması (Aramalar › Tur gecikmeleri). */
+export const FREE_REPLY_REASONS: Record<string, string> = {
+  category: "kategori bu arka uçta kapsam dışı (sabit havuz)",
+  disabled: "serbest cevap ayarı kapalı",
+  cold: "Qwen bellekte değil (Hazırla)",
+  unreachable: "Ollama'ya ulaşılamıyor",
+  no_key: "ANTHROPIC_API_KEY yok",
+  timeout: "zaman aşımı",
+  error: "API/ağ hatası",
+  audit: "denetimden geçmedi",
+  repeat: "art arda aynı cümle",
+};
+export function freeReplyReason(t: Pick<CallTurn, "reply_source" | "free_reply_fallback" | "free_reply_backend" | "free_reply_category" | "free_reply_fails">): string | null {
+  if (!t.free_reply_fallback) return null;
+  const base = FREE_REPLY_REASONS[t.free_reply_fallback] ?? t.free_reply_fallback;
+  const where = [t.free_reply_backend ?? "qwen (eski kayıt)", t.free_reply_category].filter(Boolean).join(", ");
+  const why = t.free_reply_fails?.length ? `: ${t.free_reply_fails.join(", ")}` : "";
+  return `${base}${why} [${where}]`;
+}
 export type CallAnswer = { step: string; code?: string; title?: string; kind?: string; value: unknown; utterance?: string; unanswered?: boolean };
 // Detayda `turns` ve `answers` özetteki sayıların yerine listelerdir (backend calls.detail).
 // eval-003: arama başına kaynak ve maliyet (backend usage.py). Sağlayıcı sayı vermediyse kalem null'dır.
