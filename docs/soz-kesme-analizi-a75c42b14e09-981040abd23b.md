@@ -137,3 +137,36 @@ Yankı engelleme kapalı hoparlörlü telefonda risk artar. Seviye eşiği hâl�
 ## Demoda anlatırken
 "Bağırınca kesmiyordu" hatası, gürültü süzgecinin sessiz konuşmaya göre ayarlanmış olmasından çıktı ve düzeltildi.
 Ama kısa tek kelimelik araya girmeler ("sekiz") hâlâ ajanı kesmeyebilir. Bunu "ilk deneme" diye geçiştirme: sınırlama bilinçli, çözümü Silero/kısa STT doğrulaması.
+
+## Ek bulgu (2026-11-03 10:30 UTC): "uzun bir cümle kuruyorum, yine kesmiyordu"
+Kullanıcı oturum kimliği vermedi. a75c42b14e09 ve 981040abd23b'den sonra iki A1S oturumu var:
+- 2f419d1e94fe: 08:47 UTC, 211 sn, elle eşik −40 → söz kesme seviyesi −34 dBFS.
+- 603cd918e947: 08:53–09:39 UTC, otomatik eşik. Anket ~468 sn'de bitti, sonrası açık kalan hatta ofis konuşması (incelenmedi).
+
+İkisi de cd820c2'den (09:09) **önce** başladı. JSON'larının `vad` alanında `peak_strong` yok, yani eski kodla çalıştılar.
+Mac'te 09:39:53'ten sonra kaydedilmiş oturum **yok**. Kullanıcının mesajı 10:23'te geldi. Düzeltmeden sonra denediyse arka uç yeniden başlatılmamış ya da oturum kaydedilmemiş olabilir.
+Doğrulama yolu: yeni oturum JSON'unda `"peak_strong": 0.9` görünmeli.
+
+Yöntem: söylemler üretimdeki `Endpointer` ile çıkarıldı, ≥0,8 sn olanlar incelendi. Karşılaştırma: `replay_barge_session.py --peak-strong 0` (eski) ve varsayılan (cd820c2).
+
+| Oturum / t (sn) | Ne | Ölçüm | Eski kural | cd820c2 |
+|---|---|---|---|---|
+| 2f419 **96,4–100,6** | Müşteri ~4,2 sn konuştu (üç parça, metin yok: düşürüldü). Ajan "Kusura bakmayın, tekrar soruyorum…" okuyordu | −11…−20 dBFS, F0 110–128 Hz, perde 0,99–1,00, ≥400 Hz payı 0,40–0,83, yankı ilintisi ≤0,16 | 96,44 ve 98,30: blocked (0–1 sesli çerçeve). 99,38'de 60 çerçeve dolunca **zorla kesme, 1,2 sn**. Kayıtlı `barge_cut_ms` içindeki **1181 ms** bu olay | 96,58'de kesti, **160 ms** |
+| 2f419 81,3–82,2 | kısa söylem | perdeli, ≥400 Hz payı yüksek | blocked, sonra 620 ms | 160 ms |
+| 603c 93,4 / 228,7 | kısa söylemler | aynı profil | blocked (kesmedi) | 220 / 180 ms |
+| 603c 348,2–350,7 | 2,6 sn söylem | aynı profil | blocked, sonra 400 ms | 160 ms |
+| 603c 443,7–445,8 | 2,1 sn söylem | aynı profil | blocked, sonra 640 ms | 220 ms |
+| 2f419 137,0–138,9 | ajan konuşurken düşük ses | F0 70–76 Hz, perde 0,5–0,7, ≥400 Hz payı ≈0, −32…−42 dBFS | kesmedi | kesmedi (doğru: uğultu/mikrofon gürültüsü, konuşma değil) |
+
+Toplam (603c yalnız anket bölümü, ≤470 sn):
+
+| | Eski: barge / blocked / >500 ms | cd820c2: barge / blocked / >500 ms |
+|---|---|---|
+| 2f419d1e94fe | 10 / 3 / 1 (1200 ms) | 10 / 0 / 0, medyan 160 ms |
+| 603cd918e947 | 12 / 10 / 0, medyan 200 ms | 14 / 1 / 0, medyan 160 ms |
+
+Sonuç: "uzun cümlede kesmiyor" şikâyeti **aynı kök nedenden** (kök neden 1) çıkıyor ve cd820c2 bunu kapatıyor.
+Uzun söylemde eski kural, 1,2 sn zorla kesme dolana kadar bekliyordu. Söylem parçalı olunca her parça engellenip hiç kesilmeyebiliyordu.
+Elenen nedenler: yankı yok (ilinti ≤0,16, müşteri F0 erkek, ajan kadın), mikrofon kapısı yok, durum `speaking`, seviye eşiği aşılıyor (söylem çerçevelerinin %79–98'i seviye üstünde).
+Yeni kod değişikliği yapılmadı. Yanlış tetikleme ölçümü (33 kayıt + sentetik) cd820c2'deki gibi geçerli.
+Doğrulanmayan: düzeltmenin canlı aramada çalıştığı (düzeltme sonrası kayıtlı oturum yok); düşürülen söylemlerin metni.
