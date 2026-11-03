@@ -72,8 +72,8 @@ def _iso(tmp_path, monkeypatch):
 # ---- arka uç seçimi ----
 def test_defaults_backend_auto_and_haiku_timeout():
     d = F.defaults()
-    assert d["backend"] == "auto" and d["haiku_timeout_s"] == 2.0 and d["haiku_model"] is None and d["haiku_default_model"] == HAIKU
-    assert "ÖLÇÜLMEDİ" in d["haiku_note"] and "0,95" in d["haiku_note"]      # varsayım config açıklamasında yazılı
+    assert d["backend"] == "auto" and d["haiku_timeout_s"] == 2.5 and d["haiku_model"] is None and d["haiku_default_model"] == HAIKU
+    assert "1,957" in d["haiku_note"] and "free-reply-eval-haiku-20261103-102639" in d["haiku_note"] and "ÖLÇÜLMEDİ" in d["haiku_note"]   # ölçüm kaynağı ve v5 ölçülmediği yazılı
     assert d["categories"] == ["counter", "clarify"]                         # kategori listesi değişmedi
 
 
@@ -98,7 +98,7 @@ def test_make_default_a1s_uses_haiku_l2_uses_qwen_realtime_none():
     fr = F.make_default("Ayşe", llm_spec=a1s)
     assert isinstance(fr.client, F.AnthropicChatClient) and fr.client.model == HAIKU and fr.backend == "haiku"
     d = fr.describe()
-    assert d["backend"] == "haiku" and d["timeout_s"] == 2.0 and d["max_tokens"] == 120 and d["thinking"] is False
+    assert d["backend"] == "haiku" and d["timeout_s"] == 2.5 and d["max_tokens"] == 120 and d["thinking"] is False
     fq = F.make_default("Ayşe", llm_spec=load_profiles()["L2"].component("llm"))
     assert isinstance(fq.client, F.OllamaChatClient) and fq.backend == "qwen" and fq.describe()["timeout_s"] == 1.5
     assert F.make_default("Ayşe", llm_spec=a1s, realtime=True) is None
@@ -124,7 +124,7 @@ def test_qwen_thinking_setting_not_applied_to_haiku(monkeypatch):
     r = haiku_replier(thinking=True)
     assert r.thinking is False and r.client is r.base_client
     res = r.generate(STEP_Q31, "soru", "sende kaç puan vereyim", "counter")
-    assert res.source == "haiku" and res.thinking is False and r.client.params == [(2.0, 120, 0.6)]
+    assert res.source == "haiku" and res.thinking is False and r.client.params == [(2.5, 120, 0.6)]
 
 
 # ---- üretim, düşüş ve ölçüm alanları ----
@@ -226,7 +226,7 @@ def test_anthropic_client_request_body(monkeypatch):
     assert res.source == "haiku" and res.text == GOOD and res.input_tokens == 777 and res.output_tokens == 30
     method, url, timeout, kw = sent[0]
     body = kw["json"]
-    assert method == "POST" and url == "https://api.anthropic.com/v1/messages" and timeout == 2.0
+    assert method == "POST" and url == "https://api.anthropic.com/v1/messages" and timeout == 2.5
     assert kw["headers"]["x-api-key"] == "k-test" and kw["headers"]["anthropic-version"] == "2023-06-01"
     assert body["model"] == HAIKU and body["max_tokens"] == 120 and body["thinking"] == {"type": "disabled"}
     assert body["system"].startswith("Sen Ayşe adında") and all(m["role"] != "system" for m in body["messages"])
@@ -291,7 +291,7 @@ def test_api_get_put_backend(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     c = TestClient(app)
     g = c.get("/api/free-reply").json()
-    assert g["backend"] == "auto" and g["backends"] == ["auto", "haiku", "qwen"] and g["haiku_timeout_s"] == 2.0
+    assert g["backend"] == "auto" and g["backends"] == ["auto", "haiku", "qwen"] and g["haiku_timeout_s"] == 2.5
     assert g["haiku_status"] == {"key_present": False, "model": HAIKU, "model_from_profile": True} and g["haiku_model"] is None
     assert g["haiku_max_tokens"] == 120 and g["haiku_timeout_range"] == [0.3, 5.0]
     p = c.put("/api/free-reply", json={"backend": "haiku", "haiku_timeout_s": 1.5}).json()
@@ -351,7 +351,7 @@ def test_session_record_haiku_fields_and_usage(tmp_path, monkeypatch):
     t = next(t for t in saved["turns"] if "reply_source" in t)
     assert t["reply_source"] == "haiku" and t["free_reply_backend"] == "haiku" and t["free_reply_model"] == HAIKU
     assert t["free_reply_input_tokens"] == 850 and t["free_reply_output_tokens"] == 32 and t["free_reply_cost_usd"] == expected_cost(850, 32)
-    assert saved["config"]["free_reply"]["backend"] == "haiku" and saved["config"]["free_reply"]["timeout_s"] == 2.0
+    assert saved["config"]["free_reply"]["backend"] == "haiku" and saved["config"]["free_reply"]["timeout_s"] == 2.5
     u = saved["usage"]
     assert u["items"]["free_reply_calls"] == 1 and u["cost"]["by_component"]["free_reply"] == round(expected_cost(850, 32), 6)
 

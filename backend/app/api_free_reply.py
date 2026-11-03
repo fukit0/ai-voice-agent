@@ -26,7 +26,7 @@ def _view(with_status: bool = True) -> dict:
            # Arka uç (docs/serbest-cevap-haiku.md): auto = profilin LLM'ine göre; haiku_model null = profilin Anthropic modeli
            "backend": cfg.get("backend", "auto"), "backends": list(F.BACKENDS), "haiku_model": cfg.get("haiku_model"),
            "haiku_default_model": cfg.get("haiku_default_model") or "claude-haiku-5-5",
-           "haiku_timeout_s": float(cfg.get("haiku_timeout_s", 2.0)), "haiku_timeout_range": list(F.HAIKU_TIMEOUT_RANGE),
+           "haiku_timeout_s": float(cfg.get("haiku_timeout_s", F.HAIKU_TIMEOUT_DEFAULT)), "haiku_timeout_range": list(F.HAIKU_TIMEOUT_RANGE),
            "haiku_max_tokens": int(cfg.get("haiku_max_tokens", 120)), "haiku_status": F.haiku_status(cfg)}
     if with_status:
         out["status"] = F.status(cfg)

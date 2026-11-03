@@ -102,7 +102,7 @@ def main() -> int:
             print("ANTHROPIC_API_KEY tanımlı değil (ortamda ya da proje kökündeki .env'de). Haiku ölçümü yapılmadı.", file=sys.stderr)
             return 2
         model = args.model or F.haiku_model(cfg, a1s_llm())
-        timeout = args.timeout or float(cfg.get("haiku_timeout_s", 2.0))
+        timeout = args.timeout or float(cfg.get("haiku_timeout_s", 2.5))
     else:
         model = args.model or (cfg["thinking_model"] if args.thinking else cfg["model"])
         timeout = args.timeout or float(cfg["thinking_timeout_s"] if args.thinking else cfg["timeout_s"])
