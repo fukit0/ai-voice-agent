@@ -104,6 +104,53 @@ ollama serve   # çalışmıyorsa ayrı terminalde
 - Kabul önerisi (henüz karar değil): canlı kategorilerde geçme ≥ 0,85, p95 ≤ 1,5 sn, insan okumasında uydurma ya da söz veren cümle 0. Tutmazsa varsayılan kapalıya çekilir ya da istem/denetim güncellenir.
 - `--fake` yalnızca betiğin çalıştığını sınar, kanıt değildir (geçici dizine yazar).
 
+## Qwen thinking (yalnız ölçüm, 2026-11-03)
+Kullanıcı isteği: serbest cevaba **ayrı** bir "Qwen thinking" açma/kapama ayarı. Amaç, thinking'in gecikmeyi ne kadar artırdığını metrikle görmek. Durum: uygulandı ve sahte istemciyle test edildi. **Gerçek Qwen thinking modeliyle ÖLÇÜLMEDİ.** Bulutta Ollama yok, Mac VM'inden de Mac localhost'a erişilemiyor.
+
+**Ayar alanları** (`config/free-reply.json`, hepsi ekrandan değişir; varsayılan KAPALI):
+- `thinking` (bool, varsayılan `false`)
+- `thinking_model`: varsayılan `qwen3:30b-a3b-thinking-2507-q4_K_M`. **Bu etiketin Ollama'da var olduğu doğrulanmadı.** Mac'te `ollama list` ile kontrol edin. Yoksa `ollama pull` ile indirin ya da ekrandan var olan bir thinking modeline geçin.
+- `thinking_timeout_s`: varsayılan 8,0 sn, aralık 1-30. Yalnız thinking açıkken kullanılır. Canlı sınır (0,3-5) burada uygulanmaz, çünkü amaç ölçmek.
+- `thinking_max_tokens`: 768, yalnız config'ten değişir. Düşünme ve cevap tokenları birlikte bu sınıra girer. Canlıdaki 90 token düşünmeyi yarıda keser; o durumda cevap boş kalır.
+
+**Davranış ve gerekçeler**
+- **Bağımsız ayar.** `thinking` ile `enabled` ayrı saklanır. Serbest cevabı kapatmak thinking ayarını silmez. Ama serbest cevap kapalıyken thinking açık olsa bile `make_default()` None döner ve Qwen hiç çağrılmaz (testte doğrulandı). Thinking yalnız açık serbest cevabın hangi modelle ve nasıl çağrılacağını değiştirir.
+- **Ayrı model.** Mevcut model `qwen3 instruct-2507` thinking desteklemiyor. Bu modele `think: true` göndermek bazı Ollama sürümlerinde "does not support thinking" hatası veriyor. Bu yüzden thinking açıkken ayrı thinking modeli ve `think: true`, kapalıyken instruct model ve `think: false` kullanılır. Model ve think değeri her zaman birlikte seçilir: istemci `(model, think)` başına tek.
+- **Kapalıyken neden `think: false` (alanı hiç göndermemek yerine)?** Eskiden beri gönderilen değer bu ve kullanıcının Mac'teki Ollama'sında 2026-11-03 gerçek ölçümünde sorunsuz çalıştı. Ayrıca düşünme destekleyen bir modele geçilirse modelin sessizce düşünmeye başlamasını engelliyor. Mevcut test (`body["think"] is False`) korunuyor.
+- **Düşünme metni cevaba karışmaz.** `split_thinking` iki kaynağı ayıklar: Ollama'nın ayrı `message.thinking` alanı ve içerikteki `<think>…</think>` bloğu (kapanışsız ya da yalnız kapanışlı blok dahil). Denetimden yalnız son cevap geçer ve yalnız o söylenir. Düşünme metni kaydedilmez, yalnız uzunluğu (`think_chars`) yazılır. num_predict düşünmeyi keserse cevap boş kalır, `empty` kuralıyla havuza düşülür.
+- **Aynı düşüş kuralları.** Kategori listesi, denetim, zaman aşımı, Ollama yok ve soğuk model durumları aynen geçerli. Thinking modeli bellekte değilse (soğuk) beklenmez, havuz konuşur. "Hazırla" yalnız profilin modelini (instruct) yükler. Thinking modelini ölçümden önce elle ısıtmak gerekir; eval betiği bunu kendisi yapar.
+
+**Metrik**
+- Tur kaydı (`turns[]`): `free_reply_thinking` (bool), `free_reply_model`, `free_reply_s` (uçtan uca, mevcut alan), `free_reply_eval_tokens`, `free_reply_ollama_s` ve thinking ya da sızıntı varsa `free_reply_think_chars`. `free_reply_eval_tokens`, Ollama'nın `eval_count` değeridir: düşünme ve cevap tokenlarının **toplamı**. Ollama düşünme tokenlarını ayrı saymadığı için ayrı bir `free_reply_think_tokens` alanı yok. Düşünmenin payı karakter sayısından ya da kapalı koşuyla token farkından okunur. `free_reply_ollama_s`, Ollama `total_duration` değeridir (sunucu tarafı süre).
+- Arama düzeyi `config.free_reply`: `thinking`, model, geçerli zaman aşımı, thinking açıksa `max_tokens`.
+- **Ayarlar ekranı** (Konu dışı serbest cevap): "Qwen thinking (yalnız ölçüm, yavaşlatır)" onay kutusu, açıkken "Gecikme belirgin artar: canlı demoda kapalı tutun" uyarısı, thinking modeli + durum (Sıcak / soğuk → havuz), thinking zaman aşımı, ayrı "Thinking varsayılana dön". Altında **kıyas tablosu**: son en çok 200 serbest cevap turu (`GET /api/free-reply` → `stats`, `free_reply.thinking_stats`), thinking kapalı ve açık satırları; tur sayısı, ortalama / p50 / p95 süre, havuza düşüş oranı ve sebepler. Süre yalnız LLM'e istek giden turlardan hesaplanır (soğuk / ulaşılamıyor / kategori dışı hariç). Eski kayıtlarda alan olmadığı için o turlar "kapalı" sayılır (o zaman thinking yoktu).
+- **Aramalar › detay › Tur gecikmeleri**: yeni "Serbest cevap" sütunu. Süre, kaynak, düşüş sebebi ve thinking işareti gösterilir; model adı ipucunda (title).
+- API: `PUT /api/free-reply {thinking?, thinking_model?, thinking_timeout_s?}` (null → varsayılan). GET yanıtına `thinking*` alanları eklendi; thinking açıksa thinking modelinin durumu `thinking_status` alanında. Kategori listesi eskisi gibi ekrandan değişmez.
+
+**Kullanıcının Mac'te çalıştıracağı ölçüm**
+```bash
+cd ~/sahibinden-voice-agent
+ollama list | grep thinking          # thinking modeli var mı? yoksa: ollama pull qwen3:30b-a3b-thinking-2507-q4_K_M
+./.venv/bin/python scripts/eval_free_reply.py --runs 3              # thinking kapalı (instruct), 32 vaka × 3
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --thinking   # aynı 32 vaka thinking ile
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --thinking --compare evidence/free-reply-eval-<kapalı koşunun damgası>.json
+```
+- `--thinking` modeli `thinking_model`, zaman aşımını `thinking_timeout_s`, token sınırını `thinking_max_tokens` alır. `--model` ve `--timeout` bunları geçersiz kılar. Çıktı `evidence/free-reply-eval-thinking-<tarih>.json/.md`. `meta.thinking` alanı ve satır başına `thinking`, `think_chars`, `eval_tokens`, `ollama_s` yazılır. Özette ek olarak `think_chars_mean` ve `eval_tokens_mean` var.
+- `--compare` önceki koşuyla farkı özete (`summary.compare`) ve md'ye yazar: süre p50 / p95 / ortalama / en çok farkı ve geçme oranı farkları.
+- Soğuk thinking modeli için betik önce ısınma çağrısı yapar (ölçüme girmez). **Bellek uyarısı:** iki 30B q4 modeli aynı anda bellekte tutmak Mac'in belleğini aşabilir. Ollama instruct modeli bellekten atabilir; o zaman L2 ayrıştırıcısı bir sonraki çağrıda yeniden yükleme bekler. Ölçümden sonra instruct modeli yeniden ısıtmak için "Hazırla" kullanın. Bu davranış ölçülmedi.
+- Canlı arama ile ölçüm: Ayarlar'da thinking'i açın, thinking modelini ısıtın (ör. `ollama run qwen3:30b-a3b-thinking-2507-q4_K_M ""`, ya da önce eval betiğini koşun), L2 ile birkaç "sende kaç puan vereyim" turu yapın. Sonra thinking'i kapatıp aynısını tekrarlayın; kıyas tablosu iki satırı gösterir.
+
+**Doğrulama (bulut çalışma kopyası)**
+- Önce: `PYTHONPATH=.:backend python -m pytest backend/tests -q` → **883 passed, 1 skipped**. Sonra → **907 passed, 1 skipped** (+24: `backend/tests/test_free_reply_thinking.py`). Mevcut testler değiştirilmedi.
+- Frontend: `npx tsc --noEmit` temiz. `npx vitest run` → **23 dosya, 121 test** (önce 22/117; +4: `FreeReplyThinking.test.tsx`).
+- Çıktılar: `evidence/free-reply-thinking-tests-20261103.txt`
+- Kapsanan konular: varsayılan kapalı; kapalıyken instruct istemci ve 1,5 sn / 90 token (olay eski alanlarla); açıkken thinking istemcisi, `thinking_timeout_s`, `thinking_max_tokens`, model kayda; düşünme metninin (içinde "sekiz", "ben olsam" geçse de) cevaba ve denetime sızmaması; `<think>` blok biçimleri; kapanışsız blokta havuz; soğuk / ulaşılamıyor / zaman aşımı (istisna ve toplam süre 8 sn); canlı sınırı aşan ama thinking sınırı içindeki cevap; denetimin son cevaba uygulanması; kategori ve kapalı durumda sıfır çağrı; akışta cevap + soru birebir; ayarların bağımsızlığı ve doğrulaması; serbest cevap kapalı + thinking açık = çağrı yok; API GET/PUT; Ollama gövdesinde `think: true` / `false` ve yanıt ölçüm alanları (ns → sn); `(model, think)` istemci ayrımı; tur kaydı alanları (açık ve kapalı); `thinking_stats` gruplaması; eval betiğinin `--fake --thinking` koşusu; frontend onay kutusu, uyarı, kaydet / aralık, ayrı varsayılana dönüş, kıyas tablosu, eski backend uyumu.
+
+**Bilinmeyenler**
+- Thinking'in gerçek gecikme artışı, geçme oranı ve düşünme uzunluğu ölçülmedi. 8 sn zaman aşımının ve 768 token sınırının yeterli olup olmadığı da bilinmiyor. Model kısa cevaplarda bile yüzlerce token düşünebilir; sınır yetmezse `audit: empty` düşüşleri artar, bu da raporda görünür.
+- Varsayılan thinking model etiketinin Ollama kütüphanesinde bu adla bulunduğu doğrulanmadı.
+- Kıyas için elde olan tek gerçek "kapalı" referansı, aşağıdaki 2026-11-03 instruct ölçümü: p50 0,78 / p95 1,23 sn. Bu ölçüm istem v1 ile yapıldı. Doğru kıyas için iki koşu da aynı istem sürümüyle (şu an v2) arka arkaya yapılmalı.
+
 ## Bilinen sınırlar (dürüst durum)
 - **Gerçek Qwen ile ölçülmedi.** Doğallık, doğruluk, geçme oranı ve gecikme bilinmiyor. Testler sahte istemciyle kod davranışını doğruluyor, model kalitesini değil.
 - **Gerçek ses ve telefon ile denenmedi.** TTS'in Qwen cümlelerini nasıl okuduğu (uzunluk, noktalama) dinlenmedi.
@@ -118,11 +165,14 @@ ollama serve   # çalışmıyorsa ayrı terminalde
 - "Müşteri 'sende kaç puan vereyim' diye sorduğunda ajan artık 'yardımcı olamıyorum' demiyor. Lokal Qwen kısa ve doğal bir cevap yazıyor: puan uydurmuyor, ölçeği hatırlatıyor. Soruyu kod aynen yeniden okuyor."
 - "LLM akışı yönetmiyor. Yalnızca konu dışı turda bir iki cümle yazıyor; cevap kaydı, DNC ve ret yine kodla garanti ediliyor. Normal cevaplarda LLM'e ikinci kez gidilmiyor, gecikme yalnızca bu turlara ekleniyor."
 - "Her cümle söylenmeden önce denetimden geçiyor: rakam, puan, söz, insan iddiası, link ya da istem sızıntısı varsa ya da 1,5 sn içinde gelmezse gözden geçirilmiş sabit cümle konuşuyor. Her turda hangi kaynağın konuştuğu kayda yazılıyor."
+- Thinking ayarı: "Thinking'i ayrı bir ölçüm anahtarı olarak ekledik. Açınca aynı turlar düşünen modelle yapılıyor ve Ayarlar'da açık/kapalı gecikme farkı yan yana görünüyor. Canlı demoda kapalı."
+- **Bu sınırlamayı bil (thinking):** Thinking'in gecikme etkisi henüz ölçülmedi. Rakam söylemeden önce Mac'te `--thinking` koşusu yapılmalı. Thinking açıkken tur saniyeler sürebilir ve 8 sn içinde gelmezse havuz konuşur. Thinking modeli ayrıca ısıtılmazsa sessizce havuza düşülür; bu "ilk yükleme" bahanesi değil, tasarım gereği. İki 30B model aynı anda belleğe sığmayabilir.
 - **Bu sınırlamayı bil:** Qwen'in gerçek cevapları ve gecikmesi ölçülmeden demoda "ölçüldü" denmez. Önce Mac'te `scripts/eval_free_reply.py` koşulup rapor okunmalı. Model soğuksa (Hazırla'ya basılmadıysa) ajan sessizce havuz cümlesine düşer. Demoda serbest cevap görünmüyorsa ilk bakılacak yer bu: "ilk yükleme" bahanesi değil, tasarım gereği soğuk modelde LLM çağrılmıyor. Kimlik, KVKK, kayıt ve süre cevapları bilerek sabit metinde.
 
 ## Değişen ve eklenen dosyalar
 - Yeni: `backend/app/voice/free_reply.py`, `backend/app/api_free_reply.py`, `config/free-reply.json`, `config/eval/free-reply-samples.json`, `scripts/eval_free_reply.py`, `backend/tests/test_free_reply.py`, `frontend/src/FreeReplySettings.tsx`, `frontend/src/FreeReplySettings.test.tsx`, `evidence/free-reply-tests-20261103.txt`, bu doküman
 - Değişen: `backend/app/voice/flow.py` (`free_reply` kancası: `_off_topic`, `repeat` + açıklama), `backend/app/voice/smalltalk.py` (`counter`/`clarify` kategorileri; açık uçlu adımda `pure_meta`), `config/smalltalk.json` (2 yeni havuz), `backend/app/voice/session.py` (tur kaydı + `config.free_reply`), `backend/app/api_voice.py` (canlı kademeli aramada üretici), `backend/app/main.py` (router), `frontend/src/api.ts`, `frontend/src/pages/SettingsPage.tsx`, `docs/adr/0009-hibrit-konusma-katmani.md` (ek not)
+- Thinking ekinde (2026-11-03) yeni: `backend/tests/test_free_reply_thinking.py`, `frontend/src/FreeReplyThinking.test.tsx`, `evidence/free-reply-thinking-tests-20261103.txt`. Değişen: `config/free-reply.json` (thinking alanları), `backend/app/voice/free_reply.py` (ayarlar, `ChatReply`, `split_thinking`, `think` istemcisi, `thinking_stats`), `backend/app/api_free_reply.py`, `backend/app/voice/session.py` (tur alanları), `scripts/eval_free_reply.py` (`--thinking`, `--compare`), `frontend/src/api.ts`, `frontend/src/callsApi.ts`, `frontend/src/FreeReplySettings.tsx`, `frontend/src/pages/CallsPage.tsx`, bu doküman
 - Dokunulmayan: ayrıştırıcı istemi ve dondurulmuş setler (`config/prompts/cascade-parser.json`, `prompt-samples`/`holdout` ve sha256), `offtopic-samples.json`, mevcut testler
 
 

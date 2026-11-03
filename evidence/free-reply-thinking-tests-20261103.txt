@@ -1,0 +1,43 @@
+# Qwen thinking ölçüm ayarı — test çıktıları (bulut çalışma kopyası, 2026-11-03). Gerçek Qwen ile ÖLÇÜLMEDİ; sahte istemci.
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests -q
+........................................................................ [ 87%]
+........................................................................ [ 95%]
+............................................                             [100%]
+907 passed, 1 skipped in 76.73s (0:01:16)
+
+$ PYTHONPATH=.:backend python -m pytest backend/tests/test_free_reply_thinking.py -v
+backend/tests/test_free_reply_thinking.py::test_defaults_thinking_off_with_separate_model_and_timeout PASSED [  4%]
+backend/tests/test_free_reply_thinking.py::test_thinking_off_uses_instruct_client_and_live_limits PASSED [  8%]
+backend/tests/test_free_reply_thinking.py::test_thinking_on_uses_thinking_client_timeout_and_token_budget PASSED [ 12%]
+backend/tests/test_free_reply_thinking.py::test_thinking_text_never_leaks_into_answer_or_audit PASSED [ 16%]
+backend/tests/test_free_reply_thinking.py::test_inline_think_blocks_are_stripped[<think>Puan vermemeliyim, sekiz demeyece\u011fim.</think>\nBu tamamen sizin kendi deneyiminize ba\u011fl\u0131 bir de\u011ferlendirme. Bir ile on aras\u0131nda, kendi memnuniyetinize g\xf6re bir puan verebilirsiniz.] PASSED [ 20%]
+backend/tests/test_free_reply_thinking.py::test_inline_think_blocks_are_stripped[Puan vermemeliyim, sekiz demeyece\u011fim.</think>Bu tamamen sizin kendi deneyiminize ba\u011fl\u0131 bir de\u011ferlendirme. Bir ile on aras\u0131nda, kendi memnuniyetinize g\xf6re bir puan verebilirsiniz.] PASSED [ 25%]
+backend/tests/test_free_reply_thinking.py::test_inline_think_blocks_are_stripped[<THINK>sekiz</THINK> Bu tamamen sizin kendi deneyiminize ba\u011fl\u0131 bir de\u011ferlendirme. Bir ile on aras\u0131nda, kendi memnuniyetinize g\xf6re bir puan verebilirsiniz.] PASSED [ 29%]
+backend/tests/test_free_reply_thinking.py::test_unclosed_think_block_means_empty_answer_and_pool PASSED [ 33%]
+backend/tests/test_free_reply_thinking.py::test_split_thinking_plain_text_unchanged PASSED [ 37%]
+backend/tests/test_free_reply_thinking.py::test_thinking_cold_model_not_called PASSED [ 41%]
+backend/tests/test_free_reply_thinking.py::test_thinking_unreachable_and_timeout_fall_back PASSED [ 45%]
+backend/tests/test_free_reply_thinking.py::test_thinking_slow_answer_within_thinking_timeout_is_kept PASSED [ 50%]
+backend/tests/test_free_reply_thinking.py::test_thinking_audit_still_applies_to_final_answer PASSED [ 54%]
+backend/tests/test_free_reply_thinking.py::test_thinking_respects_categories_and_disabled PASSED [ 58%]
+backend/tests/test_free_reply_thinking.py::test_flow_with_thinking_speaks_answer_then_question_verbatim PASSED [ 62%]
+backend/tests/test_free_reply_thinking.py::test_settings_thinking_independent_of_enabled PASSED [ 66%]
+backend/tests/test_free_reply_thinking.py::test_disabled_free_reply_with_thinking_on_never_calls_in_flow PASSED [ 70%]
+backend/tests/test_free_reply_thinking.py::test_api_get_put_thinking PASSED [ 75%]
+backend/tests/test_free_reply_thinking.py::test_ollama_think_client_sends_think_true_and_returns_split_fields PASSED [ 79%]
+backend/tests/test_free_reply_thinking.py::test_ollama_client_registry_separates_think_clients PASSED [ 83%]
+backend/tests/test_free_reply_thinking.py::test_session_record_thinking_fields PASSED [ 87%]
+backend/tests/test_free_reply_thinking.py::test_session_record_thinking_off_fields PASSED [ 91%]
+backend/tests/test_free_reply_thinking.py::test_thinking_stats_groups_and_excludes_not_called PASSED [ 95%]
+backend/tests/test_free_reply_thinking.py::test_eval_script_fake_thinking_run PASSED [100%]
+============================== 24 passed in 1.78s ==============================
+
+$ cd frontend && npx tsc --noEmit
+tsc: temiz
+
+$ npx vitest run
+ ✓ src/FreeReplyThinking.test.tsx (4 tests) 241ms
+ ✓ src/FreeReplySettings.test.tsx (2 tests) 208ms
+ Test Files  23 passed (23)
+      Tests  121 passed (121)

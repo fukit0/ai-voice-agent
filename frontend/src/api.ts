@@ -362,22 +362,37 @@ export async function setFastPath(profile: string, enabled: boolean | null): Pro
 }
 
 /** ADR 0009 adım 2: konu dışı turlarda lokal Qwen ile serbest cevap (docs/serbest-cevap-qwen.md). */
+/** Thinking açık/kapalı serbest cevap turlarının özeti (backend free_reply.thinking_stats; süre yalnız LLM'e istek giden turlardan). */
+export type FreeReplyStatsGroup = {
+  turns: number; called: number; qwen_rate: number | null; fallback_rate: number | null; fallback_reasons: Record<string, number>;
+  mean_s: number | null; p50_s: number | null; p95_s: number | null; models: string[];
+};
+export type FreeReplyStatus = { reachable: boolean; warm: boolean; model: string };
 export type FreeReplySettings = {
   enabled: boolean;
   model: string;
   timeout_s: number;
-  defaults: { enabled: boolean; model: string; timeout_s: number };
+  defaults: { enabled: boolean; model: string; timeout_s: number; thinking?: boolean; thinking_model?: string; thinking_timeout_s?: number };
   overridden: string[];
   categories: string[];
   timeout_range: [number, number];
   prompt: { version: string; hash: string };
-  status?: { reachable: boolean; warm: boolean; model: string };
+  status?: FreeReplyStatus;
+  // Qwen thinking (yalnız ölçüm; docs/serbest-cevap-qwen.md). Eski backend bu alanları vermezse ekran satırı göstermez.
+  thinking?: boolean;
+  thinking_model?: string;
+  thinking_timeout_s?: number;
+  thinking_timeout_range?: [number, number];
+  thinking_max_tokens?: number;
+  thinking_status?: FreeReplyStatus;
+  stats?: { last: number; turns: number; off: FreeReplyStatsGroup; on: FreeReplyStatsGroup };
 };
 
 export const fetchFreeReply = () => fetch("/api/free-reply").then((r) => json<FreeReplySettings>(r));
 
 /** Yalnız verilen alanlar değişir; null o alanı varsayılana döndürür. */
-export async function setFreeReply(patch: Partial<{ enabled: boolean | null; model: string | null; timeout_s: number | null }>): Promise<FreeReplySettings> {
+export async function setFreeReply(patch: Partial<{ enabled: boolean | null; model: string | null; timeout_s: number | null;
+  thinking: boolean | null; thinking_model: string | null; thinking_timeout_s: number | null }>): Promise<FreeReplySettings> {
   const res = await fetch("/api/free-reply", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

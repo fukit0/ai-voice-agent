@@ -10,7 +10,15 @@
   "max_sentences": 2,
   "max_questions": 0,
   "warm_check_ttl_s": 30,
-  "categories": ["counter", "clarify"],
+  "thinking": false,
+  "thinking_model": "qwen3:30b-a3b-thinking-2507-q4_K_M",
+  "thinking_timeout_s": 8.0,
+  "thinking_max_tokens": 768,
+  "thinking_note": "Yalnız ÖLÇÜM içindir (docs/serbest-cevap-qwen.md 'Qwen thinking'): thinking'in serbest cevap gecikmesini ne kadar artırdığını görmek. Varsayılan KAPALI; canlı demoda kapalı tutulur. Açıkken instruct model yerine thinking_model kullanılır ve Ollama'ya think:true gönderilir (qwen3 instruct-2507 thinking desteklemez). thinking_model etiketinin Ollama'da var olduğu bu repoda DOĞRULANMADI: Mac'te `ollama list` ile doğrula; yoksa `ollama pull <etiket>` ya da Ayarlar ekranından var olan bir thinking modeline değiştir. thinking_timeout_s yalnız thinking açıkken kullanılır (1-30 sn). thinking_max_tokens düşünme + cevap tokenlarının toplam sınırıdır; 90 tokenla düşünme yarıda kesilir ve cevap boş kalır. Serbest cevap (enabled) kapalıysa thinking açık olsa da Qwen çağrılmaz.",
+  "categories": [
+    "counter",
+    "clarify"
+  ],
   "categories_note": "Serbest cevabın denendiği konu dışı kategoriler. Bilinçli olarak DIŞARIDA: identity (dürüst kimlik cevabı sabit metin, core-006), who / number_source / recording (KVKK ve hukuk metni, sabit), duration / purpose (olgusal bilgi; LLM süre uydurabilir), support (çağrı merkezi numarası sabit), profanity (gerginlikte sabit, gözden geçirilmiş özür), hold (bekleme). 3. art arda konu dışı kapanışı her zaman sabit metindir.",
   "banned_patterns": [
     "(?<![a-zçğıöşü])(?:veririm|verirdim|verirsem|vereyim|veriyorum|verdim)(?![a-zçğıöşü])",

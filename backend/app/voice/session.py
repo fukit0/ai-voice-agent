@@ -525,6 +525,12 @@ class VoiceSession:
             rec["free_reply_s"] = free.get("seconds", 0.0)
             if free.get("reason"):
                 rec["free_reply_fallback"] = free["reason"]
+            # Thinking ölçümü (docs/serbest-cevap-qwen.md 'Qwen thinking'): açık/kapalı kıyası Ayarlar ekranında bu alanlardan yapılır
+            rec["free_reply_thinking"] = bool(free.get("thinking", False))
+            rec["free_reply_model"] = free.get("model")
+            for src, dst in (("eval_tokens", "free_reply_eval_tokens"), ("think_chars", "free_reply_think_chars"), ("ollama_s", "free_reply_ollama_s")):
+                if free.get(src) is not None:
+                    rec[dst] = free[src]
         elif any(e.get("type") in ("off_topic", "identity") for e in reply.events):
             rec["reply_source"] = "pool"
         if any(e.get("type") == "fast_path" for e in reply.events):

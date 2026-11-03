@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import re
+import statistics
 import threading
 import time
 from dataclasses import asdict, dataclass, field
@@ -31,8 +32,9 @@ from ..trnorm import number_to_words
 
 ROOT = Path(__file__).resolve().parents[3]
 CONFIG = ROOT / "config" / "free-reply.json"
-OVERRIDABLE = ("enabled", "model", "timeout_s")      # ekrandan değişebilen alanlar
+OVERRIDABLE = ("enabled", "model", "timeout_s", "thinking", "thinking_model", "thinking_timeout_s")      # ekrandan değişebilen alanlar
 TIMEOUT_RANGE = (0.3, 5.0)
+THINKING_TIMEOUT_RANGE = (1.0, 30.0)   # thinking yalnız ölçüm içindir; düşünme yüzlerce token sürebilir, canlı sınır (5 sn) burada uygulanmaz
 PROMPT_VERSION = "2"
 
 
@@ -55,13 +57,16 @@ def load_overrides() -> dict:
     if not isinstance(raw, dict):
         return {}
     out: dict = {}
-    if isinstance(raw.get("enabled"), bool):
-        out["enabled"] = raw["enabled"]
-    if isinstance(raw.get("model"), str) and raw["model"].strip():
-        out["model"] = raw["model"].strip()
-    t = raw.get("timeout_s")
-    if isinstance(t, (int, float)) and not isinstance(t, bool) and TIMEOUT_RANGE[0] <= t <= TIMEOUT_RANGE[1]:
-        out["timeout_s"] = float(t)
+    for key in ("enabled", "thinking"):
+        if isinstance(raw.get(key), bool):
+            out[key] = raw[key]
+    for key in ("model", "thinking_model"):
+        if isinstance(raw.get(key), str) and raw[key].strip():
+            out[key] = raw[key].strip()
+    for key, (lo, hi) in (("timeout_s", TIMEOUT_RANGE), ("thinking_timeout_s", THINKING_TIMEOUT_RANGE)):
+        t = raw.get(key)
+        if isinstance(t, (int, float)) and not isinstance(t, bool) and lo <= t <= hi:
+            out[key] = float(t)
     return out
 
 
@@ -79,13 +84,14 @@ def save_overrides(patch: dict) -> dict:
         if v is None or v == d.get(k):
             ov.pop(k, None)
             continue
-        if k == "enabled" and not isinstance(v, bool):
-            raise ValueError("enabled true/false olmalı")
-        if k == "model" and (not isinstance(v, str) or not v.strip() or len(v) > 120):
-            raise ValueError("model adı boş olamaz")
-        if k == "timeout_s":
-            if isinstance(v, bool) or not isinstance(v, (int, float)) or not TIMEOUT_RANGE[0] <= v <= TIMEOUT_RANGE[1]:
-                raise ValueError(f"timeout_s {TIMEOUT_RANGE[0]}-{TIMEOUT_RANGE[1]} sn arasında olmalı")
+        if k in ("enabled", "thinking") and not isinstance(v, bool):
+            raise ValueError(f"{k} true/false olmalı")
+        if k in ("model", "thinking_model") and (not isinstance(v, str) or not v.strip() or len(v) > 120):
+            raise ValueError(f"{k} adı boş olamaz")
+        if k in ("timeout_s", "thinking_timeout_s"):
+            lo, hi = TIMEOUT_RANGE if k == "timeout_s" else THINKING_TIMEOUT_RANGE
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or not lo <= v <= hi:
+                raise ValueError(f"{k} {lo}-{hi} sn arasında olmalı")
             v = float(v)
         ov[k] = v.strip() if isinstance(v, str) else v
     p = overrides_path()
@@ -105,12 +111,51 @@ class ChatClient(Protocol):
     def chat(self, messages: list[dict], timeout_s: float, max_tokens: int, temperature: float) -> str: ...
 
 
+class ChatReply(str):
+    """chat() dönüşü: düz metin gibi davranır (eski çağıranlar ve sahte istemciler str döndürmeye devam edebilir), ek olarak Ollama'nın
+    ayrı verdiği düşünme metnini (`thinking`) ve ölçüm alanlarını (`meta`: eval_tokens, ollama_s, load_s) taşır. Paylaşılan istemcide
+    'son çağrının ölçümü' gibi bir durum tutulmaz; eşzamanlı aramalarda ölçümler karışmasın diye değerle döner."""
+    thinking: str = ""
+    meta: dict = {}
+
+    def __new__(cls, content: str, thinking: str = "", meta: dict | None = None):
+        obj = super().__new__(cls, content or "")
+        obj.thinking = thinking or ""
+        obj.meta = dict(meta or {})
+        return obj
+
+
+_THINK_BLOCK = re.compile(r"<think>.*?(?:</think>|$)", re.IGNORECASE | re.DOTALL)
+
+
+def split_thinking(raw) -> tuple[str, str]:
+    """(cevap, düşünme). Düşünme ya Ollama'nın ayrı `message.thinking` alanında (ChatReply.thinking) ya da eski/uyumsuz sürümlerde içerikte
+    <think>...</think> bloğu olarak gelir. Blok kapanmadıysa (num_predict düşünmenin ortasında kestiyse) sonrası tümüyle düşünmedir:
+    cevap boş kalır ve denetim 'empty' ile havuza düşürür. Düşünme metni ASLA söylenmez ve denetime de girmez; yalnız uzunluğu kaydedilir."""
+    text = str(raw or "")
+    parts = [getattr(raw, "thinking", "") or ""]
+    parts += [m.group(0) for m in _THINK_BLOCK.finditer(text)]
+    answer = _THINK_BLOCK.sub(" ", text)
+    pieces = re.split(r"</think>", answer, flags=re.IGNORECASE)
+    if len(pieces) > 1:      # açılışı olmadan kapanan blok (bazı şablonlar <think> açılışını istemde bırakır): kapanıştan öncesi düşünmedir
+        parts.extend(pieces[:-1])
+        answer = pieces[-1]
+    thinking = re.sub(r"</?think>", "", "".join(parts), flags=re.IGNORECASE).strip()
+    return answer.strip(), thinking
+
+
 class OllamaChatClient:
     """Ollama HTTP API (/api/chat, /api/ps). L2 profilinin ayrıştırıcısıyla AYNI Ollama modeli kullanılır (bellekte tek kopya).
-    Sıcaklık /api/ps ile denetlenir ve `ttl_s` boyunca önbelleklenir (tur başına ağ yoklaması olmasın); başarılı bir çağrı sıcak sayılır."""
+    Sıcaklık /api/ps ile denetlenir ve `ttl_s` boyunca önbelleklenir (tur başına ağ yoklaması olmasın); başarılı bir çağrı sıcak sayılır.
 
-    def __init__(self, model: str, url: str | None = None, ttl_s: float = 30.0, probe_timeout_s: float = 0.25):
+    `think`: istek gövdesindeki Ollama `think` alanı. Varsayılan False (instruct-2507 modeli; eskiden beri gönderilen ve kullanıcının Mac'teki
+    Ollama'sında 2026-11-03 gerçek ölçümünde sorunsuz çalışan değer; alanı hiç göndermemek yerine false göndermek, düşünme destekleyen
+    bir modele geçilse bile sessizce düşünmeye başlamasını engeller). True yalnızca ayrı thinking modeliyle kullanılır (ayar 'thinking');
+    instruct modele think:true göndermek bazı Ollama sürümlerinde 'does not support thinking' hatası verir, bu yüzden model ve think birlikte seçilir."""
+
+    def __init__(self, model: str, url: str | None = None, ttl_s: float = 30.0, probe_timeout_s: float = 0.25, think: bool = False):
         self.model = model
+        self.think = bool(think)
         self.url = (url or os.environ.get("OLLAMA_URL", "http://localhost:11434")).rstrip("/")
         self.ttl_s = ttl_s
         self.probe_timeout_s = probe_timeout_s
@@ -146,24 +191,28 @@ class OllamaChatClient:
         from ..providers.local import _keep_alive
 
         res = httpx.post(f"{self.url}/api/chat", timeout=httpx.Timeout(timeout_s, connect=min(0.3, timeout_s)), json={
-            "model": self.model, "messages": messages, "stream": False, "think": False, "keep_alive": _keep_alive(),
+            "model": self.model, "messages": messages, "stream": False, "think": self.think, "keep_alive": _keep_alive(),
             "options": {"num_predict": max_tokens, "temperature": temperature}})
         res.raise_for_status()
         self.mark(True)
-        return (res.json().get("message") or {}).get("content", "")
+        body = res.json()
+        msg = body.get("message") or {}
+        ns = lambda k: round(body[k] / 1e9, 3) if isinstance(body.get(k), (int, float)) else None   # Ollama süreleri nanosaniye
+        meta = {"eval_tokens": body.get("eval_count"), "ollama_s": ns("total_duration"), "eval_s": ns("eval_duration"), "load_s": ns("load_duration")}
+        return ChatReply(msg.get("content", ""), msg.get("thinking") or "", {k: v for k, v in meta.items() if v is not None})
 
 
-_clients: dict[tuple[str, str], OllamaChatClient] = {}
+_clients: dict[tuple[str, str, bool], OllamaChatClient] = {}
 _clients_lock = threading.Lock()
 
 
-def ollama_client(model: str, ttl_s: float = 30.0) -> OllamaChatClient:
-    """Süreç içinde model başına tek istemci (sıcaklık önbelleği aramalar arasında paylaşılır)."""
+def ollama_client(model: str, ttl_s: float = 30.0, think: bool = False) -> OllamaChatClient:
+    """Süreç içinde (model, think) başına tek istemci (sıcaklık önbelleği aramalar arasında paylaşılır)."""
     url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
     with _clients_lock:
-        c = _clients.get((url, model))
+        c = _clients.get((url, model, bool(think)))
         if c is None:
-            c = _clients[(url, model)] = OllamaChatClient(model, url, ttl_s)
+            c = _clients[(url, model, bool(think))] = OllamaChatClient(model, url, ttl_s, think=think)
         return c
 
 
@@ -343,69 +392,102 @@ class FreeResult:
     category: str | None = None
     fails: list[str] = field(default_factory=list)
     candidate: str | None = None     # denetimden geçmeyen model çıktısı (inceleme için; SÖYLENMEZ)
+    thinking: bool = False           # bu deneme thinking modeli + think:true ile mi yapıldı (ölçüm ayarı)
+    think_chars: int | None = None   # ayıklanan düşünme metninin uzunluğu (metnin kendisi kaydedilmez/söylenmez)
+    eval_tokens: int | None = None   # Ollama eval_count: üretilen TÜM tokenlar (thinking açıkken düşünme + cevap; Ollama ayrı sayı vermez)
+    ollama_s: float | None = None    # Ollama total_duration (sn): sunucu tarafı süre; `seconds` ise ağ + yoklama dahil uçtan uca
 
     def event(self, step_key: str) -> dict:
         d = {k: v for k, v in asdict(self).items() if v not in (None, [])}
+        if not self.thinking:
+            d.pop("thinking", None)   # thinking kapalıyken olay eskisiyle aynı alanları taşır (kayıtta free_reply_thinking=false yazılır)
         return {"type": "free_reply", "step": step_key, **d}
 
 
 class FreeReplier:
-    """Bir aramaya bağlı serbest cevap üretici. İstemci ve ayarlar dışarıdan verilir (testlerde sahte istemci)."""
+    """Bir aramaya bağlı serbest cevap üretici. İstemci ve ayarlar dışarıdan verilir (testlerde sahte istemci).
 
-    def __init__(self, client: ChatClient, cfg: dict | None = None, assistant: str = "Ayşe", clock=time.perf_counter):
-        self.client = client
+    Thinking (ölçüm ayarı, varsayılan kapalı): cfg['thinking'] açıksa istek `thinking_client` ile (thinking_model, think:true),
+    `thinking_timeout_s` ve `thinking_max_tokens` ile yapılır. Kategori, soğuk model, zaman aşımı, denetim ve havuza düşüş kuralları
+    AYNIDIR; düşünme metni ayıklanır, yalnız son cevap denetlenir ve söylenir. thinking_client verilmezse config'teki thinking_model için
+    paylaşılan Ollama istemcisi kullanılır (ağ çağrısı ilk generate'te olur)."""
+
+    def __init__(self, client: ChatClient, cfg: dict | None = None, assistant: str = "Ayşe", clock=time.perf_counter,
+                 thinking_client: ChatClient | None = None):
         self.cfg = {**defaults(), **(cfg or {})}
+        self.thinking = bool(self.cfg.get("thinking", False))
+        if self.thinking and thinking_client is None:
+            thinking_client = ollama_client(self.cfg["thinking_model"], float(self.cfg.get("warm_check_ttl_s", 30)), think=True)
+        self.base_client = client
+        self.client = thinking_client if self.thinking else client   # bu aramada çağrılan istemci (model kayda bundan yazılır)
         self.assistant = assistant
         self.clock = clock
+
+    def _timeout(self) -> float:
+        return float(self.cfg.get("thinking_timeout_s", 8.0) if self.thinking else self.cfg.get("timeout_s", 1.5))
+
+    def _max_tokens(self) -> int:
+        return int(self.cfg.get("thinking_max_tokens", 768) if self.thinking else self.cfg.get("max_tokens", 90))
 
     def eligible(self, category: str | None) -> bool:
         return bool(self.cfg.get("enabled", True)) and (category or "other") in set(self.cfg.get("categories", []))
 
     def describe(self) -> dict:
-        return {"enabled": bool(self.cfg.get("enabled", True)), "model": getattr(self.client, "model", None),
-                "timeout_s": float(self.cfg.get("timeout_s", 1.5)), "categories": list(self.cfg.get("categories", [])),
-                "prompt": {"version": PROMPT_VERSION, "hash": prompt_hash()}}
+        d = {"enabled": bool(self.cfg.get("enabled", True)), "model": getattr(self.client, "model", None),
+             "timeout_s": self._timeout(), "categories": list(self.cfg.get("categories", [])),
+             "prompt": {"version": PROMPT_VERSION, "hash": prompt_hash()}, "thinking": self.thinking}
+        if self.thinking:
+            d["max_tokens"] = self._max_tokens()
+        return d
 
     def generate(self, step: dict, question: str, utterance: str, category: str | None, require_warm: bool = True) -> FreeResult:
         """require_warm=False yalnızca değerlendirme betiği içindir (soğuk modeli bilerek yükler); canlı akış her zaman True."""
         cat = category or "other"
         model = getattr(self.client, "model", None)
+        th = {"thinking": self.thinking}
         if not self.cfg.get("enabled", True):
-            return FreeResult(None, "pool", "disabled", 0.0, model, cat)
+            return FreeResult(None, "pool", "disabled", 0.0, model, cat, **th)
         if not self.eligible(cat):
-            return FreeResult(None, "pool", "category", 0.0, model, cat)
-        timeout = float(self.cfg.get("timeout_s", 1.5))
+            return FreeResult(None, "pool", "category", 0.0, model, cat, **th)
+        timeout = self._timeout()
         t0 = self.clock()
         if require_warm:
             try:
                 warm = self.client.is_warm()
             except Exception:  # noqa: BLE001
                 warm = None
-            if warm is not True:
-                return FreeResult(None, "pool", "cold" if warm is False else "unreachable", round(self.clock() - t0, 3), model, cat)
+            if warm is not True:   # thinking modeli bellekte değilse de bekleme yok: havuz (yükleme ölçüme girmesin, tur takılmasın)
+                return FreeResult(None, "pool", "cold" if warm is False else "unreachable", round(self.clock() - t0, 3), model, cat, **th)
         msgs = build_messages(step, question, utterance, cat, self.assistant, int(self.cfg.get("max_chars", 200)))
         try:
-            raw = self.client.chat(msgs, timeout, int(self.cfg.get("max_tokens", 90)), float(self.cfg.get("temperature", 0.6)))
+            raw = self.client.chat(msgs, timeout, self._max_tokens(), float(self.cfg.get("temperature", 0.6)))
         except Exception as exc:  # noqa: BLE001 — ağ/HTTP/zaman aşımı: havuz konuşur
             name = type(exc).__name__.lower()
             reason = "timeout" if "timeout" in name or "timedout" in name else "error"
-            return FreeResult(None, "pool", reason, round(self.clock() - t0, 3), model, cat, [f"{type(exc).__name__}: {str(exc)[:120]}"])
+            return FreeResult(None, "pool", reason, round(self.clock() - t0, 3), model, cat, [f"{type(exc).__name__}: {str(exc)[:120]}"], **th)
         elapsed = self.clock() - t0
-        text = normalize(raw)
+        answer, thought = split_thinking(raw)       # düşünme metni cevaba karışmaz: yalnız son cevap normalize + denetimden geçer
+        meta = getattr(raw, "meta", None) or {}
+        m = {**th, "eval_tokens": meta.get("eval_tokens"), "ollama_s": meta.get("ollama_s"),
+             "think_chars": len(thought) if (thought or self.thinking) else None}
+        text = normalize(answer)
         if elapsed > timeout:            # httpx zaman aşımı işlem başınadır; toplam süre de sınırı aşmamalı
-            return FreeResult(None, "pool", "timeout", round(elapsed, 3), model, cat, candidate=text[:300] or None)
+            return FreeResult(None, "pool", "timeout", round(elapsed, 3), model, cat, candidate=text[:300] or None, **m)
         fails = audit(text, utterance=utterance, step=step, cfg=self.cfg)
         if fails:
-            return FreeResult(None, "pool", "audit", round(self.clock() - t0, 3), model, cat, fails, text[:300])
-        return FreeResult(text, "qwen", None, round(self.clock() - t0, 3), model, cat)
+            return FreeResult(None, "pool", "audit", round(self.clock() - t0, 3), model, cat, fails, text[:300], **m)
+        return FreeResult(text, "qwen", None, round(self.clock() - t0, 3), model, cat, **m)
 
 
 def make_default(assistant: str = "Ayşe") -> FreeReplier | None:
-    """Canlı arama için: ayar kapalıysa None (FlowDriver eski davranışla çalışır, hiçbir ağ çağrısı yapılmaz)."""
+    """Canlı arama için: ayar kapalıysa None (FlowDriver eski davranışla çalışır, hiçbir ağ çağrısı yapılmaz).
+    Serbest cevap kapalıysa thinking ayarı ne olursa olsun None (Qwen hiç çağrılmaz). Thinking yalnız açık serbest cevabın modelini değiştirir."""
     cfg = settings()
     if not cfg.get("enabled", True):
         return None
-    return FreeReplier(ollama_client(cfg["model"], float(cfg.get("warm_check_ttl_s", 30))), cfg, assistant)
+    ttl = float(cfg.get("warm_check_ttl_s", 30))
+    think = ollama_client(cfg["thinking_model"], ttl, think=True) if cfg.get("thinking") else None
+    return FreeReplier(ollama_client(cfg["model"], ttl), cfg, assistant, thinking_client=think)
 
 
 def status(cfg: dict | None = None) -> dict:
@@ -415,4 +497,53 @@ def status(cfg: dict | None = None) -> dict:
     state = c._probe()
     c.mark(state)
     return {"reachable": state is not None, "warm": state is True, "model": cfg["model"]}
+
+
+# ---- thinking ölçüm özeti (Ayarlar ekranı) -------------------------------------------------------------------------------------
+NOT_CALLED = ("cold", "unreachable", "category", "disabled")   # bu sebeplerde LLM'e istek gitmedi: süre istatistiğine girmez
+
+
+def _pct(xs: list[float], q: float) -> float | None:
+    if not xs:
+        return None
+    xs = sorted(xs)
+    return round(xs[min(len(xs) - 1, round(q * (len(xs) - 1)))], 3)
+
+
+def thinking_stats(folder: Path, last: int = 200) -> dict:
+    """Son `last` serbest cevap denemesini (oturum kayıtlarından, en yeni önce) thinking açık / kapalı diye ayırıp özetler.
+    Süre (`free_reply_s`, uçtan uca) yalnız LLM'e gerçekten istek giden turlardan hesaplanır; soğuk/ulaşılamıyor turları ayrıca sayılır.
+    Eski kayıtlarda `free_reply_thinking` yoktur: o turlar kapalı sayılır (thinking ayarı eklenmeden önce hep kapalıydı)."""
+    turns: list[tuple[str, dict]] = []
+    files = sorted(folder.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True) if folder.is_dir() else []
+    for path in files:
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        tlist = doc.get("turns") if isinstance(doc, dict) else None
+        if not isinstance(tlist, list):
+            continue
+        for t in reversed(tlist):
+            if isinstance(t, dict) and "free_reply_s" in t and t.get("free_reply_fallback") not in ("category", "disabled"):
+                turns.append((str(doc.get("started_at") or ""), t))
+        if len(turns) >= last:
+            break
+    turns = turns[:last]
+    out: dict = {"last": last, "turns": len(turns)}
+    for key, on in (("off", False), ("on", True)):
+        g = [t for _, t in turns if bool(t.get("free_reply_thinking", False)) is on]
+        called = [float(t["free_reply_s"]) for t in g if t.get("free_reply_fallback") not in NOT_CALLED]
+        reasons: dict[str, int] = {}
+        for t in g:
+            if t.get("reply_source") != "qwen":
+                r = t.get("free_reply_fallback") or "?"
+                reasons[r] = reasons.get(r, 0) + 1
+        out[key] = {"turns": len(g), "called": len(called),
+                    "qwen_rate": round(sum(t.get("reply_source") == "qwen" for t in g) / len(g), 3) if g else None,
+                    "fallback_rate": round(sum(t.get("reply_source") != "qwen" for t in g) / len(g), 3) if g else None,
+                    "fallback_reasons": reasons, "mean_s": round(statistics.mean(called), 3) if called else None,
+                    "p50_s": _pct(called, 0.5), "p95_s": _pct(called, 0.95),
+                    "models": sorted({t["free_reply_model"] for t in g if t.get("free_reply_model")})}
+    return out
 

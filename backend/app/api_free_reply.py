@@ -1,12 +1,14 @@
 """Ayarlar > Konu dışı serbest cevap (ADR 0009 adım 2; docs/serbest-cevap-qwen.md).
 
-GET: geçerli ayar, varsayılanlar ve Ollama/model durumu (ulaşılıyor mu, model bellekte mi). PUT: enabled / model / timeout_s
-(null -> varsayılan). Ayar yeni aramalara uygulanır; her arama kendi kaydına hangi ayarla yapıldığını yazar (config.free_reply)."""
+GET: geçerli ayar, varsayılanlar, Ollama/model durumu (ulaşılıyor mu, model bellekte mi; thinking açıksa thinking modeli için de) ve
+son serbest cevap turlarının thinking açık/kapalı süre özeti (`stats`). PUT: enabled / model / timeout_s / thinking / thinking_model /
+thinking_timeout_s (null -> varsayılan). thinking, enabled'dan bağımsız saklanır; ama enabled kapalıyken Qwen hiç çağrılmaz. Ayar yeni aramalara uygulanır; her arama kendi kaydına hangi ayarla yapıldığını yazar (config.free_reply)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from . import stt_runs
 from .voice import free_reply as F
 
 router = APIRouter(prefix="/api/free-reply", tags=["free-reply"])
@@ -16,9 +18,15 @@ def _view(with_status: bool = True) -> dict:
     cfg, d, ov = F.settings(), F.defaults(), F.load_overrides()
     out = {"enabled": bool(cfg["enabled"]), "model": cfg["model"], "timeout_s": float(cfg["timeout_s"]),
            "defaults": {k: d[k] for k in F.OVERRIDABLE}, "overridden": sorted(ov), "categories": list(cfg.get("categories", [])),
-           "timeout_range": list(F.TIMEOUT_RANGE), "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()}}
+           "timeout_range": list(F.TIMEOUT_RANGE), "prompt": {"version": F.PROMPT_VERSION, "hash": F.prompt_hash()},
+           "thinking": bool(cfg.get("thinking", False)), "thinking_model": cfg["thinking_model"],
+           "thinking_timeout_s": float(cfg["thinking_timeout_s"]), "thinking_timeout_range": list(F.THINKING_TIMEOUT_RANGE),
+           "thinking_max_tokens": int(cfg.get("thinking_max_tokens", 768))}
     if with_status:
         out["status"] = F.status(cfg)
+        if out["thinking"]:
+            out["thinking_status"] = F.status({**cfg, "model": cfg["thinking_model"]})
+    out["stats"] = F.thinking_stats(stt_runs.data_dir() / "voice-sessions")
     return out
 
 
@@ -31,6 +39,9 @@ class FreeReplyBody(BaseModel):
     enabled: bool | None = None
     model: str | None = None
     timeout_s: float | None = None
+    thinking: bool | None = None
+    thinking_model: str | None = None
+    thinking_timeout_s: float | None = None
 
 
 @router.put("")
