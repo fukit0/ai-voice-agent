@@ -130,3 +130,10 @@ Mac'te yeniden ölçüm:
 ./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku --system-file config/prompts/serbest-cevap-selin.txt
 ./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend qwen --system-file config/prompts/serbest-cevap-selin.txt
 ```
+
+
+## v7 gerçek ölçüm (2026-11-04 07:40 UTC)
+
+GERÇEK ÖLÇÜM v7 (2026-11-04 07:40 UTC, Ayarlar'daki ÖZEL istemle: prompt version 7, hash 5e421a808b90, custom=true; 34 vaka x3, canlı 96 tur): HAIKU 93/96 (0,969; v6 varsayılan 0,906; v6 istem.txt 0,583), p50 1,41 / p95 2,21 sn, en yavaş 3,76 sn, timeout 1 (f01), audit 5 (digit 2: 'bir ile on' yerine '1 ile 10' yazdı; iade 3 = f31 bilerek), ort. 15,6 kelime (en çok 27), ~$0,021. QWEN 40/96 (0,417) AMA ölçüm bozuk: ilk 28 tur ARDIŞIK timeout (idx 0-27) sonra hepsi normal => model Ollama'da soğuktu (Haiku koşusundan sonra boşaltılmış), eval cold_load_s ölçmedi (None). Soğuk sonrası 68 turda 40 geçti (0,59): digit 12 (hâlâ '1 ile 10 arasında puan verin' diye anket sorusunu yeniden soruyor), question_mark 11, realworld_claim 7. BULGU: realworld_claim DOĞRU geri çevirmeleri reddediyor ('Havaalanı hakkında bilgi veremem', 'Dolar kuru hakkında bilgi veremem'; f21/0, f34/1) = yanlış ret. Gerçek ihlal olan 'Evet, hava gerçekten sıcak değil' (f15) doğru reddedildi. Sınır: insan notu yok, metin ölçümü; Qwen ölçümü yeniden yapılmalı (önce modeli ısıt).
+
+Demoda: 'Haiku %97 geçti, p50 1,4 sn; yerel Qwen soğukken ilk çağrılarda timeout veriyor, ısıtma şart ve kalite Haiku'nun altında' diye anlatılır. Kanıt: evidence/free-reply-eval-haiku-20261104-074005, evidence/free-reply-eval-20261104-074207.
