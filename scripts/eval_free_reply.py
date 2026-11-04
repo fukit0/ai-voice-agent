@@ -93,6 +93,24 @@ def read_system_file(path: Path) -> str:
     return text
 
 
+def warm_up_ollama(client, system: str, timeout_s: float, rounds: int = 4, cold_timeout_s: float = 180.0,
+                   say=print, clock=time.perf_counter) -> float | None:
+    """Yerel modeli ölçümden ÖNCE ısıtır. Ölçülecek gerçek sistem istemiyle (aynı önek) uzun zaman aşımlı çağrılar yapar;
+    bir çağrı `timeout_s` içinde dönene kadar (en çok `rounds` kez) tekrarlar. Dönen değer: ilk çağrının süresi (soğuk yük),
+    ilk çağrı zaten hızlıysa None. Ölçüme girmez."""
+    msgs = [{"role": "system", "content": system}, {"role": "user", "content": "<musteri>merhaba</musteri>"}]
+    first = None
+    for i in range(rounds):
+        t0 = clock()
+        client.chat(msgs, cold_timeout_s, 8, 0.0)
+        dt = round(clock() - t0, 2)
+        first = dt if first is None else first
+        say(f"ısınma {i + 1}/{rounds}: {dt} sn")
+        if dt <= timeout_s:
+            return first if first > timeout_s else None
+    raise RuntimeError(f"model {rounds} ısınma çağrısında da {timeout_s} sn altına inmedi (son {dt} sn); başka bir süreç Ollama'yı meşgul ediyor olabilir")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--runs", type=int, default=3, help="vaka başına tekrar (sıcaklık 0,6: çıktı değişir)")
@@ -147,20 +165,17 @@ def main() -> int:
         client = F.OllamaChatClient(model, ttl_s=0, think=args.thinking)
     load_s = None
     if not args.fake and not haiku:      # Haiku: soğuk model yok, ısınma/yoklama atlanır
-        warm = client.is_warm()
-        if warm is None:
+        if client.is_warm() is None:
             print(f"Ollama'ya ulaşılamıyor ({client.url}). `ollama serve` çalışıyor mu?", file=sys.stderr)
             return 2
-        if not warm:
-            print(f"{model} soğuk; ısınma çağrısı (ölçüme girmez, ~1 dk sürebilir)...", flush=True)
-            t0 = time.perf_counter()
-            try:
-                client.chat([{"role": "user", "content": "Tek kelimeyle cevap ver: hazır mısın?"}], 300, 8, 0.0)
-            except Exception as exc:  # noqa: BLE001
-                print(f"Isınma başarısız: {exc}", file=sys.stderr)
-                return 2
-            load_s = round(time.perf_counter() - t0, 2)
-            print(f"ısındı ({load_s} sn)")
+        # 2026-11-04 ölçümü: /api/ps 'yüklü' dese de ilk 28 tur timeout aldı (model yeniden yükleniyordu); bu yüzden ısınma
+        # /api/ps'ye güvenmez, ölçülecek GERÇEK istemle ısınana kadar döner.
+        sys_cfg = {**cfg, "system_prompt": system_override} if system_override is not None else cfg
+        try:
+            load_s = warm_up_ollama(client, F.system_text(sys_cfg), timeout)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Isınma başarısız: {exc}", file=sys.stderr)
+            return 2
     if system_override is not None:
         cfg = {**cfg, "system_prompt": system_override}
     live_rep = F.FreeReplier(FakeClient(backend=args.backend), cfg)
