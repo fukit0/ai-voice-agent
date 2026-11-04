@@ -537,3 +537,5 @@ agents do not update it automatically.
 - Session 047 (başı): v7 gerçek ölçüm: Haiku 93/96 (p50 1,41 sn); Qwen 40/96 ama ilk 28 tur soğuk model timeout'u (eval ısıtma yok); realworld_claim 'bilgi veremem' yanlış reti; Qwen hâlâ rakamla soru tekrarlıyor.
 
 - Session 047: Qwen eval ısıtması sağlamlaştırıldı (scripts/eval_free_reply.py warm_up_ollama): /api/ps 'yüklü' dese de gerçek istemle, yeniden yükleme bitene kadar (en çok 4 tur, 180 sn) ısınır; cold_load_s artık dolar. Test: backend/tests/test_eval_warmup.py (4). Canlı arama başında ısıtma hâlâ açık iş.
+
+- Session 047: Qwen v7 ısınma sonrası ölçüm: 69/96, timeout 0, p50 0,70 sn, cold load 94 sn; kalite Haiku'dan zayıf (digit 10, question_mark 7, anlamsız geçenler); realworld_claim 'bilgi veremem' yanlış reti hâlâ açık.
