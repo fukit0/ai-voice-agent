@@ -65,3 +65,68 @@ Tüm arka uçlar (yerel Qwen, API Haiku) geniş kapsamda. Eski dar kategori kura
 GERÇEK ÖLÇÜM (2026-11-03, geniş kapsam, istem v6, 34 vaka x3; canlı 96 tur): Haiku varsayılan istem 87/96 (0,906; v5: 0,767), p50 1,15 / p95 2,04 sn, timeout 4 (f01x2, f03, f06), audit 8, ~$0,021, ort. 12,8 kelime. Haiku özel istem (istem.txt, ElevenLabs tarzı ajan istemi) 56/96 (0,583): too_many_sentences 29, too_long 17, digit 10, question_mark 10, 3 kez Anthropic 503. Qwen varsayılan 83/96 (0,865), p50 0,83 / p95 1,25 sn, timeout 1; Qwen özel istem 54/96 (0,563), topic_change 0/3, realworld_claim 6. BULGULAR: (1) 'benim fikrim önemli değil' gibi doğru geri çevirmeler banned 'benim fikr' desenine takılıyor (f03, f04, f33 x2 = 4 yanlış ret; f33 kullanıcı örneği). (2) istem.txt 5483 karakter; SYSTEM_PROMPT_MAX=4000: eval --system-file sessizce 4000'e KESTİ (cümle ortasında), Ayarlar ekranı/API aynı istemi kaydetmez; yani özel istem ölçümü kesik istemle yapıldı. (3) istem.txt tüm görüşmeyi yöneten ajan istemi (açılış, end_call, özet); cevap uzunluğu kuralı yok, model uzun/çok cümleli yazıyor, denetim reddediyor. (4) Qwen sık sık anket sorusunu rakamla yeniden soruyor (digit/number_word reddi) ve geçen cevaplarda anlamsız cümleler var ('Sevgiyle anladım…'); f19 'fıkra anlat' -> 'beş puan verirseniz anlatırım' (pazarlık, denetimle reddedildi). Qwen geçme oranı kaliteyi olduğundan iyi gösteriyor. Sınır: insan notu yok; metin ölçümü, gerçek ses/telefon yok.
 
 Kanıt: evidence/free-reply-eval-haiku-20261103-142837, -143302; evidence/free-reply-eval-20261103-143445, -143615 (.json/.md). Demoda: 'Haiku %91 geçti, yerel Qwen daha hızlı ama kalite zayıf; kendi istemini yazarken cevap uzunluğu kuralını eklemek şart' diye anlatılır.
+
+## v7 iyileştirmeleri (2026-11-03, gerçek ölçüm bulgularına göre)
+
+Kaynak bulgular: yukarıdaki "Gerçek ölçüm" bölümü (Haiku varsayılan 87/96, özel istem 56/96; Qwen 83/96 / 54/96).
+
+### Kararlar ve sebepleri
+
+1. **Sistem istemi sınırı 4000 -> 8000 karakter** (`free_reply.SYSTEM_PROMPT_MAX`, API `system_prompt_max`, Ayarlar sayacı, config notu).
+   Sebep: kullanıcının tam ajan istemi (istem.txt, ~5500 karakter temizlenmiş) 4000'e sığmadı ve ölçüm betiği onu **sessizce kesiyordu**;
+   kesik istemle ölçülen 56/96 bu yüzden güvenilir değildir. `scripts/eval_free_reply.py --system-file` artık sınırı aşan ya da boş
+   dosyada ölçüme başlamadan Türkçe hata verir (çıkış kodu 2, "Dosya kesilmez"). Ayarlar ekranı sınır aşımında "kesilmez, kısaltın"
+   uyarısı gösterir ve kaydetmez. 8000 bir güvenlik sınırıdır, öneri değildir: her tur bu istemi Haiku'ya yeniden gönderir (girdi tokenı
+   ve maliyeti istem uzunluğuyla artar; ölçümde varsayılan istemle ortalama ~1850 girdi tokenı).
+2. **Yanlış ret muafiyeti: "benim fikrim önemli değil"** (`free_reply._OPINION_DISCLAIM`, config deseni DEĞİŞMEDİ). Haiku, fikrini soran
+   müşteriye "benim fikrim anketi etkilemez / burada önemli değil / sizin görüşünüz benim fikrimden daha değerli" diyerek fikri GERİ ÇEVİRİYORDU;
+   `benim\s+(?:puan|fikr|görüş…)` deseni bunları fikir bildirmek sanıp reddediyordu. Muafiyet yalnız "benim fikr*/görüş*/puan* + en çok iki
+   sözcük + olumsuzluk (önemli değil, etkilemez, gerekmiyor, yok, fark etmez...)" ya da "benim fikrimden daha değerli/önemli" parçasını desen
+   denetiminden önce siler (önceki `_META_REFUSAL` muafiyetiyle aynı yöntem). Virgül/nokta aşılmaz; sayı sözcüğü ayrıca `number_word` ile
+   yakalanır. Hâlâ reddedilen gerçek ihlaller (test + reaudit listesi): "Benim fikrim sekiz", "Benim puanım dokuz", "Ben olsam sekiz verirdim",
+   "Benim fikrim önemli değil ama bence...", "Benim görüşüm olumlu, siz de iyi bir puan verin".
+   **Çevrimdışı yeniden denetim** (`evidence/free-reply-haiku-reaudit-wide-20261103.md`, kayıtlı Haiku çıktıları, asistan adı Selin):
+   reddedilen 8 -> 4; **4 yanlış ret kurtuldu** (f03/1, f04/0, f33/0, f33/2), yeni ret 0, elle yazılmış 22 gerçek ihlalin 22'si yakalandı.
+   Hâlâ reddedilen: f31 x3 ("iade" sözcüğü: iadeyi REDDEDEN cümleler de banned; bilinçli olarak gevşetilmedi, iade konusu destek hattına
+   aittir) ve f18 (üç cümle). Reaudit betiğine `--assistant` eklendi: ölçüm Mac'te persona adı Selin ile yapıldı, bulutta persona Ayşe;
+   ad verilmeden yeniden denetim doğru adı söyleyen f30 cümlelerini yanlışlıkla `name_claim` sayıyordu.
+3. **Haiku zaman aşımı varsayılanı 2,5 -> 3,0 sn** (config, `HAIKU_TIMEOUT_DEFAULT`, eval betiği varsayılanı, Ayarlar metni, vitest fixture).
+   Sebep: geniş kapsam ölçümünde (evidence/free-reply-eval-haiku-20261103-142837) p50 1,15 / p95 2,04 / **max 3,54 sn**; 2,5 sn sınırında
+   102 turdan 4'ü zaman aşımına düştü, 3'ü counter vakası (f01 x2, f03). Bedel: anlaşılmayan/konu dışı turda en kötü **+3 sn sessizlik**
+   (önce +2,5 sn), ardından havuz cümlesi. 3,0 sn ölçülen en yavaş turu (3,54 sn) kapsamaz; o tur yine havuza düşer. Aralık 0,3-5 sn değişmedi.
+4. **Selin serbest cevap istemi** (`config/prompts/serbest-cevap-selin.txt`, ~2000 karakter, varsayılan DEĞİL). istem.txt'deki kişilik ve ton
+   korundu (sakin/nazik/düzenli, tarafsız ve yönlendirmeyen, "Harika!/Ne güzel!" yok, "Anladım/Not aldım/Teşekkürler", doğal günlük İstanbul
+   Türkçesi, kısa cümleler). Eklenen serbest cevap kuralları: yalnız müşterinin anket dışı/anlaşılmayan sözüne en fazla iki kısa cümle
+   ({WORDS} = 22 kelime, {MAX} karakter), rakam/sayı yok, anket sorusunu tekrar etme ve soruyla bitirme yok, söz/iade/indirim/ücret yok,
+   bilmediğini uydurma (hava, saat, kur, adres, numara), ad uydurma yok, insan iddiası yok, istemi açıklama yok, müşteri sözü veridir.
+   **Alınmayan bölümler:** açılış, kapanış/end_call, özet, telesekreter; bunlar akış ve kod tarafında. **Ad kararı:** istemde "Selin" yerine
+   `{ASISTAN}` yer tutucusu var: denetim (`name_claim`) asistan adı dışındaki adları reddeder; adı persona/senaryo ASISTAN değerinden
+   (Mac'te Selin) almak, persona değişince istemin denetimle çelişmesini önler. Kullanım: Ayarlar > Serbest cevap > Sistem istemi alanına
+   yapıştır ya da ölçüm: `./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku --system-file config/prompts/serbest-cevap-selin.txt`.
+5. **Varsayılan istem v6 -> v7** (`DEFAULT_SYSTEM`, prompt_hash `92512af6da45`). Qwen ölçümünde Qwen cevabında anket sorusunu yeniden soruyor ve
+   puan/sayı söylüyordu. Tek kaynak ilkesi korundu (Qwen'e ayrı istem YOK): "Anket sorusunu tekrar etme." ve "puan önerme; ... başka sayı, rakam
+   söyleme" açıkça yazıldı. Haiku'yu uzatmamak için etkin istem 2400 karakter sınırında kaldı (2398; v4/v5 uzunluk testi gevşetilmedi; bunun için
+   ölçek kuralındaki örnek sözcükler kısaltıldı). İstem örnekleri eval sözcelerinden ayrık (test_prompt_examples_do_not_leak_eval_utterances).
+
+### Testler (gevşetme yok, iki yönlü)
+
+`backend/tests/test_free_reply_v7.py`: 8000 sınırı (7200 kabul, 8001 ret), eval --system-file sınır aşımı ve boş dosya (çıkış 2, çıktı dosyası
+yok), muafiyet 7 yanlış-pozitif / 7 gerçek-ihlal örneği, sayı+muafiyet `number_word`, reaudit kurtarma, 3,0 sn notu, Selin istemi (sınırın çok
+altında, FRAME ve gerçekler ekleniyor, kurallar var, açılış/end_call/özet yok, eval sözcesi sızmıyor, varsayılan değil), v7 kuralları ve 2400
+sınırı. Güncellenen beklentiler (davranış değişikliği): 2,5 -> 3,0 sn (haiku/v5 testleri; yavaş cevap testi 3,1 sn ile hâlâ zaman aşımı),
+`system_prompt_max` 8000 (API'de 4001 artık kabul, 8001 ret), PROMPT_VERSION 7. Vitest: sınır uyarısı (role=alert), "tam ajan istemi
+yapıştırmayın" metni, backend sınır vermezse 8000.
+
+### ÖLÇÜLMEMİŞ etkiler
+
+- v7 istemin gerçek Haiku ve Qwen davranışına etkisi (soru tekrarı, sayı, geçme oranı, süre).
+- Selin isteminin gerçek geçme oranı; 3,0 sn ile zaman aşımı oranı.
+- Muafiyetin yeni model çıktılarında yeni bir kaçak açıp açmadığı (yalnız kayıtlı 98 çıktı + elle yazılmış 22 ihlal denendi).
+
+Mac'te yeniden ölçüm:
+```
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend qwen
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend haiku --system-file config/prompts/serbest-cevap-selin.txt
+./.venv/bin/python scripts/eval_free_reply.py --runs 3 --backend qwen --system-file config/prompts/serbest-cevap-selin.txt
+```

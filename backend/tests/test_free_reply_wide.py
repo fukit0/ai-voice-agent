@@ -170,7 +170,7 @@ def test_custom_prompt_used_verbatim_with_fixed_frame_and_hash_changes():
     assert '<musteri>"' in c.calls[0][1]["content"]                       # müşteri sözü hâlâ ayraç içinde VERİ
     assert fr.custom and not fr0.custom and fr.phash != fr0.phash
     assert fr.generate(STEP_Q31, "s", THIRD, "unclear").prompt_hash == fr.phash
-    assert fr.describe()["prompt"] == {"version": "6", "hash": fr.phash, "custom": True}
+    assert fr.describe()["prompt"] == {"version": "7", "hash": fr.phash, "custom": True}
 
 
 @pytest.mark.parametrize("val", ["", "   \n\t ", None, F.DEFAULT_SYSTEM])
@@ -234,10 +234,12 @@ def test_api_exposes_prompt_fields_and_saves(monkeypatch):
     cl = TestClient(app)
     v = cl.get("/api/free-reply").json()
     assert v["system_prompt"] is None and v["default_system_prompt"] == F.DEFAULT_SYSTEM and v["frame"] == F.FRAME
-    assert v["system_prompt_max"] == 4000 and v["use_pool_fallback_only"] is True and v["prompt"]["custom"] is False
+    assert v["system_prompt_max"] == 8000 and v["use_pool_fallback_only"] is True and v["prompt"]["custom"] is False
     assert "Bilinen gerçekler" in v["effective_system_prompt"] and F.FRAME in v["effective_system_prompt"]
     v2 = cl.put("/api/free-reply", json={"system_prompt": "Özel istem {ASISTAN}."}).json()
     assert v2["system_prompt"] == "Özel istem {ASISTAN}." and v2["prompt"]["custom"] is True and v2["prompt"]["hash"] != v["prompt"]["hash"]
     assert v2["effective_system_prompt"].startswith("Özel istem Ayşe.")
-    assert cl.put("/api/free-reply", json={"system_prompt": "x" * 4001}).status_code == 400
+    assert cl.put("/api/free-reply", json={"system_prompt": "x" * 8001}).status_code == 400
+    assert cl.put("/api/free-reply", json={"system_prompt": "x" * 4001}).status_code == 200   # 2026-11-03: sınır 4000 -> 8000
+    cl.put("/api/free-reply", json={"system_prompt": None})
     assert cl.put("/api/free-reply", json={"system_prompt": None}).json()["system_prompt"] is None

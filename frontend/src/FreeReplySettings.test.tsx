@@ -77,9 +77,13 @@ it("sistem istemi: varsayılan görünür, sayaç, kaydet / geri al / varsayıla
   expect(screen.getByLabelText("Karakter sayısı").textContent).toBe("11 / 40");
   fireEvent.click(btn("Geri al"));
   expect(area.value).toBe(DEF);
+  expect(screen.queryByRole("alert")).toBeNull();                       // sınır içinde uyarı yok
   fireEvent.change(area, { target: { value: "x".repeat(41) } });
   expect(btn("Kaydet")).toBeDisabled();
+  expect(screen.getByRole("alert").textContent).toContain("40 karakter sınırını aşıyor; kesilmez");   // 2026-11-03: açık uyarı
+  expect(screen.getByText(/tam ajan istemi \(açılış, kapanış, özet\) yapıştırmayın/)).toBeInTheDocument();
   fireEvent.change(area, { target: { value: "Kısa konuş." } });
+  expect(screen.queryByRole("alert")).toBeNull();
   fireEvent.click(btn("Kaydet"));
   await waitFor(() => expect(puts).toEqual([{ system_prompt: "Kısa konuş." }]));
   state = { ...state, system_prompt: "Kısa konuş.", prompt: { version: "6", hash: "cus", custom: true } } as typeof state;
@@ -107,4 +111,16 @@ it("eski backend istem alanlarını vermezse bölüm gösterilmez", async () => 
   render(<FreeReplySettings />);
   await screen.findByLabelText("Serbest cevap");
   expect(screen.queryByLabelText("Sistem istemi")).toBeNull();
+});
+
+it("backend sınırı vermezse sayaç 8000 kabul eder (2026-11-03: 4000 -> 8000)", async () => {
+  const { system_prompt_max: _omit, ...noMax } = promptState;
+  state = { ...noMax } as typeof state;
+  render(<FreeReplySettings />);
+  const area = (await screen.findByLabelText("Sistem istemi")) as HTMLTextAreaElement;
+  fireEvent.change(area, { target: { value: "x".repeat(6000) } });
+  expect(screen.getByLabelText("Karakter sayısı").textContent).toBe("6000 / 8000");
+  expect(screen.queryByRole("alert")).toBeNull();
+  fireEvent.change(area, { target: { value: "x".repeat(8001) } });
+  expect(screen.getByRole("alert").textContent).toContain("8000 karakter sınırını aşıyor");
 });

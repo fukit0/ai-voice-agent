@@ -465,3 +465,15 @@ Hizli yol ayar olarak her cascade profilde Ayarlar > Cevap anlama'dan acilip kap
 **Kısa cevap:** A1S'te (Haiku) cevap olmayan her turda LLM müşterinin söylediğine kısa, anlamlı bir karşılık verir, sonra kod anket sorusunu yeniden okur ("Eşim yaptı galiba görüşmeyi, ben cevaplasam olur mu?" artık "Özür dilerim, tam anlayamadım" almaz). Sistem istemi Ayarlar'dan düzenlenir; varsayılana tek tuşla dönülür. Cevap, ret, aranmama, geri arama ve hızlı yol turlarında LLM çağrılmaz; müşterinin cevabı hiçbir zaman LLM cümlesinden kaydedilmez. Kayıt/numara/amaç sorularında LLM config'teki "bilinen gerçekler"i kendi cümlesiyle söyler.
 **Bu sınırlamayı bil:** Geniş kapsam gerçek Haiku ile ÖLÇÜLMEDİ; "uydurmuyor" ya da "her söze doğru cevap veriyor" deme. Anlaşılmayan turlara ~1-2,5 sn LLM gecikmesi eklenir (önceden anında cevap vardı). Ankete kimin cevap verebileceği (eşi görüşme yaptıysa) için iş kuralı yok: LLM "siz de cevaplayabilirsiniz" diyebilir ve bunu denetim yakalayamaz. Yazdığınız istem denetimi kapatmaz: iade/indirim vaadi, istem sızıntısı, ad uydurma yine söylenmez, yedek cümle konuşur. Lokal Qwen profillerinde (L1-L5) geniş kapsam kapalı (Qwen ölçümünde uydurma çıktı); orada hâlâ "tam anlayamadım" duyulabilir. Ayar değişikliği yeni aramalara uygulanır; backend yeniden başlatıldıktan sonra geçerli.
 **Güncelleme (2026-11-03):** Geniş kapsam yerel Qwen profillerinde de açık (kullanıcı kararı). Bu sınırlamayı bil: Qwen bu kapsamda ÖLÇÜLMEDİ; daha önceki gerçek Qwen ölçümünde hava/sohbet gibi kategorilerde uydurma cümleler çıkmıştı, bu yüzden demoda önerilen profil A1S (Haiku). L2 gibi yerel profillerde 'tam anlayamadım' yerine LLM konuşur ama kalite/gecikme Haiku'dan düşük olabilir.
+
+## S63 — Kendi sistem istemimizi yazabilir miyiz? ElevenLabs'te kullandığımız tam ajan istemini yapıştırsak olur mu? (2026-11-03)
+**Kısa cevap:** Yazabilirsiniz (Ayarlar > Serbest cevap > Sistem istemi, en fazla 8000 karakter), ama bu alan yalnız **serbest cevap** içindir:
+anket dışı ya da anlaşılmayan bir söze verilen bir-iki cümlelik karşılık. Açılış, kapanış, özet ve telesekreter akış/kod tarafındadır. Örnek kısa istem:
+`config/prompts/serbest-cevap-selin.txt` (Selin'in tonunu korur, serbest cevap kurallarını ekler).
+**Bu sınırlamayı bil:** Kendi istemini yazarken **cevap uzunluğu kuralı şarttır** (en fazla iki kısa cümle, {WORDS} kelime); tam ajan istemi yapıştırmak
+çalışmaz: 2026-11-03 ölçümünde tam istemle Haiku 56/96'ya düştü (varsayılan 87/96), çünkü uzun cevaplar denetimde reddedildi ve istem 4000 sınırında
+kesilmişti. Sınır artık 8000 ve kesme yok (aşan istem reddedilir), ama uzun istem her turda yeniden gönderilir: maliyet ve gecikme artar. Selin istemi
+ve varsayılan istem v7 gerçek modelle henüz ÖLÇÜLMEDİ; "kendi istemimizle de aynı kalite" deme.
+**Değişen kararlar (sebepleriyle):** Haiku zaman aşımı 2,5 -> 3,0 sn (ölçümde en yavaş tur 3,54 sn; bedeli anlaşılmayan turda en kötü ~3 sn sessizlik).
+"Benim fikrim önemli değil" gibi fikri geri çeviren cümleler artık reddedilmiyor (kayıtlı çıktılarda 4 yanlış ret kurtuldu); "benim fikrim sekiz" gibi
+fikir bildiren cümleler hâlâ reddediliyor.

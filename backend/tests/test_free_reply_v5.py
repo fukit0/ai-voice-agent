@@ -26,21 +26,21 @@ def has(fs: list[str], rule: str) -> bool:
     return any(f == rule or f.startswith(rule) for f in fs)
 
 
-# ---- Haiku zaman aşımı 2,0 -> 2,5 ----
-def test_haiku_timeout_default_is_2_5_everywhere():
-    assert F.HAIKU_TIMEOUT_DEFAULT == 2.5 and F.defaults()["haiku_timeout_s"] == 2.5
+# ---- Haiku zaman aşımı 2,0 -> 2,5 -> 3,0 (2026-11-03 geniş kapsam ölçümü, max 3,54 sn) ----
+def test_haiku_timeout_default_is_3_0_everywhere():
+    assert F.HAIKU_TIMEOUT_DEFAULT == 3.0 and F.defaults()["haiku_timeout_s"] == 3.0
     cfg = {k: v for k, v in F.defaults().items() if k != "haiku_timeout_s"}
 
     class H:
         backend = "haiku"
         model = "claude-haiku-5-5"
     r = F.FreeReplier(H(), cfg)
-    r.cfg.pop("haiku_timeout_s", None)                     # config alanı yoksa koddaki varsayılan da 2,5
-    assert r._timeout() == 2.5
+    r.cfg.pop("haiku_timeout_s", None)                     # config alanı yoksa koddaki varsayılan da 3,0
+    assert r._timeout() == 3.0
     lo, hi = F.HAIKU_TIMEOUT_RANGE
-    assert lo <= 2.5 <= hi
+    assert lo <= 3.0 <= hi
     ui = (S.ROOT / "frontend" / "src" / "FreeReplySettings.tsx").read_text(encoding="utf-8")
-    assert "Varsayılan 2,5 sn" in ui and "Varsayılan 2,0 sn" not in ui
+    assert "Varsayılan 3,0 sn" in ui and "Varsayılan 2,5 sn" not in ui and "Varsayılan 2,0 sn" not in ui
     assert 'get("haiku_timeout_s", 2.0)' not in (S.ROOT / "scripts" / "eval_free_reply.py").read_text(encoding="utf-8")
 
 
@@ -131,7 +131,7 @@ def test_name_claim_uses_replier_assistant_name():
 
 # ---- istem v5 ----
 def test_prompt_v5_length_name_and_scale_rules():
-    assert F.PROMPT_VERSION == "6" and F.MAX_WORDS == 22      # off-004: v6; v5 kuralları korundu
+    assert F.PROMPT_VERSION == "7" and F.MAX_WORDS == 22      # off-004: v7; v5/v6 kuralları korundu
     msg = F.build_messages(STEPS["q2"], "soru", "x", "other", "Ayşe", 200)[0]["content"]
     assert "en fazla 22 kelime ve 200 karakter" in msg and "{WORDS}" not in msg and "{MAX}" not in msg
     assert "Adın yalnızca Ayşe" in msg and "ad, unvan, kimlik uydurma" in msg

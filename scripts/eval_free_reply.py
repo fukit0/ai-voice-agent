@@ -77,6 +77,22 @@ def pct(xs: list[float], q: float) -> float | None:
     return round(xs[min(len(xs) - 1, round(q * (len(xs) - 1)))], 3)
 
 
+def read_system_file(path: Path) -> str:
+    """off-004: --system-file içeriği (temizlenmiş). Sınırı aşan dosya KESİLMEZ: kesik istemle ölçüm sessizce yanlış sonuç verirdi
+    (canlıda aynı istem Ayarlar'da reddedilir), bu yüzden açık Türkçe hata (ValueError; main çıkış kodu 2)."""
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"Sistem istemi dosyası okunamadı: {path} ({exc})") from exc
+    text = F.clean_prompt(raw)
+    if not text:
+        raise ValueError(f"Sistem istemi dosyası boş: {path}")
+    if len(text) > F.SYSTEM_PROMPT_MAX:
+        raise ValueError(f"Sistem istemi dosyası çok uzun: {len(text)} karakter (sınır {F.SYSTEM_PROMPT_MAX}). Dosya kesilmez; "
+                         "istemi kısaltıp yeniden deneyin (serbest cevap için kısa istem önerilir: config/prompts/serbest-cevap-selin.txt).")
+    return text
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--runs", type=int, default=3, help="vaka başına tekrar (sıcaklık 0,6: çıktı değişir)")
@@ -93,6 +109,13 @@ def main() -> int:
     args = ap.parse_args()
 
     cfg = F.settings()
+    system_override = None
+    if args.system_file is not None:
+        try:
+            system_override = read_system_file(args.system_file)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
     haiku = args.backend == "haiku"
     if haiku and args.thinking:
         print("--thinking yalnız Qwen içindir; Haiku'da düşünme her zaman kapalı.", file=sys.stderr)
@@ -104,7 +127,7 @@ def main() -> int:
             print("ANTHROPIC_API_KEY tanımlı değil (ortamda ya da proje kökündeki .env'de). Haiku ölçümü yapılmadı.", file=sys.stderr)
             return 2
         model = args.model or F.haiku_model(cfg, a1s_llm())
-        timeout = args.timeout or float(cfg.get("haiku_timeout_s", 2.5))
+        timeout = args.timeout or float(cfg.get("haiku_timeout_s", F.HAIKU_TIMEOUT_DEFAULT))
     else:
         model = args.model or (cfg["thinking_model"] if args.thinking else cfg["model"])
         timeout = args.timeout or float(cfg["thinking_timeout_s"] if args.thinking else cfg["timeout_s"])
@@ -138,8 +161,8 @@ def main() -> int:
                 return 2
             load_s = round(time.perf_counter() - t0, 2)
             print(f"ısındı ({load_s} sn)")
-    if args.system_file is not None:
-        cfg = {**cfg, "system_prompt": F.clean_prompt(args.system_file.read_text(encoding="utf-8"))[:F.SYSTEM_PROMPT_MAX]}
+    if system_override is not None:
+        cfg = {**cfg, "system_prompt": system_override}
     live_rep = F.FreeReplier(FakeClient(backend=args.backend), cfg)
     if live_rep.wide:   # off-004 geniş kapsam: canlıda NEVER_LLM dışındaki tüm kategoriler denenir
         live_cats = {c["category"] for c in data["cases"]} - set(F.NEVER_LLM)

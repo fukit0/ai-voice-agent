@@ -31,7 +31,7 @@ function PromptEditor({ s, save }: { s: Settings; save: (p: Parameters<typeof se
   const [preview, setPreview] = useState(false);
   useEffect(() => setText(s.system_prompt ?? s.default_system_prompt ?? ""), [s.system_prompt, s.default_system_prompt]);
   useEffect(() => setFallback(s.fallback_text ?? ""), [s.fallback_text]);
-  const max = s.system_prompt_max ?? 4000;
+  const max = s.system_prompt_max ?? 8000;
   const fmax = s.fallback_text_max ?? 200;
   const tooLong = text.length > max;
   const dirty = text !== saved;
@@ -50,12 +50,13 @@ function PromptEditor({ s, save }: { s: Settings; save: (p: Parameters<typeof se
       </div>
       <div className="setting prompt-setting">
         <dt>Sistem istemi{custom ? <span className="pill warn">Özel istem</span> : <span className="pill ok">Varsayılan</span>}
-          <span>Model bu metni aynen alır. {"{ASISTAN}"}, {"{MAX}"}, {"{WORDS}"} yer tutucuları doldurulur. Müşteri sözü her zaman ayrı ve etiket içinde VERİ olarak gider. Boş kaydederseniz varsayılana döner. Güvenlik denetimi (iade/indirim/ücret vaadi, istem sızıntısı, web adresi, uydurma telefon/adres, ad uydurma, yabancı dil, aşırı uzunluk) istemden bağımsızdır ve kapatılamaz: denetimden geçmeyen cümle söylenmez.</span></dt>
+          <span>Model bu metni aynen alır. {"{ASISTAN}"}, {"{MAX}"}, {"{WORDS}"} yer tutucuları doldurulur. Müşteri sözü her zaman ayrı ve etiket içinde VERİ olarak gider. Boş kaydederseniz varsayılana döner. Güvenlik denetimi (iade/indirim/ücret vaadi, istem sızıntısı, web adresi, uydurma telefon/adres, ad uydurma, yabancı dil, aşırı uzunluk) istemden bağımsızdır ve kapatılamaz: denetimden geçmeyen cümle söylenmez. Bu istem yalnız serbest cevap içindir: tam ajan istemi (açılış, kapanış, özet) yapıştırmayın; cevap uzunluğu kuralı (en fazla iki kısa cümle) şarttır, yoksa uzun cevaplar denetimde reddedilir. Örnek: config/prompts/serbest-cevap-selin.txt.</span></dt>
         <dd className="prompt-dd">
           <textarea value={text} onChange={(e) => setText(e.target.value)} aria-label="Sistem istemi" rows={14} spellCheck={false}
             style={{ width: "100%", fontFamily: "var(--mono, monospace)", fontSize: 13 }} />
           <div className="prompt-actions">
             <span className={tooLong ? "pill err" : "meta"} aria-label="Karakter sayısı">{text.length} / {max}</span>
+            {tooLong && <span className="pill err" role="alert">İstem {max} karakter sınırını aşıyor; kesilmez, kısaltın.</span>}
             <button type="button" disabled={!dirty || tooLong} onClick={() => save({ system_prompt: text.trim() ? text : null })}>Kaydet</button>
             <button type="button" disabled={!dirty} onClick={() => setText(saved)}>Geri al</button>
             <button type="button" disabled={!custom} onClick={() => save({ system_prompt: null })}>Varsayılana sıfırla</button>
@@ -175,7 +176,7 @@ export function FreeReplySettings() {
             </dd>
           </div>
           <div className="setting">
-            <dt>Haiku zaman aşımı (sn)<span>Bu sürede cevap gelmezse havuz cümlesi konuşur. Varsayılan 2,5 sn ölçüme dayanır (2026-11-03 Haiku serbest cevap ölçümü: p95 1,96 sn, en yavaş 2,06 sn; 2,0 sn sınırında 102 turdan 4'ü zaman aşımına düştü). Aralık {hlo}–{hhi} sn.</span></dt>
+            <dt>Haiku zaman aşımı (sn)<span>Bu sürede cevap gelmezse havuz cümlesi konuşur. Varsayılan 3,0 sn ölçüme dayanır (2026-11-03 geniş kapsam Haiku ölçümü: p95 2,04 sn, en yavaş 3,54 sn; 2,5 sn sınırında 102 turdan 4'ü zaman aşımına düştü). Bedeli: anlaşılmayan turda en kötü ~3 sn sessizlik. Aralık {hlo}–{hhi} sn.</span></dt>
             <dd>
               <input value={haikuTimeout} onChange={(e) => setHaikuTimeout(e.target.value)} aria-label="Haiku zaman aşımı" size={5} inputMode="decimal" />
               <button type="button" disabled={!haikuTimeoutOk || ht === s.haiku_timeout_s} onClick={() => save({ haiku_timeout_s: ht })}>Kaydet</button>

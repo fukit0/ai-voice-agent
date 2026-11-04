@@ -8,7 +8,7 @@ const group = (o: Record<string, unknown> = {}) => ({
   turns: 0, called: 0, qwen_rate: null, fallback_rate: null, fallback_reasons: {}, mean_s: null, p50_s: null, p95_s: null, models: [], ...o,
 });
 const defaults = { enabled: true, model: M, timeout_s: 1.5, thinking: false, thinking_model: "t", thinking_timeout_s: 8,
-  backend: "auto", haiku_model: null, haiku_timeout_s: 2.5 };   // 2026-11-03: Haiku ölçümüne göre 2,0 -> 2,5 sn
+  backend: "auto", haiku_model: null, haiku_timeout_s: 3.0 };   // 2026-11-03: Haiku ölçümüne göre 2,0 -> 2,5 -> 3,0 sn (geniş kapsam max 3,54 sn)
 const base = {
   ...defaults, defaults, overridden: [] as string[], categories: ["counter", "clarify"], timeout_range: [0.3, 5], thinking_timeout_range: [1, 30],
   thinking_max_tokens: 768, prompt: { version: "3", hash: "abc" }, status: { reachable: false, warm: false, model: M },
@@ -53,12 +53,12 @@ it("arka uç seçimi kaydedilir; anahtar yoksa havuz uyarısı görünür; ayrı
 it("Haiku zaman aşımı aralıkta kaydedilir; model boş bırakılırsa profilden (null) gönderilir", async () => {
   render(<FreeReplySettings />);
   const t = await screen.findByLabelText("Haiku zaman aşımı");
-  expect((t as HTMLInputElement).value).toBe("2.5");
-  expect(screen.getByText(/Varsayılan 2,5 sn ölçüme dayanır/)).toBeInTheDocument();
+  expect((t as HTMLInputElement).value).toBe("3");
+  expect(screen.getByText(/Varsayılan 3,0 sn ölçüme dayanır/)).toBeInTheDocument();
   const saveOf = (label: string) => within(screen.getByLabelText(label).closest("dd") as HTMLElement).getByRole("button", { name: "Kaydet" });
   fireEvent.change(t, { target: { value: "9" } });
   expect(saveOf("Haiku zaman aşımı")).toBeDisabled();
-  fireEvent.change(t, { target: { value: "2,5" } });
+  fireEvent.change(t, { target: { value: "3,0" } });
   expect(saveOf("Haiku zaman aşımı")).toBeDisabled();      // varsayılanla aynı değer: değişiklik yok
   fireEvent.change(t, { target: { value: "3,2" } });
   fireEvent.click(saveOf("Haiku zaman aşımı"));
