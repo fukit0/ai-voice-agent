@@ -1,0 +1,306 @@
+{
+  "text": "Merhaba Ahmet Bey, ben Ayşe. sahibinden.com adına arıyorum. Size kısa bir anket yapabilir miyim?",
+  "seed": 1234,
+  "models": {
+    "eleven_flash_v2_5": {
+      "tag_model": false,
+      "clips": [
+        {
+          "tone": "samimi",
+          "seconds_to_synthesize": 3.01,
+          "applied": {
+            "stability": 0.45,
+            "similarity_boost": 0.75,
+            "speed": 1.0
+          },
+          "acoustics": {
+            "seconds": 6.27,
+            "words_per_sec": 2.39,
+            "pitch_median_hz": 240.0,
+            "pitch_std_semitones": 2.91,
+            "loudness_std_db": 6.24
+          }
+        },
+        {
+          "tone": "resmi",
+          "seconds_to_synthesize": 0.61,
+          "applied": {
+            "stability": 0.85,
+            "similarity_boost": 0.75,
+            "speed": 0.95
+          },
+          "acoustics": {
+            "seconds": 6.64,
+            "words_per_sec": 2.26,
+            "pitch_median_hz": 242.4,
+            "pitch_std_semitones": 3.85,
+            "loudness_std_db": 7.7
+          }
+        },
+        {
+          "tone": "enerjik",
+          "seconds_to_synthesize": 0.57,
+          "applied": {
+            "stability": 0.2,
+            "similarity_boost": 0.75,
+            "speed": 1.15
+          },
+          "acoustics": {
+            "seconds": 5.76,
+            "words_per_sec": 2.6,
+            "pitch_median_hz": 244.9,
+            "pitch_std_semitones": 4.21,
+            "loudness_std_db": 7.43
+          }
+        },
+        {
+          "tone": "sakin",
+          "seconds_to_synthesize": 0.63,
+          "applied": {
+            "stability": 0.75,
+            "similarity_boost": 0.75,
+            "speed": 0.88
+          },
+          "acoustics": {
+            "seconds": 6.92,
+            "words_per_sec": 2.17,
+            "pitch_median_hz": 224.3,
+            "pitch_std_semitones": 3.2,
+            "loudness_std_db": 6.92
+          }
+        }
+      ],
+      "spread": {
+        "words_per_sec": 0.43,
+        "pitch_std_semitones": 1.3,
+        "loudness_std_db": 1.46,
+        "pitch_median_hz": 20.6
+      }
+    },
+    "eleven_multilingual_v2": {
+      "tag_model": false,
+      "clips": [
+        {
+          "tone": "samimi",
+          "seconds_to_synthesize": 0.87,
+          "applied": {
+            "stability": 0.45,
+            "similarity_boost": 0.75,
+            "style": 0.25,
+            "speed": 1.0
+          },
+          "acoustics": {
+            "seconds": 6.64,
+            "words_per_sec": 2.26,
+            "pitch_median_hz": 240.0,
+            "pitch_std_semitones": 5.34,
+            "loudness_std_db": 7.57
+          }
+        },
+        {
+          "tone": "resmi",
+          "seconds_to_synthesize": 0.86,
+          "applied": {
+            "stability": 0.8,
+            "similarity_boost": 0.75,
+            "style": 0.0,
+            "speed": 0.95
+          },
+          "acoustics": {
+            "seconds": 6.69,
+            "words_per_sec": 2.24,
+            "pitch_median_hz": 214.3,
+            "pitch_std_semitones": 3.73,
+            "loudness_std_db": 7.07
+          }
+        },
+        {
+          "tone": "enerjik",
+          "seconds_to_synthesize": 0.85,
+          "applied": {
+            "stability": 0.25,
+            "similarity_boost": 0.75,
+            "style": 0.6,
+            "speed": 1.12
+          },
+          "acoustics": {
+            "seconds": 5.76,
+            "words_per_sec": 2.6,
+            "pitch_median_hz": 205.1,
+            "pitch_std_semitones": 4.61,
+            "loudness_std_db": 7.46
+          }
+        },
+        {
+          "tone": "sakin",
+          "seconds_to_synthesize": 1.01,
+          "applied": {
+            "stability": 0.7,
+            "similarity_boost": 0.75,
+            "style": 0.1,
+            "speed": 0.88
+          },
+          "acoustics": {
+            "seconds": 7.29,
+            "words_per_sec": 2.06,
+            "pitch_median_hz": 218.2,
+            "pitch_std_semitones": 5.25,
+            "loudness_std_db": 7.5
+          }
+        }
+      ],
+      "spread": {
+        "words_per_sec": 0.54,
+        "pitch_std_semitones": 1.61,
+        "loudness_std_db": 0.5,
+        "pitch_median_hz": 34.9
+      }
+    },
+    "eleven_v4_turbo": {
+      "tag_model": true,
+      "clips": [
+        {
+          "tone": "samimi",
+          "seconds_to_synthesize": 1.53,
+          "applied": {
+            "tag": "[warmly]",
+            "stability": 0.45,
+            "speed": 1.0
+          },
+          "acoustics": {
+            "seconds": 6.8,
+            "words_per_sec": 2.21,
+            "pitch_median_hz": 263.7,
+            "pitch_std_semitones": 4.8,
+            "loudness_std_db": 6.52
+          }
+        },
+        {
+          "tone": "resmi",
+          "seconds_to_synthesize": 1.4,
+          "applied": {
+            "tag": "[serious]",
+            "stability": 0.8,
+            "speed": 0.95
+          },
+          "acoustics": {
+            "seconds": 7.04,
+            "words_per_sec": 2.13,
+            "pitch_median_hz": 247.4,
+            "pitch_std_semitones": 4.57,
+            "loudness_std_db": 6.53
+          }
+        },
+        {
+          "tone": "enerjik",
+          "seconds_to_synthesize": 1.39,
+          "applied": {
+            "tag": "[excited]",
+            "stability": 0.25,
+            "speed": 1.12
+          },
+          "acoustics": {
+            "seconds": 6.64,
+            "words_per_sec": 2.26,
+            "pitch_median_hz": 272.7,
+            "pitch_std_semitones": 4.75,
+            "loudness_std_db": 6.67
+          }
+        },
+        {
+          "tone": "sakin",
+          "seconds_to_synthesize": 1.38,
+          "applied": {
+            "tag": "[calm]",
+            "stability": 0.7,
+            "speed": 0.88
+          },
+          "acoustics": {
+            "seconds": 6.8,
+            "words_per_sec": 2.21,
+            "pitch_median_hz": 255.3,
+            "pitch_std_semitones": 4.88,
+            "loudness_std_db": 6.3
+          }
+        }
+      ],
+      "spread": {
+        "words_per_sec": 0.13,
+        "pitch_std_semitones": 0.31,
+        "loudness_std_db": 0.37,
+        "pitch_median_hz": 25.3
+      }
+    },
+    "eleven_v3": {
+      "tag_model": true,
+      "clips": [
+        {
+          "tone": "samimi",
+          "seconds_to_synthesize": 4.36,
+          "applied": {
+            "tag": "[warmly]",
+            "stability": 0.5
+          },
+          "acoustics": {
+            "seconds": 6.08,
+            "words_per_sec": 2.47,
+            "pitch_median_hz": 277.5,
+            "pitch_std_semitones": 3.98,
+            "loudness_std_db": 5.62
+          }
+        },
+        {
+          "tone": "resmi",
+          "seconds_to_synthesize": 3.11,
+          "applied": {
+            "tag": "[serious]",
+            "stability": 1.0
+          },
+          "acoustics": {
+            "seconds": 5.36,
+            "words_per_sec": 2.8,
+            "pitch_median_hz": 266.7,
+            "pitch_std_semitones": 3.72,
+            "loudness_std_db": 6.02
+          }
+        },
+        {
+          "tone": "enerjik",
+          "seconds_to_synthesize": 3.11,
+          "applied": {
+            "tag": "[excited]",
+            "stability": 0.0
+          },
+          "acoustics": {
+            "seconds": 5.6,
+            "words_per_sec": 2.68,
+            "pitch_median_hz": 260.9,
+            "pitch_std_semitones": 3.61,
+            "loudness_std_db": 5.44
+          }
+        },
+        {
+          "tone": "sakin",
+          "seconds_to_synthesize": 3.96,
+          "applied": {
+            "tag": "[calm]",
+            "stability": 1.0
+          },
+          "acoustics": {
+            "seconds": 5.6,
+            "words_per_sec": 2.68,
+            "pitch_median_hz": 260.9,
+            "pitch_std_semitones": 3.74,
+            "loudness_std_db": 5.93
+          }
+        }
+      ],
+      "spread": {
+        "words_per_sec": 0.33,
+        "pitch_std_semitones": 0.37,
+        "loudness_std_db": 0.58,
+        "pitch_median_hz": 16.6
+      }
+    }
+  }
+}

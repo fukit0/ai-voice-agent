@@ -26,6 +26,7 @@ you either verify it or document why it is blocked.
 - Use repository artifacts as the system of record.
 - Sahibinden Sesli Anket Ajanı — PoC Planı dokümanına bağlı kal
 - Değişen kararları sebepleriyle, "Demoda anlatırken “ilk yükleme” bahanesi değil, bu sınırlamayı bil." gibi bilgileri Demo Sunumu dosyasına ekle
+- /goal komutuyla verdiğim hedefler sırasından kullanıcıdan bir girdi beklenirse, goal durumu sürekli kontrol edilmeye devam etmesin. kullanıcı girdisinden/kanıtından sonra goal check yapılsın.
 
 ## Required Files
 

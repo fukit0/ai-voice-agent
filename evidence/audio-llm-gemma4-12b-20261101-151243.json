@@ -1,0 +1,264 @@
+{
+ "model": "gemma4:12b",
+ "error": null,
+ "summary": {
+  "n": 10,
+  "json_ok_rate": 1.0,
+  "p50_s": 1.161,
+  "cold_s": 1.179,
+  "match_rate": 0.4,
+  "transcript_match_rate": 0.3
+ },
+ "rows": [
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 21,
+   "clip": "c06.wav",
+   "rep": 1,
+   "seconds": 1.179,
+   "json_ok": true,
+   "intent": "unclear",
+   "value": null,
+   "transcript": "",
+   "raw": "```json\n{\"intent\": \"unclear\", \"value\": null, \"transcript\": \"\"}\n```",
+   "expected": true,
+   "expected_text": "evet",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 21,
+   "clip": "c07.wav",
+   "rep": 1,
+   "seconds": 1.167,
+   "json_ok": true,
+   "intent": "unclear",
+   "value": null,
+   "transcript": "",
+   "raw": "```json\n{\"intent\": \"unclear\", \"value\": null, \"transcript\": \"\"}\n```",
+   "expected": true,
+   "expected_text": "evet",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 651,
+   "output_tokens": 23,
+   "clip": "c08.wav",
+   "rep": 1,
+   "seconds": 1.165,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": true,
+   "expected_text": "evet",
+   "step": "musaitlik",
+   "match": true,
+   "transcript_match": true
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 651,
+   "output_tokens": 23,
+   "clip": "c09.wav",
+   "rep": 1,
+   "seconds": 1.158,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": true,
+   "expected_text": "evet",
+   "step": "musaitlik",
+   "match": true,
+   "transcript_match": true
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 23,
+   "clip": "c10.wav",
+   "rep": 1,
+   "seconds": 1.16,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": true,
+   "expected_text": "evet",
+   "step": "musaitlik",
+   "match": true,
+   "transcript_match": true
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 23,
+   "clip": "c11.wav",
+   "rep": 1,
+   "seconds": 1.16,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": false,
+   "expected_text": "hayır",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 651,
+   "output_tokens": 23,
+   "clip": "c12.wav",
+   "rep": 1,
+   "seconds": 1.174,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": false,
+   "expected_text": "hayır",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 23,
+   "clip": "c13.wav",
+   "rep": 1,
+   "seconds": 1.159,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": false,
+   "expected_text": "hayır",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 23,
+   "clip": "c14.wav",
+   "rep": 1,
+   "seconds": 1.161,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": false,
+   "expected_text": "hayır",
+   "step": "musaitlik",
+   "match": false,
+   "transcript_match": false
+  },
+  {
+   "diag": {
+    "finish_reason": "stop",
+    "reasoning_chars": 0,
+    "message_keys": [
+     "content",
+     "role"
+    ]
+   },
+   "input_tokens": 652,
+   "output_tokens": 23,
+   "clip": "c15.wav",
+   "rep": 1,
+   "seconds": 1.166,
+   "json_ok": true,
+   "intent": "answer",
+   "value": true,
+   "transcript": "evet",
+   "raw": "```json\n{\"intent\": \"answer\", \"value\": true, \"transcript\": \"evet\"}\n```",
+   "expected": true,
+   "expected_text": "evet evet",
+   "step": "musaitlik",
+   "match": true,
+   "transcript_match": false
+  }
+ ]
+}

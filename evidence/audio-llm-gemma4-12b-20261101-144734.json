@@ -1,0 +1,178 @@
+{
+ "model": "gemma4:12b",
+ "error": null,
+ "summary": {
+  "n": 15,
+  "json_ok_rate": 0.0,
+  "p50_s": 5.882,
+  "cold_s": 13.805,
+  "match_rate": null
+ },
+ "rows": [
+  {
+   "clip": "c01.wav",
+   "rep": 1,
+   "seconds": 13.805,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c01.wav",
+   "rep": 2,
+   "seconds": 5.72,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c01.wav",
+   "rep": 3,
+   "seconds": 5.168,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c02.wav",
+   "rep": 1,
+   "seconds": 5.685,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c02.wav",
+   "rep": 2,
+   "seconds": 5.361,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c02.wav",
+   "rep": 3,
+   "seconds": 5.304,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c03.wav",
+   "rep": 1,
+   "seconds": 5.671,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c03.wav",
+   "rep": 2,
+   "seconds": 7.063,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c03.wav",
+   "rep": 3,
+   "seconds": 6.209,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c04.wav",
+   "rep": 1,
+   "seconds": 7.253,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c04.wav",
+   "rep": 2,
+   "seconds": 5.965,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c04.wav",
+   "rep": 3,
+   "seconds": 5.799,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c05.wav",
+   "rep": 1,
+   "seconds": 6.795,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c05.wav",
+   "rep": 2,
+   "seconds": 6.179,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  },
+  {
+   "clip": "c05.wav",
+   "rep": 3,
+   "seconds": 6.126,
+   "json_ok": false,
+   "intent": null,
+   "value": null,
+   "transcript": null,
+   "raw": "",
+   "match": null
+  }
+ ]
+}
